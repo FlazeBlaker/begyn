@@ -338,11 +338,43 @@ exports.generateContent = onRequest(
                         ratioDesc = "Vertical 9:16 aspect ratio";
                     }
 
-                    let prompt = `Create a high-quality ${userPlatform} image for: "${userIdea}". Style: ${userTones}.
+                    // DYNAMIC PROMPT CONSTRUCTION
+                    let prompt = "";
+
+                    if (userImage) {
+                        prompt = `You are an expert AI artist specialized in PHOTOREALISTIC IMAGE MANIPULATION.
+                         
+**CORE OBJECTIVE: EXACT IDENTITY PRESERVATION**
+- The attached image contains the REFERENCE SUBJECT.
+- You MUST generate a new image where the subject's face/identity is an EXACT MATCH to the reference.
+- **CRITICAL:** Do not just create a "lookalike". It must look like the SAME PERSON.
+- Preserve facial structure, eye shape, nose shape, and key distinguishing features 100%.
+
+**CONTEXT & STYLE:**
+- Platform: ${userPlatform} (${ratioDesc})
+- Context/Topic: "${userIdea}"
+- Aesthetic/Tone: ${userTones}
+- Style: Photorealistic, High Definition, 8k.
+- Lighting: Professional studio lighting or natural lighting (matching the context).
+
+**INSTRUCTIONS:**
+1. Analyze the reference face deeply.
+2. Place THIS EXACT FACE into the new context defined above.
+3. Ensure skin texture and lighting on the face match the new scene naturally, but DO NOT ALTER THE FEATURES.
+
+**NEGATIVE CONSTRAINTS:**
+- Do NOT change the person's ethnicity, age, or facial structure.
+- Do NOT make them look "cartoonish" or "animated" unless the style explicitly requests it.
+- Do NOT include text, UI elements, or logos.
+`;
+                    } else {
+                        // Fallback for no image
+                        prompt = `Create a high-quality ${userPlatform} image for: "${userIdea}". Style: ${userTones}.
 ${ratioDesc}.
 Make it engaging, modern, clean, eye-catching. Professional composition.
 IMPORTANT: This is a CONTENT image, NOT a screenshot of a user interface.
-NEGATIVE CONSTRAINTS: Do NOT include any social media logos (no Instagram/YouTube logos), no UI elements, no buttons (like/comment/share), no "swipe up" text, no interface frames. Just the pure visual content.`;
+NEGATIVE CONSTRAINTS: Do NOT include any social media logos, no UI elements, no buttons.`;
+                    }
 
                     console.log("Prompt:", prompt);
                     console.log("Creating model...");
@@ -352,7 +384,22 @@ NEGATIVE CONSTRAINTS: Do NOT include any social media logos (no Instagram/YouTub
                     });
 
                     console.log("Calling generateContent...");
-                    const result = await imageModel.generateContent(prompt);
+
+                    // Prepare parts for the API call
+                    let parts = [{ text: prompt }];
+
+                    if (userImage) {
+                        // Extract base64 data if it has the prefix
+                        const base64Data = userImage.replace(/^data:image\/\w+;base64,/, "");
+                        parts.push({
+                            inlineData: {
+                                data: base64Data,
+                                mimeType: "image/jpeg" // Assuming jpeg/png, API handles standard types
+                            }
+                        });
+                    }
+
+                    const result = await imageModel.generateContent(parts);
                     console.log("Getting response...");
                     const response = await result.response;
 
