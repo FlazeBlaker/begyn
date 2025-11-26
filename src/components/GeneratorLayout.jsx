@@ -452,6 +452,7 @@ export const AdvancedOptionsPanel = ({ open, onToggle, children, title = "Advanc
 export default function GeneratorLayout({
     header,
     topic,
+    typeSelector,
     imageUploadComponent,
     advancedOptionsPanel,
     generateButtonText,
@@ -522,6 +523,8 @@ export default function GeneratorLayout({
             {header}
 
             <div style={inputContainerStyle}>
+                {typeSelector}
+
                 {topic && topic.selectedTones && (
                     <ToneSelector
                         selectedTones={topic.selectedTones}

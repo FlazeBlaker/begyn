@@ -492,67 +492,12 @@ export default function Sidebar({
                         <li>
                             <NavLink
                                 to="/generate"
-                                icon="🚀"
-                                isTestActive={isTestActive}
-                                isSidebarOpen={isSidebarOpen}
-                                onClick={isMobile ? toggleSidebar : undefined}
-                            >
-                                Generator Hub
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/caption-generator"
                                 icon="✨"
                                 isTestActive={isTestActive}
                                 isSidebarOpen={isSidebarOpen}
                                 onClick={isMobile ? toggleSidebar : undefined}
                             >
-                                Caption Generator
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/idea-generator"
-                                icon="💡"
-                                isTestActive={isTestActive}
-                                isSidebarOpen={isSidebarOpen}
-                                onClick={isMobile ? toggleSidebar : undefined}
-                            >
-                                Content Ideas
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/post-generator"
-                                icon="✍️"
-                                isTestActive={isTestActive}
-                                isSidebarOpen={isSidebarOpen}
-                                onClick={isMobile ? toggleSidebar : undefined}
-                            >
-                                Post Generator
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/video-script-generator"
-                                icon="🎬"
-                                isTestActive={isTestActive}
-                                isSidebarOpen={isSidebarOpen}
-                                onClick={isMobile ? toggleSidebar : undefined}
-                            >
-                                Video Script
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/tweet-generator"
-                                icon="🐦"
-                                isTestActive={isTestActive}
-                                isSidebarOpen={isSidebarOpen}
-                                onClick={isMobile ? toggleSidebar : undefined}
-                            >
-                                Tweet Generator
+                                Generator
                             </NavLink>
                         </li>
                         <li>

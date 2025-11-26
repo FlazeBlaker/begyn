@@ -8,6 +8,7 @@ const db = admin.firestore();
 
 // --- GEMINI SETUP ---
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const sharp = require("sharp");
 // Initialize Gemini with the provided API Key (env var)
 // Initialize Gemini with the provided API Key (env var)
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "AIzaSyBTE9GkRl051i6WVOUp3IzMU0uHn23pwgQ");
@@ -83,6 +84,9 @@ exports.generateContent = onRequest(
             const tones = payload?.tones || [];
             const options = payload?.options || {};
             const image = payload?.image; // Base64 image string
+            const aspectRatio = payload?.aspectRatio || "1:1";
+            const faceOverlay = payload?.faceOverlay || false;
+            const facePosition = payload?.facePosition || "bottom-left";
 
             console.log("DEBUG: generateContent called");
             console.log("DEBUG: type =", type);
@@ -101,6 +105,7 @@ exports.generateContent = onRequest(
                 image: 2,       // Standalone image generation
                 smartImage: 1,  // Reduced from 2 to 1
                 dynamicGuide: 0,
+                dynamicGuideIterative: 0,
                 finalGuide: 0
             };
 
@@ -171,7 +176,14 @@ exports.generateContent = onRequest(
             }
 
             // Validation: Most types need a topic or image, but guides use other payload data
-            if (!topic && !image && type !== "dynamicGuide" && type !== "finalGuide") {
+            if (!topic && !image &&
+                type !== "dynamicGuide" &&
+                type !== "finalGuide" &&
+                type !== "dynamicGuideIterative" &&
+                type !== "generateRoadmapSteps" &&
+                type !== "generateChecklist" &&
+                type !== "generatePillars"
+            ) {
                 return res.status(400).json({
                     error: "invalid-argument: The function must be called with a 'topic' or an 'image'.",
                     debug: {
@@ -275,6 +287,78 @@ exports.generateContent = onRequest(
           - Questions should be specific to their niche.
           - Return ONLY the JSON object. No markdown formatting.
         `,
+                dynamicGuideIterative: `
+          You are an expert brand strategist. Conduct a deep-dive interview to build a perfect social media strategy.
+          **Core Context:**
+          - Niche: ${payload?.coreData?.niche || 'General'}
+          - Goal: ${payload?.coreData?.goal || 'Growth'}
+          - Tone: ${(payload?.coreData?.tone || []).join(', ')}
+          
+          **Conversation History:**
+          ${(payload?.history || []).map((h, i) => `Q${i + 1}: ${h.question}\nA: ${h.answer}`).join('\n\n')}
+          
+          **Goal:** Ask ONE single follow-up question to clarify their strategy, audience, or resources.
+          **Constraint:** 
+          - Stop asking questions when you have a clear picture (usually 3-5 questions total).
+          - **Minimalist Style:** Keep questions short, simple, and easy to understand. Avoid jargon.
+          - **Simple Options:** If providing options, keep them short (1-3 words).
+          
+          **Schema:** Return a JSON object:
+          {
+            "ready": boolean, // true if you have enough info
+            "question": { // Required if ready is false
+               "text": "Short, simple question string",
+               "type": "text" | "radio" | "select",
+               "options": ["Short Opt 1", "Short Opt 2"] // Only for radio/select
+            }
+          }
+        `,
+                generateRoadmapSteps: `
+          You are an expert social media manager. Create a "Zero to Hero" roadmap timeline.
+          **Core Data:** ${JSON.stringify(payload?.formData || {})}
+          **Dynamic Answers:** ${JSON.stringify(payload?.dynamicAnswers || [])}
+          
+          **Instructions:**
+          - Generate **30-50 high-impact steps** from "Day 1" to "Day 30+".
+          - **Schema:** Return a JSON object with ONLY "roadmapSteps":
+            "roadmapSteps": [
+              {
+                "title": "Short Action Title",
+                "description": "Brief 1-sentence summary",
+                "detailedDescription": "Specific instructions on WHAT and HOW.",
+                "subNodes": [
+                  { "title": "Sub-Task 1", "steps": ["Step 1.1", "Step 1.2"] },
+                  { "title": "Sub-Task 2", "steps": ["Step 2.1", "Step 2.2"] }
+                ],
+                "phase": "Foundation" | "Content Creation" | "Growth" | "Monetization",
+                "timeEstimate": "e.g., 15 mins",
+                "suggestions": ["Suggestion 1", "Suggestion 2"],
+                "resources": [{ "name": "Tool Name", "url": "https://..." }],
+                "generatorLink": "/video-script-generator" | "/post-generator" | "/idea-generator" | null
+              }
+            ]
+          - Return ONLY the JSON object.
+        `,
+                generateChecklist: `
+          You are an expert social media manager. Create a 7-Day Launchpad Checklist.
+          **Core Data:** ${JSON.stringify(payload?.formData || {})}
+          
+          **Instructions:**
+          - Generate exactly 7 actionable tasks for the first week.
+          - **Schema:** Return a JSON object with ONLY "sevenDayChecklist":
+            "sevenDayChecklist": ["Day 1 Task", "Day 2 Task", ..., "Day 7 Task"]
+          - Return ONLY the JSON object.
+        `,
+                generatePillars: `
+          You are an expert social media manager. Define Core Content Pillars.
+          **Core Data:** ${JSON.stringify(payload?.formData || {})}
+          
+          **Instructions:**
+          - Generate 3-5 core content themes/pillars.
+          - **Schema:** Return a JSON object with ONLY "contentPillars":
+            "contentPillars": ["Pillar 1", "Pillar 2", "Pillar 3"]
+          - Return ONLY the JSON object.
+        `,
                 finalGuide: `
           You are an expert social media manager. Create a comprehensive "Zero to Hero" action plan.
           **Core Data:** ${JSON.stringify(payload?.formData || {})}
@@ -292,6 +376,9 @@ exports.generateContent = onRequest(
             - "title": Short action title (e.g., "Create Instagram Bio").
             - "description": Brief 1-sentence summary.
             - "detailedDescription": A detailed explanation of WHAT to do and HOW to do it. Be specific.
+            - "subNodes": An array of 2-4 sub-nodes. Each sub-node object must have:
+              - "title": Title of the sub-task.
+              - "steps": An array of 2-3 very short, easy strings explaining how to do it.
             - "phase": One of ["Foundation", "Content Creation", "Growth", "Monetization"].
             - "timeEstimate": ACCURATE and PRECISE time estimate (e.g., "15 mins", "2 hours", "45 mins"). Do NOT use ranges like "1-2 days". Be specific.
             - "suggestions": An array of **3-5 specific suggestions** (e.g., video ideas, hook examples, tools to try) where applicable.
@@ -300,6 +387,83 @@ exports.generateContent = onRequest(
           - Return ONLY the JSON object.No markdown formatting.
         `
             };
+
+            // --- HELPER: Composite Face on Thumbnail (YouTube Style) ---
+            async function compositeFaceOnThumbnail(baseImageBase64, faceImageBase64, position = "bottom-left") {
+                try {
+                    // Remove base64 prefix if present
+                    const baseData = baseImageBase64.replace(/^data:image\/\w+;base64,/, "");
+                    const faceData = faceImageBase64.replace(/^data:image\/\w+;base64,/, "");
+
+                    // Convert base64 to buffers
+                    const baseBuffer = Buffer.from(baseData, "base64");
+                    const faceBuffer = Buffer.from(faceData, "base64");
+
+                    // Get base image dimensions
+                    const base = sharp(baseBuffer);
+                    const baseMetadata = await base.metadata();
+                    const baseWidth = baseMetadata.width;
+                    const baseHeight = baseMetadata.height;
+
+                    // Calculate face overlay size (20% of base image height for MrBeast style)
+                    const faceSize = Math.round(baseHeight * 0.35); // Larger for impact
+
+                    // Process face: circular crop with border
+                    const processedFace = await sharp(faceBuffer)
+                        .resize(faceSize, faceSize, { fit: 'cover' })
+                        .composite([
+                            {
+                                input: Buffer.from(
+                                    `<svg width="${faceSize}" height="${faceSize}">
+                                        <circle cx="${faceSize / 2}" cy="${faceSize / 2}" r="${faceSize / 2}" fill="white"/>
+                                    </svg>`
+                                ),
+                                blend: 'dest-in'
+                            }
+                        ])
+                        .extend({
+                            top: 8,
+                            bottom: 8,
+                            left: 8,
+                            right: 8,
+                            background: { r: 255, g: 255, b: 255, alpha: 1 } // White border
+                        })
+                        .toBuffer();
+
+                    // Calculate position
+                    let left, top;
+                    const margin = 30; // Margin from edges
+
+                    if (position === "bottom-left") {
+                        left = margin;
+                        top = baseHeight - faceSize - margin - 16; // -16 for border
+                    } else if (position === "bottom-right") {
+                        left = baseWidth - faceSize - margin - 16;
+                        top = baseHeight - faceSize - margin - 16;
+                    } else if (position === "top-left") {
+                        left = margin;
+                        top = margin;
+                    } else { // top-right
+                        left = baseWidth - faceSize - margin - 16;
+                        top = margin;
+                    }
+
+                    // Composite face onto base image
+                    const result = await base
+                        .composite([{
+                            input: processedFace,
+                            left: left,
+                            top: top
+                        }])
+                        .toBuffer();
+
+                    // Convert back to base64
+                    return `data:image/png;base64,${result.toString('base64')}`;
+                } catch (e) {
+                    console.error("Face compositing error:", e);
+                    throw e;
+                }
+            }
 
             // --- SMART IMAGE GENERATION (With User Image Integration) ---
             if (type === "smartImage") {
@@ -311,69 +475,86 @@ exports.generateContent = onRequest(
                     const userTones = (payload?.tones || []).join(", ") || "professional";
                     const userImage = payload?.image; // Base64 image uploaded by user
 
-                    console.log("Inputs:", { userPlatform, userIdea, userTones, hasImage: !!userImage });
+                    console.log("Inputs:", { userPlatform, userIdea, userTones, hasImage: !!userImage, aspectRatio, faceOverlay, facePosition });
 
-                    let aspectRatio = "1:1"; // Default square
+                    // Use payload aspectRatio if provided, otherwise auto-detect from platform
+                    let finalAspectRatio = aspectRatio; // From payload
                     let ratioDesc = "Square aspect ratio";
 
-                    const p = userPlatform.toLowerCase();
-                    if (p.includes("youtube") || p.includes("twitter") || p.includes("facebook") || p.includes("linkedin")) {
+                    // Auto-detect from platform if not explicitly set
+                    if (aspectRatio === "1:1") {
+                        const p = userPlatform.toLowerCase();
                         if (p.includes("youtube")) {
-                            aspectRatio = "16:9";
+                            finalAspectRatio = "16:9";
+                            ratioDesc = "Wide 16:9 aspect ratio for YouTube thumbnail";
+                        } else if (p.includes("twitter")) {
+                            finalAspectRatio = "16:9";
                             ratioDesc = "Wide 16:9 aspect ratio";
                         } else if (p.includes("story") || p.includes("tiktok") || p.includes("reel") || p.includes("short")) {
-                            aspectRatio = "9:16";
+                            finalAspectRatio = "9:16";
                             ratioDesc = "Vertical 9:16 aspect ratio";
-                        } else {
-                            if (p.includes("twitter")) {
-                                aspectRatio = "16:9";
-                                ratioDesc = "Wide 16:9 aspect ratio";
-                            } else {
-                                aspectRatio = "1:1";
-                                ratioDesc = "Square 1:1 aspect ratio";
-                            }
                         }
-                    } else if (p.includes("story") || p.includes("tiktok") || p.includes("reel") || p.includes("short")) {
-                        aspectRatio = "9:16";
-                        ratioDesc = "Vertical 9:16 aspect ratio";
+                    } else {
+                        // Use explicitly provided aspect ratio
+                        if (finalAspectRatio === "16:9") ratioDesc = "Wide 16:9 landscape format";
+                        else if (finalAspectRatio === "9:16") ratioDesc = "Vertical 9:16 portrait format";
+                        else ratioDesc = "Square 1:1 format";
                     }
 
                     // DYNAMIC PROMPT CONSTRUCTION
                     let prompt = "";
 
                     if (userImage) {
-                        prompt = `You are an expert AI artist specialized in PHOTOREALISTIC IMAGE MANIPULATION.
-                         
-**CORE OBJECTIVE: EXACT IDENTITY PRESERVATION**
-- The attached image contains the REFERENCE SUBJECT.
-- You MUST generate a new image where the subject's face/identity is an EXACT MATCH to the reference.
-- **CRITICAL:** Do not just create a "lookalike". It must look like the SAME PERSON.
-- Preserve facial structure, eye shape, nose shape, and key distinguishing features 100%.
+                        // Check if topic mentions people/person to decide if we should add the face
+                        const topicLower = userIdea.toLowerCase();
+                        const mentionsPeople = topicLower.includes('people') || topicLower.includes('person') || topicLower.includes('man') || topicLower.includes('woman') || topicLower.includes('guy') || topicLower.includes('girl');
 
-**CONTEXT & STYLE:**
-- Platform: ${userPlatform} (${ratioDesc})
-- Context/Topic: "${userIdea}"
-- Aesthetic/Tone: ${userTones}
-- Style: Photorealistic, High Definition, 8k.
-- Lighting: Professional studio lighting or natural lighting (matching the context).
+                        if (mentionsPeople) {
+                            // Don't add face overlay if people are already mentioned in the topic
+                            prompt = `Create a high-quality ${userPlatform} thumbnail image for: "${userIdea}". Style: ${userTones}.
+${ratioDesc}.
+Make it engaging, modern, clean, eye-catching. Professional YouTube thumbnail style.
+IMPORTANT: This is a SINGLE CONTENT IMAGE, NOT a collage or grid. Generate ONLY ONE main thumbnail image.
+NEGATIVE CONSTRAINTS: Do NOT create multiple variations, no grid layouts, no collages, no text overlays, no UI elements, no logos.`;
+                        } else {
+                            // Add the person on the left side since they're not mentioned
+                            prompt = `You are an expert AI artist creating a PROFESSIONAL YOUTUBE THUMBNAIL.
 
-**INSTRUCTIONS:**
-1. Analyze the reference face deeply.
-2. Place THIS EXACT FACE into the new context defined above.
-3. Ensure skin texture and lighting on the face match the new scene naturally, but DO NOT ALTER THE FEATURES.
+**CRITICAL REQUIREMENTS:**
+1. Create a SINGLE, UNIFIED 16:9 thumbnail image (NOT a collage, grid, or multiple variations)
+2. The reference image shows a REAL PERSON - integrate THIS EXACT PERSON naturally on the LEFT SIDE of the scene
+3. This person should be positioned on the LEFT portion of the frame, taking up roughly 30-40% of the image width
+4. The RIGHT side should show the main context: "${userIdea}"
+
+**IDENTITY PRESERVATION:**
+- The person in the reference image MUST maintain their EXACT facial features, ethnicity, age, and appearance
+- Match their skin tone, facial structure, eye shape, and distinguishing features 100%
+- Do NOT create a lookalike - it must be the SAME PERSON
+
+**COMPOSITION STYLE (MrBeast/YouTube Thumbnail):**
+- Person on LEFT: Full body or upper body shot, facing slightly towards camera, engaged with the scene
+- Person should have an expressive, energetic pose (pointing, reacting, gesturing) appropriate for: "${userIdea}"
+- Background/RIGHT side: Show the main subject matter from the topic
+- Professional lighting, photorealistic, high-definition 8K quality
+- Vibrant colors, high contrast, eye-catching composition
+- Style: ${userTones}
 
 **NEGATIVE CONSTRAINTS:**
-- Do NOT change the person's ethnicity, age, or facial structure.
-- Do NOT make them look "cartoonish" or "animated" unless the style explicitly requests it.
-- Do NOT include text, UI elements, or logos.
-`;
+- Do NOT create multiple images, grids, collages, or variations
+- Do NOT add text, titles, arrows, or graphic overlays
+- Do NOT make the person look cartoonish or animated
+- Do NOT include social media logos or UI elements
+- Generate ONLY ONE main thumbnail image
+
+Example composition: Person on left interacting with/reacting to the scene on the right.`;
+                        }
                     } else {
                         // Fallback for no image
                         prompt = `Create a high-quality ${userPlatform} image for: "${userIdea}". Style: ${userTones}.
 ${ratioDesc}.
 Make it engaging, modern, clean, eye-catching. Professional composition.
-IMPORTANT: This is a CONTENT image, NOT a screenshot of a user interface.
-NEGATIVE CONSTRAINTS: Do NOT include any social media logos, no UI elements, no buttons.`;
+IMPORTANT: This is a SINGLE CONTENT IMAGE, NOT a collage or grid. Generate ONLY ONE main image.
+NEGATIVE CONSTRAINTS: Do NOT include any social media logos, no UI elements, no buttons, no multiple variations.`;
                     }
 
                     console.log("Prompt:", prompt);
@@ -415,7 +596,12 @@ NEGATIVE CONSTRAINTS: Do NOT include any social media logos, no UI elements, no 
                             }
                             if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')) {
                                 console.log("✅ IMAGE FOUND!");
-                                res.status(200).json({ result: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}` });
+                                let finalImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+
+                                // Person is now integrated directly in the main image generation
+                                // No need for face overlay compositing
+
+                                res.status(200).json({ result: finalImage });
                                 return;
                             }
                         }

@@ -15,13 +15,8 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const BrandSetup = lazy(() => import("./pages/BrandSetup"));
 const DownloadPage = lazy(() => import("./pages/DownloadPage"));
 const HistoryPage = lazy(() => import("./pages/HistoryPage"));
-const CaptionGenerator = lazy(() => import("./pages/CaptionGenerator"));
-const IdeaGenerator = lazy(() => import("./pages/IdeaGenerator"));
-const PostGenerator = lazy(() => import("./pages/PostGenerator"));
-const VideoScriptGenerator = lazy(() => import("./pages/VideoScriptGenerator"));
-const TweetGenerator = lazy(() => import("./pages/TweetGenerator"));
-const VideoGenerator = lazy(() => import("./pages/VideoGenerator"));
-const GeneratorHub = lazy(() => import("./pages/GeneratorHub"));
+const Generators = lazy(() => import("./pages/Generators"));
+
 
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
 const GuideFlow = lazy(() => import("./pages/GuideFlow"));
@@ -316,45 +311,11 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
 
                             <Route path="/generate" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
-                                    <GeneratorHub />
+                                    <Generators />
                                 </PrivateRoute>
                             } />
 
-                            <Route path="/caption-generator" element={
-                                <PrivateRoute user={user} onboarded={onboarded}>
-                                    <CaptionGenerator />
-                                </PrivateRoute>
-                            } />
 
-                            <Route path="/idea-generator" element={
-                                <PrivateRoute user={user} onboarded={onboarded}>
-                                    <IdeaGenerator />
-                                </PrivateRoute>
-                            } />
-
-                            <Route path="/post-generator" element={
-                                <PrivateRoute user={user} onboarded={onboarded}>
-                                    <PostGenerator />
-                                </PrivateRoute>
-                            } />
-
-                            <Route path="/video-script-generator" element={
-                                <PrivateRoute user={user} onboarded={onboarded}>
-                                    <VideoScriptGenerator />
-                                </PrivateRoute>
-                            } />
-
-                            <Route path="/tweet-generator" element={
-                                <PrivateRoute user={user} onboarded={onboarded}>
-                                    <TweetGenerator />
-                                </PrivateRoute>
-                            } />
-
-                            <Route path="/video-generator" element={
-                                <PrivateRoute user={user} onboarded={onboarded}>
-                                    <VideoGenerator />
-                                </PrivateRoute>
-                            } />
 
                             <Route path="/history" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
@@ -376,7 +337,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
 
                             <Route path="/guide/roadmap" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
-                                    <YourGuidePage />
+                                    <YourGuidePage userInfo={userInfo} />
                                 </PrivateRoute>
                             } />
 

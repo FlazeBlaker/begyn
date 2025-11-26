@@ -7,6 +7,8 @@ const NODE_RADIUS = 22;
 const NODE_SPACING = 180;
 const PANEL_WIDTH = 420;
 const PANEL_HEIGHT = 300;
+const SUBNODE_RADIUS = 8;
+const SUBNODE_DISTANCE = 38;
 
 export default function Roadmap({ steps = [] }) {
     const uid = auth.currentUser?.uid;
@@ -24,20 +26,30 @@ export default function Roadmap({ steps = [] }) {
 
     // --- initialize nodes with positions and completed status ---
     const initializeNodes = useCallback((stepsArray, savedProgress = {}, savedNotes = {}) => {
-        return stepsArray.map((step, i) => ({
-            id: step.id,
-            title: step.title,
-            description: step.description,
-            detailedDescription: step.detailedDescription,
-            suggestions: step.suggestions,
-            resources: step.resources,
-            generatorLink: step.generatorLink,
-            timeEstimate: step.timeEstimate,
-            x: 60 + i * NODE_SPACING,
-            y: 140 + Math.sin(i * 0.4) * 40,
-            completed: savedProgress[step.id]?.completed || false,
-            note: savedNotes[step.id] || "",
-        }));
+        return stepsArray.map((step, i) => {
+            // Initialize subnodes with unique IDs and completion tracking
+            const subNodes = (step.subNodes || []).map((sub, j) => ({
+                ...sub,
+                id: `${step.id}-sub-${j}`,
+                completed: savedProgress[step.id]?.subNodes?.[j] || false,
+            }));
+
+            return {
+                id: step.id,
+                title: step.title,
+                description: step.description,
+                detailedDescription: step.detailedDescription,
+                subNodes: subNodes,
+                suggestions: step.suggestions,
+                resources: step.resources,
+                generatorLink: step.generatorLink,
+                timeEstimate: step.timeEstimate,
+                x: 60 + i * NODE_SPACING,
+                y: 140 + Math.sin(i * 0.4) * 40,
+                completed: savedProgress[step.id]?.completed || false,
+                note: savedNotes[step.id] || "",
+            };
+        });
     }, []);
 
     // --- load saved progress, notes, settings from Firestore and init nodes ---
@@ -74,7 +86,11 @@ export default function Roadmap({ steps = [] }) {
         async (currentNodes) => {
             if (!uid) return;
             const progress = currentNodes.reduce((acc, n) => {
-                acc[n.id] = { completed: !!n.completed };
+                acc[n.id] = {
+                    completed: !!n.completed,
+                    // Save subnode completion as array of booleans
+                    subNodes: (n.subNodes || []).map(sub => sub.completed || false)
+                };
                 return acc;
             }, {});
             try {
@@ -142,15 +158,123 @@ export default function Roadmap({ steps = [] }) {
         [saveProgress, selectedStep]
     );
 
+    // --- mark subnode complete ---
+    const completeSubNode = useCallback(
+        (nodeId, subnodeId) => {
+            let nextSelection = null;
+
+            setNodes((prev) => {
+                const next = prev.map((n) => {
+                    if (n.id !== nodeId) return n;
+
+                    // Update the specific subnode
+                    const updatedSubNodes = n.subNodes.map((sub) =>
+                        sub.id === subnodeId ? { ...sub, completed: true } : sub
+                    );
+
+                    // Auto-complete parent if ALL subnodes are completed
+                    const allSubsComplete = updatedSubNodes.every((s) => s.completed);
+
+                    return {
+                        ...n,
+                        subNodes: updatedSubNodes,
+                        completed: allSubsComplete && n.completed ? true : n.completed,
+                    };
+                });
+
+                // Find the node and current subnode index
+                const currentNode = next.find(n => n.id === nodeId);
+                const currentSubIndex = currentNode?.subNodes.findIndex(s => s.id === subnodeId) ?? -1;
+
+                // Determine next selection
+                if (currentNode && currentSubIndex !== -1) {
+                    // Check if there's a next subnode in the same node
+                    if (currentSubIndex + 1 < currentNode.subNodes.length) {
+                        const nextSubnode = currentNode.subNodes[currentSubIndex + 1];
+                        nextSelection = {
+                            ...currentNode,
+                            isSubNode: true,
+                            selectedSubNode: nextSubnode,
+                            selectedSubNodeIndex: currentSubIndex + 1
+                        };
+                    } else {
+                        // No more subnodes, find next main node
+                        const currentNodeIndex = next.findIndex(n => n.id === nodeId);
+                        if (currentNodeIndex !== -1 && currentNodeIndex + 1 < next.length) {
+                            const nextNode = next[currentNodeIndex + 1];
+                            // If next node has subnodes, select first subnode, otherwise select the main node
+                            if (nextNode.subNodes && nextNode.subNodes.length > 0) {
+                                nextSelection = {
+                                    ...nextNode,
+                                    isSubNode: true,
+                                    selectedSubNode: nextNode.subNodes[0],
+                                    selectedSubNodeIndex: 0
+                                };
+                            } else {
+                                nextSelection = nextNode;
+                            }
+                        }
+                    }
+                }
+
+                // optimistic save
+                saveProgress(next);
+                return next;
+            });
+
+            // Update selectedStep with the next selection
+            if (nextSelection) {
+                setSelectedStep(nextSelection);
+            } else {
+                // If no next selection, just update the current selectedStep to show completion
+                setSelectedStep((prev) => {
+                    if (!prev || !prev.isSubNode || prev.id !== nodeId) return prev;
+                    const updatedSubNodes = prev.subNodes.map((sub) =>
+                        sub.id === subnodeId ? { ...sub, completed: true } : sub
+                    );
+                    const updatedSelectedSubNode = updatedSubNodes.find(s => s.id === subnodeId);
+                    const allSubsComplete = updatedSubNodes.every((s) => s.completed);
+                    return {
+                        ...prev,
+                        subNodes: updatedSubNodes,
+                        selectedSubNode: updatedSelectedSubNode,
+                        completed: allSubsComplete && prev.completed ? true : prev.completed,
+                    };
+                });
+            }
+        },
+        [saveProgress]
+    );
+
+    // Check if a node is locked (needs all previous nodes + their subnodes completed)
+    const isNodeLocked = useCallback((nodeIndex, allNodes) => {
+        if (nodeIndex === 0) return false;
+
+        // Check all previous nodes
+        for (let i = 0; i < nodeIndex; i++) {
+            const prevNode = allNodes[i];
+
+            // Main node must be completed
+            if (!prevNode.completed) return true;
+
+            // All subnodes must be completed
+            if (prevNode.subNodes && prevNode.subNodes.length > 0) {
+                const allSubsComplete = prevNode.subNodes.every((s) => s.completed);
+                if (!allSubsComplete) return true;
+            }
+        }
+
+        return false;
+    }, []);
+
     // Helpers to get node index by id
     const getIndexById = (id) => nodes.findIndex((n) => n.id === id);
 
     // Begin drag
-    const handleMouseDown = (e, node) => {
+    const handleMouseDown = (e, node, nodeIndex) => {
         // only allow dragging if node not locked
-        const idx = getIndexById(node.id);
-        const isLocked = idx > 0 && !nodes[idx - 1]?.completed;
-        if (isLocked) return;
+        const locked = isNodeLocked(nodeIndex, nodes);
+        if (locked) return;
 
         const svgRect = svgRef.current.getBoundingClientRect();
         const offsetX = e.clientX - svgRect.left - node.x;
@@ -294,6 +418,90 @@ export default function Roadmap({ steps = [] }) {
         return lines;
     };
 
+    // Render subnodes as vertical chain below parent node
+    const renderSubNodes = (node) => {
+        if (!node.subNodes || node.subNodes.length === 0) return null;
+
+        const elements = [];
+        const VERTICAL_SPACING = 55;
+        const startY = node.y + 50; // Start below parent node
+
+        node.subNodes.forEach((subnode, i) => {
+            const sy = startY + (i * VERTICAL_SPACING);
+            const sx = node.x;
+
+            // Connector line from parent (or previous subnode) to current subnode
+            const fromY = i === 0 ? node.y : (startY + ((i - 1) * VERTICAL_SPACING));
+            const completed = subnode.completed;
+
+            elements.push(
+                <line
+                    key={`sub-line-${node.id}-${i}`}
+                    x1={sx}
+                    y1={fromY}
+                    x2={sx}
+                    y2={sy}
+                    stroke={completed ? "#4ade80" : "rgba(168, 85, 247, 0.3)"}
+                    strokeWidth={completed ? 3 : 2}
+                    style={{ pointerEvents: 'none' }}
+                />
+            );
+
+            // Subnode circle
+            elements.push(
+                <circle
+                    key={`sub-${subnode.id}`}
+                    cx={sx}
+                    cy={sy}
+                    r={SUBNODE_RADIUS}
+                    fill={completed ? "#16a34a" : "rgba(168, 85, 247, 0.6)"}
+                    stroke={completed ? "#4ade80" : "#a855f7"}
+                    strokeWidth={1.5}
+                    style={{
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
+                    }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // Select the subnode to show its details
+                        setSelectedStep({
+                            ...node,
+                            isSubNode: true,
+                            selectedSubNode: subnode,
+                            selectedSubNodeIndex: i
+                        });
+                    }}
+                    onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        // Double-click to mark complete
+                        if (!completed) {
+                            completeSubNode(node.id, subnode.id);
+                        }
+                    }}
+                >
+                    <title>{subnode.title}</title>
+                </circle>
+            );
+
+            // Subnode label
+            elements.push(
+                <text
+                    key={`sub-label-${subnode.id}`}
+                    x={sx + SUBNODE_RADIUS + 8}
+                    y={sy + 4}
+                    fill={completed ? "#4ade80" : "#c4b5fd"}
+                    fontSize="11"
+                    fontWeight="500"
+                    style={{ pointerEvents: 'none', userSelect: 'none' }}
+                >
+                    {subnode.title.length > 30 ? subnode.title.slice(0, 30) + "…" : subnode.title}
+                </text>
+            );
+        });
+
+        return elements;
+    };
+
     // update a note locally and optionally autosave
     const updateNote = (stepId, note, autosave = false) => {
         setRoadmapNotes((prev) => {
@@ -369,65 +577,69 @@ export default function Roadmap({ steps = [] }) {
                         <g>
                             {nodes.map((node, i) => {
                                 const isSelected = selectedStep?.id === node.id;
-                                const isLocked = i > 0 && !nodes[i - 1]?.completed;
+                                const isLocked = isNodeLocked(i, nodes);
                                 return (
-                                    <g
-                                        key={node.id}
-                                        onMouseDown={(e) => handleMouseDown(e, node)}
-                                        onClick={() => handleSelect(node)}
-                                        style={{ cursor: isLocked ? "not-allowed" : "grab" }}
-                                    >
-                                        {/* outer ring */}
-                                        <circle
-                                            cx={node.x}
-                                            cy={node.y}
-                                            r={NODE_RADIUS + (isSelected ? 8 : 2)}
-                                            fill={node.completed ? "#052f17" : "transparent"}
-                                            stroke={node.completed ? "#4ade80" : "rgba(255,255,255,0.03)"}
-                                            strokeWidth={isSelected ? 2.4 : 1.2}
-                                            style={{
-                                                transformOrigin: `${node.x}px ${node.y}px`,
-                                                transition: "all 200ms ease",
-                                            }}
-                                        />
-                                        {/* main node */}
-                                        <circle
-                                            cx={node.x}
-                                            cy={node.y}
-                                            r={NODE_RADIUS}
-                                            fill={node.completed ? "#16a34a" : isLocked ? "#333" : "url(#nodeGrad)"}
-                                            stroke="#ffffff"
-                                            strokeWidth={isSelected ? 2 : 1}
-                                            style={{
-                                                transition: "transform 180ms ease, filter 180ms ease",
-                                                filter: isSelected ? "drop-shadow(0 10px 30px rgba(124,58,237,0.25))" : "none",
-                                                pointerEvents: isLocked ? "none" : "auto",
-                                            }}
-                                        />
-                                        {/* step number */}
-                                        <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#fff" fontSize="12" fontWeight="700" style={{ pointerEvents: "none" }}>
-                                            {i + 1}
-                                        </text>
+                                    <g key={node.id}>
+                                        {/* Subnodes - render first so they appear behind main node */}
+                                        {renderSubNodes(node)}
 
-                                        {/* label */}
-                                        <text
-                                            x={node.x}
-                                            y={node.y - NODE_RADIUS - 12}
-                                            textAnchor="middle"
-                                            fill={isLocked ? "#999" : "#d8b4fe"}
-                                            fontSize="13"
-                                            fontWeight="700"
-                                            style={{ pointerEvents: "none", userSelect: "none" }}
+                                        <g
+                                            onMouseDown={(e) => handleMouseDown(e, node, i)}
+                                            onClick={() => handleSelect(node)}
+                                            style={{ cursor: isLocked ? "not-allowed" : "grab" }}
                                         >
-                                            {node.title.length > 22 ? node.title.slice(0, 22) + "…" : node.title}
-                                        </text>
-
-                                        {/* lock icon for locked steps */}
-                                        {isLocked && (
-                                            <text x={node.x + NODE_RADIUS + 12} y={node.y - NODE_RADIUS + 6} fontSize="14" fill="#ffb4b4">
-                                                🔒
+                                            {/* outer ring */}
+                                            <circle
+                                                cx={node.x}
+                                                cy={node.y}
+                                                r={NODE_RADIUS + (isSelected ? 8 : 2)}
+                                                fill={node.completed ? "#052f17" : "transparent"}
+                                                stroke={node.completed ? "#4ade80" : "rgba(255,255,255,0.03)"}
+                                                strokeWidth={isSelected ? 2.4 : 1.2}
+                                                style={{
+                                                    transformOrigin: `${node.x}px ${node.y}px`,
+                                                    transition: "all 200ms ease",
+                                                }}
+                                            />
+                                            {/* main node */}
+                                            <circle
+                                                cx={node.x}
+                                                cy={node.y}
+                                                r={NODE_RADIUS}
+                                                fill={node.completed ? "#16a34a" : isLocked ? "#333" : "url(#nodeGrad)"}
+                                                stroke="#ffffff"
+                                                strokeWidth={isSelected ? 2 : 1}
+                                                style={{
+                                                    transition: "transform 180ms ease, filter 180ms ease",
+                                                    filter: isSelected ? "drop-shadow(0 10px 30px rgba(124,58,237,0.25))" : "none",
+                                                    pointerEvents: isLocked ? "none" : "auto",
+                                                }}
+                                            />
+                                            {/* step number */}
+                                            <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#fff" fontSize="12" fontWeight="700" style={{ pointerEvents: "none" }}>
+                                                {i + 1}
                                             </text>
-                                        )}
+
+                                            {/* label */}
+                                            <text
+                                                x={node.x}
+                                                y={node.y - NODE_RADIUS - 12}
+                                                textAnchor="middle"
+                                                fill={isLocked ? "#999" : "#d8b4fe"}
+                                                fontSize="13"
+                                                fontWeight="700"
+                                                style={{ pointerEvents: "none", userSelect: "none" }}
+                                            >
+                                                {node.title.length > 22 ? node.title.slice(0, 22) + "…" : node.title}
+                                            </text>
+
+                                            {/* lock icon for locked steps */}
+                                            {isLocked && (
+                                                <text x={node.x + NODE_RADIUS + 12} y={node.y - NODE_RADIUS + 6} fontSize="14" fill="#ffb4b4">
+                                                    🔒
+                                                </text>
+                                            )}
+                                        </g>
                                     </g>
                                 );
                             })}
@@ -454,9 +666,16 @@ export default function Roadmap({ steps = [] }) {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                         <div>
                             <h3 style={{ margin: "0 0 8px 0", color: "#fff", fontSize: "clamp(1.2rem, 4vw, 1.6rem)" }}>
-                                {selectedStep.title}
+                                {selectedStep.isSubNode ? (
+                                    <>
+                                        <span style={{ color: "#a855f7", fontSize: "0.9em" }}>Sub-task: </span>
+                                        {selectedStep.selectedSubNode.title}
+                                    </>
+                                ) : (
+                                    selectedStep.title
+                                )}
                             </h3>
-                            {selectedStep.timeEstimate && (
+                            {!selectedStep.isSubNode && selectedStep.timeEstimate && (
                                 <span style={{
                                     display: "inline-block",
                                     background: "rgba(139, 92, 246, 0.15)",
@@ -493,8 +712,45 @@ export default function Roadmap({ steps = [] }) {
                     </div>
 
                     <div style={{ color: "#e2e8f0", fontSize: "1rem", lineHeight: 1.7, marginBottom: 24 }}>
-                        {selectedStep.detailedDescription || selectedStep.description}
+                        {selectedStep.isSubNode ? (
+                            // Show subnode steps
+                            selectedStep.selectedSubNode.steps && selectedStep.selectedSubNode.steps.length > 0 ? (
+                                <ul style={{ margin: 0, paddingLeft: 20, color: "#cbd5e1" }}>
+                                    {selectedStep.selectedSubNode.steps.map((s, j) => (
+                                        <li key={j} style={{ marginBottom: 8 }}>{s}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p>{selectedStep.selectedSubNode.title}</p>
+                            )
+                        ) : (
+                            selectedStep.detailedDescription || selectedStep.description
+                        )}
                     </div>
+
+                    {/* Sub Nodes */}
+                    {selectedStep.subNodes && selectedStep.subNodes.length > 0 && (
+                        <div style={{ marginBottom: 24 }}>
+                            <h4 style={{ color: "#4ade80", margin: "0 0 16px 0", fontSize: "1rem" }}>📝 Action Plan:</h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {selectedStep.subNodes.map((node, i) => (
+                                    <div key={i} style={{
+                                        background: 'rgba(255,255,255,0.03)',
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(255,255,255,0.05)'
+                                    }}>
+                                        <h5 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '0.95rem' }}>{i + 1}. {node.title}</h5>
+                                        <ul style={{ margin: 0, paddingLeft: 20, color: "#cbd5e1", fontSize: "0.9rem" }}>
+                                            {node.steps && node.steps.map((s, j) => (
+                                                <li key={j} style={{ marginBottom: 4 }}>{s}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Suggestions */}
                     {selectedStep.suggestions && selectedStep.suggestions.length > 0 && (
@@ -559,8 +815,55 @@ export default function Roadmap({ steps = [] }) {
                     )}
 
                     {(() => {
+                        // Handle subnode completion
+                        if (selectedStep.isSubNode) {
+                            const subnode = selectedStep.selectedSubNode;
+                            const isCompleted = subnode.completed;
+
+                            return (
+                                <>
+                                    {!isCompleted ? (
+                                        <button
+                                            onClick={() => {
+                                                completeSubNode(selectedStep.id, subnode.id);
+                                            }}
+                                            style={{
+                                                padding: "14px 20px",
+                                                background: "#22c55e",
+                                                color: "#fff",
+                                                border: "none",
+                                                borderRadius: 10,
+                                                cursor: "pointer",
+                                                fontWeight: 700,
+                                                fontSize: "1rem",
+                                                width: "100%",
+                                                boxShadow: "0 4px 15px rgba(34, 197, 94, 0.3)",
+                                                transition: "all 0.2s"
+                                            }}
+                                        >
+                                            ✅ Mark Sub-task Complete
+                                        </button>
+                                    ) : (
+                                        <div style={{
+                                            color: "#4ade80",
+                                            fontWeight: 700,
+                                            fontSize: "1.1rem",
+                                            textAlign: "center",
+                                            padding: "14px",
+                                            background: "rgba(34, 197, 94, 0.1)",
+                                            borderRadius: "10px",
+                                            border: "1px solid rgba(34, 197, 94, 0.2)"
+                                        }}>
+                                            🎉 Sub-task Completed!
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        }
+
+                        // Handle main node completion
                         const idx = nodes.findIndex((n) => n.id === selectedStep.id);
-                        const isLocked = idx > 0 && !nodes[idx - 1]?.completed;
+                        const isLocked = isNodeLocked(idx, nodes);
 
                         return (
                             <>
@@ -591,7 +894,7 @@ export default function Roadmap({ steps = [] }) {
                                         </button>
                                         {isLocked && (
                                             <div style={{ color: "#94a3b8", fontSize: 13, textAlign: "center" }}>
-                                                Complete previous step to unlock
+                                                Complete previous steps and their sub-tasks to unlock
                                             </div>
                                         )}
                                     </div>

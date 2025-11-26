@@ -75,7 +75,7 @@ const MobileRoadmap = ({ steps, onStepComplete }) => {
                                     <>
                                         <div className="timeline-desc">{step.description}</div>
                                         <div className="timeline-meta">
-                                            <span>⏱️ {step.estimatedDays || '1-2'} days</span>
+                                            <span>⏱️ {step.timeEstimate || '30 mins'}</span>
                                             <span>{step.category || 'General'}</span>
                                         </div>
                                     </>
@@ -88,6 +88,30 @@ const MobileRoadmap = ({ steps, onStepComplete }) => {
                                             <span>⏱️ {step.timeEstimate || '30 mins'}</span>
                                             <span>{step.category || 'General'}</span>
                                         </div>
+
+                                        {/* Sub Nodes */}
+                                        {step.subNodes && step.subNodes.length > 0 && (
+                                            <div style={{ marginTop: 16 }}>
+                                                <h4 style={{ color: "#4ade80", margin: "0 0 12px 0", fontSize: "0.9rem" }}>📝 Action Plan:</h4>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    {step.subNodes.map((node, i) => (
+                                                        <div key={i} style={{
+                                                            background: 'rgba(255,255,255,0.03)',
+                                                            padding: '10px',
+                                                            borderRadius: '8px',
+                                                            border: '1px solid rgba(255,255,255,0.05)'
+                                                        }}>
+                                                            <h5 style={{ margin: '0 0 6px 0', color: '#e2e8f0', fontSize: '0.9rem' }}>{i + 1}. {node.title}</h5>
+                                                            <ul style={{ margin: 0, paddingLeft: 20, color: "#cbd5e1", fontSize: "0.85rem" }}>
+                                                                {node.steps && node.steps.map((s, j) => (
+                                                                    <li key={j} style={{ marginBottom: 4 }}>{s}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Suggestions */}
                                         {step.suggestions && step.suggestions.length > 0 && (
