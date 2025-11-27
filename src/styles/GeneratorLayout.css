@@ -1,0 +1,349 @@
+/* GeneratorLayout.css */
+
+/* --- Variables --- */
+:root {
+    --glass-bg: rgba(20, 20, 30, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.03);
+    --primary-gradient: linear-gradient(135deg, #a855f7, #ec4899);
+    --primary-glow: rgba(168, 85, 247, 0.4);
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0b0;
+    --card-radius: 24px;
+    --input-bg: rgba(0, 0, 0, 0.3);
+    --transition-speed: 0.3s;
+    --toolbar-height: 80px;
+}
+
+/* --- Layout: Creator Studio --- */
+.studio-container {
+    height: 100vh;
+    /* Fix: Force fixed height to viewport */
+    background: radial-gradient(circle at top center, #1e1e2e, #0f0f16);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Fix: Prevent ANY page scrolling */
+}
+
+/* --- Toolbar --- */
+.studio-toolbar {
+    height: var(--toolbar-height);
+    background: rgba(20, 20, 30, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-left,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.toolbar-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+/* --- Workspace --- */
+.studio-workspace {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Split View */
+    height: calc(100vh - var(--toolbar-height));
+    overflow: hidden;
+}
+
+/* --- Left Panel: Input Console --- */
+.input-console {
+    padding: 32px;
+    overflow-y: auto;
+    /* Fix: Enable scrolling as requested */
+    border-right: 1px solid var(--glass-border);
+    background: rgba(15, 15, 22, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.console-section {
+    margin-bottom: 32px;
+    animation: fadeIn 0.5s ease-out;
+    width: 100%;
+    /* Ensure full width */
+    display: flex;
+    flex-direction: column;
+    /* align-items: center;  Removed center alignment to keep labels left aligned, but textarea will be centered via margin */
+}
+
+/* --- Right Panel: Live Preview --- */
+.live-preview {
+    padding: 40px;
+    background: radial-gradient(circle at center, #1a1a24, #0f0f16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* Fix: Disable container scrolling */
+    position: relative;
+}
+
+.preview-device {
+    width: 100%;
+    max-width: 480px;
+    /* Mobile-ish width */
+    min-height: 600px;
+    max-height: calc(100vh - 160px);
+    /* Fix: Constrain height to viewport */
+    background: #ffffff;
+    border-radius: 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 12px rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+    /* Fix: Allow internal scrolling */
+    position: relative;
+    color: #000;
+    /* Reset text color for preview */
+    animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* --- Components --- */
+
+/* Compact Selectors for Toolbar */
+.compact-selector {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid var(--glass-border);
+}
+
+.compact-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.compact-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.compact-btn.selected {
+    background: var(--primary-gradient);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(168, 85, 247, 0.3);
+}
+
+/* Inputs */
+.studio-label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: 100%;
+}
+
+.studio-textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
+    /* Fix: Ensure padding doesn't overflow width */
+    display: block;
+    margin: 0 auto;
+    /* Fix: Center the textarea */
+}
+
+.studio-textarea:focus {
+    border-color: #a855f7;
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1);
+}
+
+/* Generate Button */
+.studio-generate-btn {
+    width: 100%;
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--primary-gradient);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.studio-generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 40px rgba(168, 85, 247, 0.5);
+}
+
+.studio-generate-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+    transform: none;
+}
+
+/* Advanced Options (NEW DESIGN) */
+.studio-advanced {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.studio-advanced:hover {
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(168, 85, 247, 0.1);
+    transform: translateY(-2px);
+}
+
+.studio-advanced-toggle {
+    width: 100%;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+}
+
+.studio-advanced-toggle:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.studio-advanced-content {
+    padding: 0 24px 24px;
+    border-top: 1px solid var(--glass-border);
+    animation: slideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .studio-workspace {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .studio-container {
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .live-preview {
+        padding: 20px;
+        min-height: 500px;
+    }
+
+    .studio-toolbar {
+        flex-direction: column;
+        height: auto;
+        padding: 20px;
+        gap: 16px;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}

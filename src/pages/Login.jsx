@@ -1,15 +1,8 @@
-// src/pages/Login.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { auth, db, doc, getDoc, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-
-const styles = `
-@keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); } 50% { box-shadow: 0 0 40px rgba(236, 72, 153, 0.6); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-`;
+import { Sparkles, ArrowRight, CheckCircle, Shield, Cpu } from 'lucide-react';
 
 export default function Login() {
     const navigate = useNavigate();
@@ -32,8 +25,10 @@ export default function Login() {
     const handleGoogleLogin = async () => {
         setLoading(true);
         setError(null);
+        console.log("Starting Google Login flow...");
         try {
             const result = await signInWithPopup(auth, new GoogleAuthProvider());
+            console.log("Google Login success:", result.user.uid);
             const userRef = doc(db, "brands", result.user.uid);
             const snap = await getDoc(userRef);
             const onboarded = snap.exists() && snap.data()?.onboarded;
@@ -47,135 +42,111 @@ export default function Login() {
         }
     };
 
-    // Don't render anything while checking auth status to prevent flicker
     if (authChecking) return null;
 
     return (
-        <div style={{
-            height: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            overflow: 'hidden',
-            padding: '20px'
-        }}>
-            <style>{styles}</style>
+        <div className="login-container" style={{ minHeight: '100vh', display: 'flex', position: 'relative', overflow: 'hidden' }}>
+            {/* Background Elements */}
+            <div className="orb-glowing" style={{ top: '-10%', left: '-10%' }}></div>
+            <div className="orb-glowing" style={{ bottom: '-10%', right: '-10%', background: 'radial-gradient(circle, rgba(236,72,153,0.4) 0%, transparent 70%)' }}></div>
+            <div className="scan-line"></div>
 
-            <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: 'clamp(16px, 4vw, 24px)',
-                padding: 'clamp(32px, 8vw, 60px) clamp(20px, 6vw, 40px)',
-                width: '100%',
-                maxWidth: '440px',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.1)',
-                textAlign: 'center',
-                animation: 'fadeIn 0.8s'
+            {/* LEFT SIDE: Visuals */}
+            <div className="desktop-only" style={{
+                flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px',
+                position: 'relative', zIndex: 1
             }}>
-                <div style={{
-                    width: 'clamp(60px, 18vw, 80px)',
-                    height: 'clamp(60px, 18vw, 80px)',
-                    margin: '0 auto 24px',
-                    background: 'linear-gradient(135deg, #a855f7, #ec4899)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 'clamp(2rem, 6vw, 2.5rem)',
-                    animation: 'glow 3s infinite'
-                }}>
-                    ✨
-                </div>
-
-                <h1 style={{
-                    fontSize: 'clamp(1.8rem, 6vw, 2.5rem)',
-                    fontWeight: '800',
-                    marginBottom: '12px',
-                    background: 'linear-gradient(to right, #fff, #e0e0e0)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                }}>
-                    AI Content Studio
-                </h1>
-
-                <p style={{
-                    color: '#94a3b8',
-                    fontSize: 'clamp(0.95rem, 3vw, 1.1rem)',
-                    lineHeight: '1.6',
-                    marginBottom: 'clamp(24px, 6vw, 40px)'
-                }}>
-                    Create viral social media content in seconds with AI.
-                </p>
-
-                {error && (
+                <div className="stagger-1" style={{ maxWidth: '600px' }}>
                     <div style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        color: '#fca5a5',
-                        padding: '12px',
-                        borderRadius: '12px',
-                        marginBottom: '24px',
-                        fontSize: '0.9rem'
-                    }}>
-                        {error}
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        padding: '8px 16px', borderRadius: '99px',
+                        background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)',
+                        color: '#d8b4fe', marginBottom: '32px', fontWeight: '600'
+                    }} className="reflection">
+                        <Cpu size={16} /> AI-Powered Creation Engine
                     </div>
-                )}
+                    <h1 style={{
+                        fontSize: '4.5rem', fontWeight: '800', lineHeight: '1.1', marginBottom: '24px',
+                        color: '#fff'
+                    }}>
+                        Turn Ideas into <br />
+                        <span className="aurora-text">Viral Content.</span>
+                    </h1>
+                    <p style={{ fontSize: '1.2rem', color: '#a0a0b0', marginBottom: '40px', lineHeight: '1.6' }} className="shimmer-text">
+                        Join thousands of creators using Begyn AI to dominate LinkedIn, Twitter, and Instagram.
+                        No design skills needed.
+                    </p>
 
-                <button
-                    onClick={handleGoogleLogin}
-                    disabled={loading}
-                    style={{
-                        width: '100%',
-                        padding: 'clamp(14px, 4vw, 16px)',
-                        minHeight: '48px',
-                        background: 'white',
-                        color: '#1e293b',
-                        border: 'none',
-                        borderRadius: 'clamp(12px, 3vw, 16px)',
-                        fontSize: 'clamp(0.95rem, 3vw, 1.1rem)',
-                        fontWeight: '700',
-                        cursor: loading ? 'wait' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '12px',
-                        transition: 'all 0.2s',
-                        opacity: loading ? 0.8 : 1,
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                >
-                    {loading ? (
-                        <>
-                            <div style={{
-                                width: '20px',
-                                height: '20px',
-                                border: '3px solid #cbd5e1',
-                                borderTopColor: '#475569',
-                                borderRadius: '50%',
-                                animation: 'spin 1s linear infinite'
-                            }} />
-                            <span>Signing in...</span>
-                        </>
-                    ) : (
-                        <>
-                            <img
-                                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                                alt="Google"
-                                style={{ width: '24px', height: '24px' }}
-                            />
-                            <span>Sign in with Google</span>
-                        </>
-                    )}
-                </button>
+                    <div style={{ display: 'flex', gap: '32px' }}>
+                        <div className="hover-lift-glow" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '12px 20px', borderRadius: '12px' }}>
+                            <div className="status-dot"></div>
+                            <span style={{ color: '#e0e0e0', fontWeight: '500' }}>Free Forever Plan</span>
+                        </div>
+                        <div className="hover-lift-glow" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '12px 20px', borderRadius: '12px' }}>
+                            <Shield size={20} color="#22c55e" />
+                            <span style={{ color: '#e0e0e0', fontWeight: '500' }}>No Credit Card</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <p style={{
-                    marginTop: '32px',
-                    color: '#64748b',
-                    fontSize: '0.9rem'
+            {/* RIGHT SIDE: Login Form */}
+            <div style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                position: 'relative', zIndex: 1
+            }}>
+                <div className="glass-premium tech-corners stagger-2" style={{
+                    width: '100%', maxWidth: '480px', padding: '48px', borderRadius: '24px'
                 }}>
-                    By signing in, you agree to our Terms & Privacy Policy.
-                </p>
+                    <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                        <div className="floating" style={{ display: 'inline-block', marginBottom: '24px' }}>
+                            <img src="/logos/logo.png" alt="Logo" style={{ height: '64px' }} />
+                        </div>
+                        <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '12px', color: '#fff' }}>Welcome Back</h2>
+                        <p style={{ color: '#a0a0b0' }}>Sign in to continue to your dashboard</p>
+                    </div>
+
+                    {error && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: '#fca5a5', padding: '12px', borderRadius: '12px', marginBottom: '24px', fontSize: '0.9rem'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => {
+                            console.log("Google Login Clicked");
+                            handleGoogleLogin();
+                        }}
+                        disabled={loading}
+                        className="cyber-button"
+                        style={{
+                            width: '100%', padding: '16px', borderRadius: '12px', fontSize: '1rem',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                            cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.8 : 1,
+                            position: 'relative', zIndex: 50
+                        }}
+                    >
+                        {loading ? (
+                            <span>Initializing...</span>
+                        ) : (
+                            <>
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style={{ width: '20px' }} />
+                                Continue with Google
+                            </>
+                        )}
+                    </button>
+
+                    <div className="neon-separator"></div>
+
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ color: '#525252', fontSize: '0.85rem' }}>
+                            By continuing, you agree to our <Link to="/terms" className="text-glow-purple" style={{ color: '#a0a0b0' }}>Terms</Link> and <Link to="/privacy" className="text-glow-purple" style={{ color: '#a0a0b0' }}>Privacy Policy</Link>.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );

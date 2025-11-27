@@ -12,7 +12,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const sharp = require("sharp");
 // Initialize Gemini with the provided API Key (env var)
 // Initialize Gemini with the provided API Key (env var)
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.VITE_GOOGLE_AI_API_KEY);
 
 // --- MAIN FUNCTION (HTTP) ---
 // --- MAIN FUNCTION (HTTP) ---
@@ -497,9 +497,11 @@ exports.generateContent = onRequest(
                         }
                     } else {
                         // Use explicitly provided aspect ratio
-                        if (finalAspectRatio === "16:9") ratioDesc = "Wide 16:9 landscape format";
-                        else if (finalAspectRatio === "9:16") ratioDesc = "Vertical 9:16 portrait format";
-                        else ratioDesc = "Square 1:1 format";
+                        if (finalAspectRatio === "16:9") ratioDesc = "Wide 16:9 landscape format (1920x1080 pixels)";
+                        else if (finalAspectRatio === "9:16") ratioDesc = "Vertical 9:16 portrait format (1080x1920 pixels)";
+                        else if (finalAspectRatio === "4:5") ratioDesc = "Portrait 4:5 format (1080x1350 pixels)";
+                        else if (finalAspectRatio === "1.91:1") ratioDesc = "Wide 1.91:1 format (1200x628 pixels)";
+                        else ratioDesc = "Square 1:1 format (1024x1024 pixels)";
                     }
 
                     // DYNAMIC PROMPT CONSTRUCTION
@@ -522,7 +524,7 @@ NEGATIVE CONSTRAINTS: Do NOT create multiple variations, no grid layouts, no col
                             prompt = `You are an expert AI artist creating a PROFESSIONAL YOUTUBE THUMBNAIL.
 
 **CRITICAL REQUIREMENTS:**
-1. Create a SINGLE, UNIFIED 16:9 thumbnail image (NOT a collage, grid, or multiple variations)
+1. Create a SINGLE, UNIFIED ${finalAspectRatio} thumbnail image (NOT a collage, grid, or multiple variations)
 2. The reference image shows a REAL PERSON - integrate THIS EXACT PERSON naturally on the LEFT SIDE of the scene
 3. This person should be positioned on the LEFT portion of the frame, taking up roughly 30-40% of the image width
 4. The RIGHT side should show the main context: "${userIdea}"
@@ -539,6 +541,7 @@ NEGATIVE CONSTRAINTS: Do NOT create multiple variations, no grid layouts, no col
 - Professional lighting, photorealistic, high-definition 8K quality
 - Vibrant colors, high contrast, eye-catching composition
 - Style: ${userTones}
+- Aspect Ratio: ${ratioDesc}
 
 **NEGATIVE CONSTRAINTS:**
 - Do NOT create multiple images, grids, collages, or variations

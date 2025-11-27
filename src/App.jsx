@@ -18,6 +18,7 @@ const BrandSetup = lazy(() => import("./pages/BrandSetup"));
 const DownloadPage = lazy(() => import("./pages/DownloadPage"));
 const HistoryPage = lazy(() => import("./pages/HistoryPage"));
 const Generators = lazy(() => import("./pages/Generators"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 
 
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
@@ -239,6 +240,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
 
     // Routes that should hide the main layout
     const hideLayout = location.pathname === "/login" ||
+        location.pathname === "/" ||
         location.pathname === "/guide/onboarding" ||
         location.pathname === "/guide/flow";
 
@@ -251,6 +253,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
             <Suspense fallback={<SuspenseFallback />}>
                 <Routes>
                     <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<LandingPage />} />
                     <Route path="/guide/onboarding" element={
                         <GuideRoute user={user}>
                             <OnboardingPage setOnboardedStatus={(v) => { /* map as needed */ }} />
@@ -296,7 +299,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                         <Routes>
 
                             {/* Protected main routes */}
-                            <Route path="/" element={
+                            <Route path="/dashboard" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
                                     <Dashboard />
                                 </PrivateRoute>

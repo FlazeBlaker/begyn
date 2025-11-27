@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { auth, db, doc, updateDoc } from '../../services/firebase';
+import AdUnit from '../../components/AdUnit';
 
 const MobileRoadmap = ({ steps, onStepComplete }) => {
     const [expandedStep, setExpandedStep] = useState(null);
@@ -220,6 +221,7 @@ const MobileRoadmap = ({ steps, onStepComplete }) => {
                     );
                 })}
             </div>
+            <AdUnit slotId="1234567890" />
         </div>
     );
 };
