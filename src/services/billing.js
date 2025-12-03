@@ -24,7 +24,7 @@ export const startRazorpayOrder = async ({ packageId, price, credits, userId }) 
 function handleRazorpayData(data, packageId, price, credits) {
     // Check for Mock Mode
     if (data.key === (import.meta.env.VITE_RAZORPAY_MOCK_KEY || "rzp_test_mock_key")) {
-        console.log("Starting Mock Razorpay Flow...");
+        // console.log("Starting Mock Razorpay Flow...");
         const confirm = window.confirm(`[MOCK PAYMENT]\n\nPay ₹${price} for ${credits} credits?`);
         if (confirm) {
             const mockTxId = `mock_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

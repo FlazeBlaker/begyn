@@ -92,11 +92,6 @@ const AI_NEWS = [
     "💡 New study shows AI boosts productivity by 40%.",
     "📱 Social Media trends for 2025: Authenticity wins."
 ];
-const COMMUNITY_SPOTLIGHT = [
-    { user: "Sarah K.", title: "Viral LinkedIn Hook", likes: 124 },
-    { user: "Mike D.", title: "Tech Thread", likes: 89 },
-    { user: "Alex R.", title: "Product Launch", likes: 256 }
-];
 
 // --- COMPONENTS ---
 
@@ -135,9 +130,6 @@ const WelcomeHeader = ({ user }) => {
                 </p>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
-                <button className="glass-card" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff' }}>
-                    <Mic size={18} /> Voice Mode
-                </button>
                 <div className="glass-card" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Server size={18} color="#22c55e" /> <span style={{ fontSize: '0.9rem' }}>API Status: <strong>Online</strong></span>
                 </div>
@@ -232,22 +224,6 @@ const AnalyticsCard = ({ usageData, timeRange, setTimeRange }) => (
     </div>
 );
 
-const StorageWidget = () => (
-    <div className="glass-card" style={{ padding: '20px' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Cloud size={16} color="#3b82f6" /> Storage
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '1.5rem', fontWeight: '700' }}>45%</span>
-            <span style={{ fontSize: '0.8rem', color: '#a0a0b0', marginBottom: '4px' }}>used</span>
-        </div>
-        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: '45%', height: '100%', background: '#3b82f6' }}></div>
-        </div>
-        <p style={{ fontSize: '0.75rem', color: '#a0a0b0', marginTop: '8px' }}>2.1GB of 5GB</p>
-    </div>
-);
-
 const SurpriseMe = () => {
     const navigate = useNavigate();
 
@@ -294,34 +270,46 @@ export default function Dashboard() {
     const [timeRange, setTimeRange] = useState('7d');
 
     useEffect(() => {
+        let unsubBrand = null;
+        let unsubHistory = null;
+
         const unsubscribe = auth.onAuthStateChanged((u) => {
+            // Clean up previous listeners
+            if (unsubBrand) { unsubBrand(); unsubBrand = null; }
+            if (unsubHistory) { unsubHistory(); unsubHistory = null; }
+
             setUser(u);
             if (u) {
                 // 1. Fetch User Stats (Credits, Streak)
-                const unsubBrand = onSnapshot(doc(db, "brands", u.uid), (doc) => {
+                unsubBrand = onSnapshot(doc(db, "brands", u.uid), (doc) => {
                     if (doc.exists()) {
                         const data = doc.data();
                         setCredits(data.credits || 0);
                         setStreak(data.streak || 1);
                     }
+                }, (error) => {
+                    if (error.code !== 'permission-denied') console.error("Brand snapshot error:", error);
                 });
 
                 // 2. Fetch History & Process for Usage
-                const unsubHistory = onSnapshot(collection(db, "users", u.uid, "history"), (snap) => {
+                unsubHistory = onSnapshot(collection(db, "users", u.uid, "history"), (snap) => {
                     const data = snap.docs.map(d => d.data()).sort((a, b) => b.timestamp - a.timestamp);
                     setHistory(data);
                     setLoading(false);
+                }, (error) => {
+                    if (error.code !== 'permission-denied') console.error("History snapshot error:", error);
                 });
 
-                return () => {
-                    unsubBrand();
-                    unsubHistory();
-                };
             } else {
                 setLoading(false);
             }
         });
-        return () => unsubscribe();
+
+        return () => {
+            if (unsubBrand) unsubBrand();
+            if (unsubHistory) unsubHistory();
+            unsubscribe();
+        };
     }, []);
 
     // Recalculate usage data when history or timeRange changes
@@ -383,23 +371,9 @@ export default function Dashboard() {
                     <AnalyticsCard usageData={usageData} timeRange={timeRange} setTimeRange={setTimeRange} />
 
                     {/* ROW 3: Widgets */}
-
                     <SurpriseMe />
-                    <StorageWidget />
 
-                    <div className="glass-card" style={{ padding: '20px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Globe size={16} color="#8b5cf6" /> Community Spotlight
-                        </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {COMMUNITY_SPOTLIGHT.map((item, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                    <span style={{ color: '#e0e0e0' }}>{item.title}</span>
-                                    <span style={{ color: '#a0a0b0' }}>❤️ {item.likes}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    {/* Removed StorageWidget and CommunitySpotlight */}
                 </div>
             </div>
         </div>

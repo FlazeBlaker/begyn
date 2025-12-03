@@ -136,333 +136,450 @@ export default function HistoryPage() {
         }
     };
 
+    // Video Script Tabs Component (Copied from Generators.jsx)
+    const VideoScriptTabs = ({ data }) => {
+        const [activeTab, setActiveTab] = useState('intro');
+
+        const tabs = [
+            { id: 'intro', label: 'Intro', icon: '🎬' },
+            { id: 'main', label: 'Main Content', icon: '📝' },
+            { id: 'outro', label: 'Outro', icon: '🎯' }
+        ];
+
+        return (
+            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                {/* Tab Navigation */}
+                <div style={{
+                    display: "flex",
+                    gap: "8px",
+                    marginBottom: "24px",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    paddingBottom: "16px"
+                }}>
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={(e) => { e.stopPropagation(); setActiveTab(tab.id); }}
+                            style={{
+                                padding: "12px 24px",
+                                borderRadius: "12px",
+                                background: activeTab === tab.id
+                                    ? "linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.15))"
+                                    : "transparent",
+                                border: activeTab === tab.id ? "1px solid rgba(168, 85, 247, 0.4)" : "1px solid transparent",
+                                cursor: "pointer",
+                                fontWeight: activeTab === tab.id ? "700" : "500",
+                                color: activeTab === tab.id ? "#ffffff" : "#94a3b8",
+                                fontSize: "0.95rem",
+                                transition: "all 0.2s",
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "8px"
+                            }}
+                        >
+                            <span style={{ fontSize: "1.2rem" }}>{tab.icon}</span> {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab Content */}
+                <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px" }} className="custom-scrollbar">
+                    {activeTab === 'intro' && data.intro && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                            {data.intro.map((option, idx) => (
+                                <div key={idx} style={{
+                                    background: "rgba(30, 32, 45, 0.6)",
+                                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderRadius: "20px",
+                                    padding: "28px",
+                                    position: "relative",
+                                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                                }}>
+                                    <div style={{
+                                        position: "absolute",
+                                        top: "-14px",
+                                        left: "24px",
+                                        background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                                        color: "white",
+                                        padding: "6px 16px",
+                                        borderRadius: "20px",
+                                        fontSize: "0.8rem",
+                                        fontWeight: "700",
+                                        boxShadow: "0 4px 10px rgba(139, 92, 246, 0.3)",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "1px"
+                                    }}>
+                                        Option {idx + 1}
+                                    </div>
+                                    <div style={{
+                                        whiteSpace: "pre-wrap",
+                                        lineHeight: "1.8",
+                                        fontSize: "1.1rem",
+                                        color: "#e2e8f0",
+                                        marginTop: "12px",
+                                        fontFamily: "'Inter', sans-serif",
+                                        letterSpacing: "0.01em"
+                                    }}>
+                                        {formatText(option.text)}
+                                    </div>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(option.text); }}
+                                        style={{
+                                            marginTop: "24px",
+                                            padding: "12px 20px",
+                                            borderRadius: "12px",
+                                            background: "rgba(139, 92, 246, 0.1)",
+                                            border: "1px solid rgba(139, 92, 246, 0.3)",
+                                            cursor: "pointer",
+                                            fontWeight: "600",
+                                            color: "#d8b4fe",
+                                            width: "100%",
+                                            fontSize: "0.95rem",
+                                            transition: "all 0.2s",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: "8px"
+                                        }}
+                                    >
+                                        📋 Copy Intro {idx + 1}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {activeTab === 'main' && data.mainContent && (
+                        <div style={{
+                            background: "rgba(30, 32, 45, 0.6)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            borderRadius: "20px",
+                            padding: "32px",
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                        }}>
+                            <div style={{
+                                whiteSpace: "pre-wrap",
+                                lineHeight: "1.9",
+                                fontSize: "1.15rem",
+                                color: "#e2e8f0",
+                                fontFamily: "'Inter', sans-serif",
+                                letterSpacing: "0.01em"
+                            }}>
+                                {formatText(data.mainContent)}
+                            </div>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(data.mainContent); }}
+                                style={{
+                                    marginTop: "32px",
+                                    padding: "14px 24px",
+                                    borderRadius: "14px",
+                                    background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontWeight: "700",
+                                    color: "white",
+                                    width: "100%",
+                                    fontSize: "1rem",
+                                    boxShadow: "0 4px 15px rgba(139, 92, 246, 0.3)",
+                                    transition: "all 0.2s"
+                                }}
+                            >
+                                📋 Copy Main Content
+                            </button>
+                        </div>
+                    )}
+
+                    {activeTab === 'outro' && data.outro && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                            {data.outro.map((option, idx) => (
+                                <div key={idx} style={{
+                                    background: "rgba(30, 32, 45, 0.6)",
+                                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderRadius: "20px",
+                                    padding: "28px",
+                                    position: "relative",
+                                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                                }}>
+                                    <div style={{
+                                        position: "absolute",
+                                        top: "-14px",
+                                        left: "24px",
+                                        background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                                        color: "white",
+                                        padding: "6px 16px",
+                                        borderRadius: "20px",
+                                        fontSize: "0.8rem",
+                                        fontWeight: "700",
+                                        boxShadow: "0 4px 10px rgba(139, 92, 246, 0.3)",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "1px"
+                                    }}>
+                                        Option {idx + 1}
+                                    </div>
+                                    <div style={{
+                                        whiteSpace: "pre-wrap",
+                                        lineHeight: "1.8",
+                                        fontSize: "1.1rem",
+                                        color: "#e2e8f0",
+                                        marginTop: "12px",
+                                        fontFamily: "'Inter', sans-serif",
+                                        letterSpacing: "0.01em"
+                                    }}>
+                                        {formatText(option.text)}
+                                    </div>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(option.text); }}
+                                        style={{
+                                            marginTop: "24px",
+                                            padding: "12px 20px",
+                                            borderRadius: "12px",
+                                            background: "rgba(139, 92, 246, 0.1)",
+                                            border: "1px solid rgba(139, 92, 246, 0.3)",
+                                            cursor: "pointer",
+                                            fontWeight: "600",
+                                            color: "#d8b4fe",
+                                            width: "100%",
+                                            fontSize: "0.95rem",
+                                            transition: "all 0.2s",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: "8px"
+                                        }}
+                                    >
+                                        📋 Copy Outro {idx + 1}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     const renderContent = (item) => {
         const { content, type } = item;
 
-        // If content is a string, render it as markdown
-        if (typeof content === 'string') {
-            return <ReactMarkdown>{content}</ReactMarkdown>;
-        }
-
-        // If content is an object
-        if (typeof content === 'object' && content !== null) {
-            // Check if it's data with a results array
-            if (content.results && Array.isArray(content.results)) {
-                // Determine content type
-                const hasImages = content.results.some(r => r.imageUrl || r.includeImage);
-                const isCaption = type?.toLowerCase().includes('caption');
-                const isPost = type?.toLowerCase().includes('post') || hasImages;
-
-                if (isPost) {
-                    // Render POST format
-                    return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {content.results.map((post, idx) => (
-                                <div key={idx} style={{
-                                    background: 'var(--bg-secondary)',
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--border-color)'
-                                }}>
-                                    <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-                                        Post {idx + 1}
-                                    </strong>
-
-                                    {post.imageUrl && (
-                                        <div style={{ marginTop: '12px', marginBottom: '12px' }}>
-                                            <img
-                                                src={post.imageUrl}
-                                                alt={`Post ${idx + 1}`}
-                                                style={{
-                                                    width: '100%',
-                                                    maxHeight: '400px',
-                                                    objectFit: 'cover',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid var(--border-color)'
-                                                }}
-                                            />
-                                            <div style={{
-                                                marginTop: '8px',
-                                                padding: '8px 12px',
-                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                                borderRadius: '6px',
-                                                fontSize: '0.8rem',
-                                                color: '#fca5a5',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px'
-                                            }}>
-                                                <span>⚠️</span>
-                                                <span>Images will be deleted after 30 days. Make sure to download them.</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {post.caption && (
-                                        <div style={{ marginTop: '12px' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                                Caption:
-                                            </div>
-                                            <p style={{
-                                                whiteSpace: 'pre-wrap',
-                                                margin: '0',
-                                                color: 'var(--text-primary)',
-                                                lineHeight: '1.6'
-                                            }}>
-                                                {formatText(post.caption)}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {post.hashtags && (
-                                        <div style={{ marginTop: '12px' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                                Hashtags:
-                                            </div>
-                                            <p style={{
-                                                color: '#a855f7',
-                                                margin: '0',
-                                                wordBreak: 'break-word',
-                                                overflowWrap: 'break-word',
-                                                whiteSpace: 'pre-wrap'
-                                            }}>
-                                                {post.hashtags}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const text = `${post.caption || ''}\n\n${post.hashtags || ''}`.trim();
-                                                navigator.clipboard.writeText(text);
-                                                alert('Copied!');
-                                            }}
-                                            style={{
-                                                background: 'transparent',
-                                                border: '1px solid var(--border-color)',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                padding: '8px 16px',
-                                                fontSize: '0.9rem',
-                                                color: 'var(--text-primary)',
-                                                fontWeight: '500'
-                                            }}
-                                        >
-                                            📋 Copy Text
-                                        </button>
-                                        {post.imageUrl && (
-                                            <button
-                                                onClick={(e) => handleDownloadImage(post.imageUrl, post.caption, e)}
-                                                style={{
-                                                    background: 'rgba(140, 100, 255, 0.1)',
-                                                    border: '1px solid rgba(140, 100, 255, 0.3)',
-                                                    borderRadius: '6px',
-                                                    cursor: 'pointer',
-                                                    padding: '8px 16px',
-                                                    fontSize: '0.9rem',
-                                                    color: '#a855f7',
-                                                    fontWeight: '500'
-                                                }}
-                                            >
-                                                ⬇️ Download Image
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                } else if (isCaption) {
-                    // Render CAPTION format
-                    return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {content.results.map((captionObj, idx) => (
-                                <div key={idx} style={{
-                                    background: 'var(--bg-secondary)',
-                                    padding: '12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid var(--border-color)'
-                                }}>
-                                    <strong style={{ color: 'var(--text-primary)' }}>Caption {idx + 1}</strong>
-                                    <p style={{
-                                        whiteSpace: 'pre-wrap',
-                                        marginTop: '8px',
-                                        marginBottom: '8px',
-                                        color: 'var(--text-primary)',
-                                        lineHeight: '1.6'
-                                    }}>
-                                        {formatText(captionObj.caption || captionObj)}
-                                    </p>
-                                    {captionObj.hashtags && (
-                                        <p style={{
-                                            color: '#a855f7',
-                                            marginTop: '8px',
-                                            marginBottom: '8px',
-                                            wordBreak: 'break-word',
-                                            overflowWrap: 'break-word'
-                                        }}>
-                                            {captionObj.hashtags}
-                                        </p>
-                                    )}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const text = captionObj.caption || captionObj;
-                                            const fullText = captionObj.hashtags
-                                                ? `${text}\n\n${captionObj.hashtags}`
-                                                : text;
-                                            navigator.clipboard.writeText(fullText);
-                                            alert('Copied!');
-                                        }}
-                                        style={{
-                                            marginTop: '8px',
-                                            background: 'transparent',
-                                            border: '1px solid var(--border-color)',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            padding: '6px 12px',
-                                            fontSize: '0.85rem',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    >
-                                        📋 Copy
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                } else {
-                    // Render TWEET format
-                    return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {content.results.map((result, idx) => (
-                                <div key={idx} style={{
-                                    background: 'var(--bg-secondary)',
-                                    padding: '10px',
-                                    borderRadius: '8px',
-                                    border: '1px solid var(--border-color)'
-                                }}>
-                                    <strong>Option {idx + 1}</strong>
-                                    <p style={{ whiteSpace: 'pre-wrap', marginTop: '5px', color: 'var(--text-primary)' }}>
-                                        {result.caption || result}
-                                    </p>
-                                    <button
-                                        onClick={(e) => handleCopy(result.caption || result, e)}
-                                        style={{
-                                            marginTop: '5px',
-                                            background: 'transparent',
-                                            border: '1px solid var(--border-color)',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            padding: '4px 8px',
-                                            fontSize: '0.8rem',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    >
-                                        Copy
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                }
-            }
-
-            // Handle flat object structure (Smart Image / Post)
-            if (content.image || content.text) {
-                return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {content.prompt && (
-                            <div style={{
-                                fontSize: '0.9rem',
-                                color: 'var(--text-secondary)',
-                                paddingBottom: '8px',
-                                borderBottom: '1px solid var(--border-color)'
-                            }}>
-                                <strong>Prompt:</strong> {content.prompt}
-                            </div>
-                        )}
-
-                        {content.image && (
-                            <div style={{ position: 'relative' }}>
-                                <img
-                                    src={content.image}
-                                    alt="Generated Content"
-                                    style={{
-                                        width: '100%',
-                                        maxHeight: '500px',
-                                        objectFit: 'contain',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--border-color)',
-                                        background: '#000'
-                                    }}
-                                />
-                                <button
-                                    onClick={(e) => handleDownloadImage(content.image, content.prompt, e)}
-                                    style={{
-                                        marginTop: '8px',
-                                        background: 'rgba(140, 100, 255, 0.1)',
-                                        border: '1px solid rgba(140, 100, 255, 0.3)',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        padding: '8px 16px',
-                                        fontSize: '0.9rem',
-                                        color: '#a855f7',
-                                        fontWeight: '500',
-                                        width: '100%'
-                                    }}
-                                >
-                                    ⬇️ Download Image
-                                </button>
-                            </div>
-                        )}
-
-                        {content.text && (
-                            <div style={{
-                                background: 'var(--bg-secondary)',
-                                padding: '16px',
-                                borderRadius: '8px',
-                                border: '1px solid var(--border-color)'
-                            }}>
-                                <ReactMarkdown>{typeof content.text === 'string' ? content.text : JSON.stringify(content.text)}</ReactMarkdown>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const textToCopy = typeof content.text === 'string' ? content.text : JSON.stringify(content.text);
-                                        navigator.clipboard.writeText(textToCopy);
-                                        alert('Copied!');
-                                    }}
-                                    style={{
-                                        marginTop: '12px',
-                                        background: 'transparent',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        padding: '6px 12px',
-                                        fontSize: '0.85rem',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                >
-                                    📋 Copy Text
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                );
-            }
-
-            // Fallback for unknown format
+        // 1. Handle Image Content (Post/SmartImage)
+        if (content.image) {
             return (
-                <pre style={{ whiteSpace: 'pre-wrap', overflowX: 'auto', color: 'var(--text-primary)' }}>
-                    {JSON.stringify(content, null, 2)}
-                </pre>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {content.prompt && (
+                        <div style={{
+                            fontSize: '0.9rem',
+                            color: 'var(--text-secondary)',
+                            paddingBottom: '8px',
+                            borderBottom: '1px solid var(--border-color)'
+                        }}>
+                            <strong>Prompt:</strong> {content.prompt}
+                        </div>
+                    )}
+                    <div style={{ position: 'relative' }}>
+                        <img
+                            src={content.image}
+                            alt="Generated Content"
+                            style={{
+                                width: '100%',
+                                maxHeight: '500px',
+                                objectFit: 'contain',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-color)',
+                                background: '#000'
+                            }}
+                        />
+                        <button
+                            onClick={(e) => handleDownloadImage(content.image, content.prompt, e)}
+                            style={{
+                                marginTop: '8px',
+                                background: 'rgba(140, 100, 255, 0.1)',
+                                border: '1px solid rgba(140, 100, 255, 0.3)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                padding: '8px 16px',
+                                fontSize: '0.9rem',
+                                color: '#a855f7',
+                                fontWeight: '500',
+                                width: '100%'
+                            }}
+                        >
+                            ⬇️ Download Image
+                        </button>
+                    </div>
+                </div>
             );
         }
 
-        return null;
+        // 2. Handle Text Content
+        let parsed = content;
+        // If content is wrapped in a 'text' property (common in Generators.jsx output)
+        if (content.text) parsed = content.text;
+
+        // Try to parse stringified JSON
+        if (typeof parsed === 'string') {
+            try {
+                const cleanText = parsed.replace(/```json\n?|\n?```/g, "").trim();
+                parsed = JSON.parse(cleanText);
+            } catch (e) {
+                // If parsing fails, treat as markdown string
+            }
+        }
+
+        // --- RENDER BASED ON PARSED STRUCTURE ---
+
+        // A. Video Script (Intro/Main/Outro)
+        if (parsed.intro && parsed.mainContent && parsed.outro) {
+            return <VideoScriptTabs data={parsed} />;
+        }
+
+        // B. Tweets (Array of objects with 'text')
+        if (parsed.tweets && Array.isArray(parsed.tweets)) {
+            return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {parsed.tweets.map((tweet, idx) => (
+                        <div key={idx} style={{
+                            background: "rgba(30, 32, 45, 0.6)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            borderRadius: "20px",
+                            padding: "24px",
+                            position: "relative",
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                        }}>
+                            <div style={{
+                                position: "absolute",
+                                top: "-12px",
+                                left: "24px",
+                                background: "linear-gradient(135deg, #1da1f2, #0ea5e9)",
+                                color: "white",
+                                padding: "4px 12px",
+                                borderRadius: "12px",
+                                fontSize: "0.75rem",
+                                fontWeight: "700",
+                                textTransform: "uppercase",
+                                letterSpacing: "1px",
+                                boxShadow: "0 4px 10px rgba(29, 161, 242, 0.3)"
+                            }}>
+                                Tweet {idx + 1}
+                            </div>
+                            <div style={{
+                                whiteSpace: "pre-wrap",
+                                lineHeight: "1.6",
+                                fontSize: "1.1rem",
+                                color: "#e2e8f0",
+                                marginTop: "12px",
+                                fontFamily: "'Inter', sans-serif"
+                            }}>
+                                {formatText(tweet.text)}
+                            </div>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(tweet.text); }}
+                                style={{
+                                    marginTop: "20px",
+                                    padding: "10px 16px",
+                                    borderRadius: "10px",
+                                    background: "rgba(29, 161, 242, 0.1)",
+                                    border: "1px solid rgba(29, 161, 242, 0.3)",
+                                    cursor: "pointer",
+                                    fontWeight: "600",
+                                    color: "#7dd3fc",
+                                    width: "100%",
+                                    fontSize: "0.9rem",
+                                    transition: "all 0.2s",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "8px"
+                                }}
+                            >
+                                📋 Copy Tweet
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // C. Generic Array (Ideas, Captions)
+        if (Array.isArray(parsed)) {
+            return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                    {parsed.map((item, idx) => {
+                        // Check if it's an Idea Object
+                        const isIdea = item.title && item.idea && item.explanation;
+                        const textContent = typeof item === 'string' ? item : (item.caption || item.text || JSON.stringify(item));
+
+                        return (
+                            <div key={idx} style={{
+                                background: isIdea ? "linear-gradient(145deg, rgba(30, 32, 45, 0.8), rgba(20, 22, 35, 0.9))" : "rgba(255, 255, 255, 0.03)",
+                                border: isIdea ? "1px solid rgba(168, 85, 247, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)",
+                                borderRadius: "20px",
+                                padding: "24px",
+                                position: "relative",
+                                boxShadow: isIdea ? "0 4px 20px rgba(0,0,0,0.2)" : "none"
+                            }}>
+                                {isIdea ? (
+                                    <>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", gap: "12px" }}>
+                                            <h3 style={{ margin: 0, color: "white", fontSize: "1.2rem", lineHeight: "1.4", fontWeight: "700", letterSpacing: "-0.02em" }}>{item.title}</h3>
+                                            <span style={{ background: "rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: "20px", fontSize: "0.75rem", color: "#cbd5e1", whiteSpace: "nowrap" }}>{item.length}</span>
+                                        </div>
+                                        <div style={{ marginBottom: "16px" }}>
+                                            <div style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px", color: "#a855f7", marginBottom: "6px", fontWeight: "700" }}>The Concept</div>
+                                            <p style={{ margin: 0, color: "#e2e8f0", lineHeight: "1.6", fontSize: "1rem" }}>{item.idea}</p>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px", color: "#38bdf8", marginBottom: "6px", fontWeight: "700" }}>Why It Works</div>
+                                            <ul style={{ margin: 0, paddingLeft: "20px", color: "#94a3b8", lineHeight: "1.6", fontSize: "0.95rem" }}>
+                                                {Array.isArray(item.explanation) ? item.explanation.map((exp, i) => (
+                                                    <li key={i} style={{ marginBottom: "4px" }}>{exp}</li>
+                                                )) : <li>{item.explanation}</li>}
+                                            </ul>
+                                        </div>
+                                    </>
+                                ) : (
+                                    // Simple Text/Caption
+                                    <>
+                                        <strong style={{ display: 'block', marginBottom: '8px', color: '#a855f7' }}>Option {idx + 1}</strong>
+                                        <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6", color: "var(--text-primary)" }}>
+                                            <ReactMarkdown>{textContent}</ReactMarkdown>
+                                        </div>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(textContent); }}
+                                            style={{
+                                                marginTop: "12px",
+                                                background: "transparent",
+                                                border: "1px solid var(--border-color)",
+                                                borderRadius: "6px",
+                                                cursor: "pointer",
+                                                padding: "6px 12px",
+                                                fontSize: "0.85rem",
+                                                color: "var(--text-primary)"
+                                            }}
+                                        >
+                                            📋 Copy
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        // D. Fallback: Markdown String
+        if (typeof parsed === 'string') {
+            return <ReactMarkdown>{parsed}</ReactMarkdown>;
+        }
+
+        // E. Fallback: Raw JSON
+        return (
+            <pre style={{ whiteSpace: 'pre-wrap', overflowX: 'auto', color: 'var(--text-primary)' }}>
+                {JSON.stringify(content, null, 2)}
+            </pre>
+        );
     };
 
     return (

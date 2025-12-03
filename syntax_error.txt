@@ -1,0 +1,9 @@
+D:\6 Projects\Ai Social Media Creator\ai-social-media\functions\index.js:835
+                const cleanText = text.replace(/```json / g, "").replace(/```/g, "").trim();
+                                               ^^^^^^^^^^
+
+SyntaxError: missing ) after argument list
+    at wrapSafe (node:internal/modules/cjs/loader:1378:20)
+    at checkSyntax (node:internal/main/check_syntax:78:3)
+
+Node.js v20.17.0

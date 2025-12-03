@@ -1,0 +1,26 @@
+/* --- DRAGGABLE MARQUEE --- */
+.marquee-container {
+    overflow: hidden;
+    cursor: grab;
+    touch-action: pan-y;
+    /* Allow vertical scroll but handle horizontal in JS */
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    width: 100%;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.marquee-container:active {
+    cursor: grabbing;
+}
+
+.marquee-track {
+    display: flex;
+    gap: 32px;
+    width: max-content;
+    will-change: transform;
+    padding: 20px 0;
+    /* Add padding for hover effects */
+}

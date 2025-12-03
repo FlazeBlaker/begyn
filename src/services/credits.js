@@ -20,39 +20,18 @@ export async function getUserCredits(uid) {
 
 /**
  * grantCredits(uid, amount, planId = null, planType = null)
- * Adds credits and optionally sets the plan fields.
+ * DEPRECATED: Credits must be managed server-side only.
  */
 export async function grantCredits(uid, amount, planId = null, planType = null) {
-    const ref = doc(db, "brands", uid);
-    // Use updateDoc to increment, set merge true on server if creating doc
-    try {
-        // client-side atomic update not available directly; use a transaction in server/Cloud Function or Firestore Transaction
-        // Simple best-effort update:
-        const snap = await getDoc(ref);
-        const data = snap.exists() ? snap.data() : {};
-        const newCredits = (data.credits || 0) + amount;
-        const payload = { credits: newCredits };
-        if (planId) payload.planId = planId;
-        if (planType) payload.planType = planType;
-        await updateDoc(ref, payload);
-        return true;
-    } catch (err) {
-        console.error("grantCredits error:", err);
-        throw err;
-    }
+    console.error("Security Warning: grantCredits called on client. This function is deprecated and disabled.");
+    throw new Error("Security Violation: Credits cannot be modified from the client.");
 }
 
 /**
  * consumeCredits(uid, amount)
- * Deduct amount if available; returns true if succeeded, false if not enough.
+ * DEPRECATED: Credits must be consumed server-side only.
  */
 export async function consumeCredits(uid, amount) {
-    const ref = doc(db, "brands", uid);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return false;
-    const data = snap.data();
-    const current = data.credits || 0;
-    if (current < amount) return false;
-    await updateDoc(ref, { credits: current - amount });
-    return true;
+    console.error("Security Warning: consumeCredits called on client. This function is deprecated and disabled.");
+    return false;
 }

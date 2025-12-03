@@ -23,11 +23,21 @@ service cloud.firestore {
 
     // Brands collection: Users can read/write their own brand data
     match /brands/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
       
-      // Allow access to subcollections (like payments)
+      // Allow updates ONLY if credits and creditsUsed are NOT modified
+      // This prevents users from hacking their own credits via the console
+      allow update: if isOwner(userId) 
+                    && request.resource.data.credits == resource.data.credits
+                    && request.resource.data.creditsUsed == resource.data.creditsUsed;
+      
+      // Deny create/delete (managed by backend)
+      allow create, delete: if false;
+      
+      // Allow access to subcollections (like payments) - Read Only for client
       match /{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow write: if false;
       }
     }
 

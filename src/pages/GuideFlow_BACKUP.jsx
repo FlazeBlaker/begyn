@@ -51,7 +51,7 @@ const Step1Niche = ({ data, updateData, next, usingBrandData }) => {
 
     return (
         <div className="step-container fadeIn">
-            <h2>?? 1. Core Foundation & Niche Definition</h2>
+            <h2>💡 1. Core Foundation & Niche Definition</h2>
             {usingBrandData && (
                 <div style={{
                     background: 'rgba(140, 100, 255, 0.1)',
@@ -62,7 +62,7 @@ const Step1Niche = ({ data, updateData, next, usingBrandData }) => {
                     color: '#a855f7',
                     fontSize: '0.9rem'
                 }}>
-                    ? Pre-filled from your Brand Setup! You can edit these values.
+                    ✨ Pre-filled from your Brand Setup! You can edit these values.
                 </div>
             )}
             <label htmlFor="coreTopic">Core Topic/Niche (e.g., retro gaming) *</label>
@@ -102,7 +102,7 @@ const Step2Platform = ({ data, updateData, next }) => {
 
     return (
         <div className="step-container fadeIn">
-            <h2>?? 2. Platform Selection</h2>
+            <h2>💡 2. Platform Selection</h2>
             <label htmlFor="timeCommitment">Time Commitment (Hours per week) *</label>
             <input id="timeCommitment" className="styled-input" name="timeCommitment" value={data.timeCommitment || ""} onChange={handleChange} placeholder="e.g., 8-10 hours/week" />
             <label>Content Preference (Select up to 3) *</label>
@@ -216,9 +216,9 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
 
     return (
         <div className="step-container fadeIn" style={{ textAlign: "center" }}>
-            <h2>?? 3. Branding & Name Generation (AI)</h2>
+            <h2>💡 3. Branding & Name Generation (AI)</h2>
             <p>Based on your Niche and Goals, the AI will now dynamically generate the remaining custom setup steps (4-{formData.dynamicSteps?.length + CORE_STEPS_COUNT || 'N'}).</p>
-            {loading ? <div className="ai-loader">?? Generating Custom Roadmap...</div> :
+            {loading ? <div className="ai-loader">⚙️ Generating Custom Roadmap...</div> :
                 <CustomButton text="Start Custom AI Guide" onClick={startGeneration} disabled={!formData.coreTopic} />
             }
         </div>
@@ -354,7 +354,7 @@ const FinalReviewStep = ({ data, finish }) => {
 
     return (
         <div className="step-container fadeIn">
-            <h2>? Final Action Plan Review</h2>
+            <h2>✅ Final Action Plan Review</h2>
             <p>Review the complete AI-generated strategy and confirm your brand setup.</p>
             <div className="final-review-grid" style={{
                 display: 'grid',
@@ -459,142 +459,78 @@ export default function GuideFlow({ setOnboardedStatus }) {
 
         // 2. Call AI to generate the detailed, multi-step plan
         let finalGuideData = {
-            roadmapSteps: [],
-            sevenDayChecklist: [],
-            contentPillars: []
+            roadmapSteps: [] // Will be populated by AI
         };
 
         try {
-            // A. Generate Roadmap Steps in Batches (6 batches of 5 = 30 steps)
-
-            const totalSteps = 30;
-
-            const batchSize = 5;
-
-            const batches = Math.ceil(totalSteps / batchSize);
-
-            let allSteps = [];
-
-
-
-            for (let i = 0; i < batches; i++) {
-
-                const startStep = i * batchSize + 1;
-
-                const endStep = startStep + batchSize - 1;
-
-
-
-                console.log(`Generating batch ${i + 1}/${batches} (Steps ${startStep}-${endStep})...`);
-
-
-
-                const batchResponse = await generateContent({
-
-                    type: "generateRoadmapBatch",
-
-                    payload: {
-
-                        topic: formData.coreTopic || 'General Content Strategy',
-
-                        formData: formData,
-
-                        dynamicAnswers: dynamicAnswers,
-
-                        startStep: startStep,
-
-                        endStep: endStep,
-
-                        numSteps: batchSize
-
-                    }
-
-                });
-
-
-
-                let batchData;
-
-                try {
-
-                    batchData = typeof batchResponse === 'object' ? batchResponse : JSON.parse(batchResponse);
-
-                } catch (e) {
-
-                    console.error(`Failed to parse batch ${i + 1}:`, e);
-
-                    continue;
-
+            const finalGuideResponseString = await generateContent({ // REPLACED
+                // type: "finalGuide",
+                payload: {
+                    topic: formData.coreTopic || 'General Content Strategy',
+                    formData: formData,
+                    dynamicAnswers: dynamicAnswers,
+                    brandSetupData: brandSetupData // Include brand setup data for AI context
                 }
-
-
-
-                if (batchData.steps && Array.isArray(batchData.steps)) {
-
-                    allSteps = [...allSteps, ...batchData.steps];
-
-                }
-
-            }
-
-
-
-            // Map all aggregated steps
-
-            finalGuideData.roadmapSteps = allSteps.map((step, index) => ({
-
-                id: `step-${index + 1}`,
-
-                title: step.title,
-
-                description: step.description,
-
-                detailedDescription: step.detailedDescription || step.description,
-
-                phase: step.phase,
-
-                timeEstimate: step.timeEstimate || "30 mins",
-
-                suggestions: step.suggestions || [],
-
-                resources: step.resources || [],
-
-                actionItems: step.actionItems || [],
-
-                generatorLink: step.generatorLink || null,
-
-                type: 'ai-generated'
-
-            }));
-
-
-
-            // B. Generate Pillars (Separate Call)
-
-            const pillarsResponse = await generateContent({
-
-                type: "generatePillars",
-
-                payload: { formData: formData }
-
             });
 
-            const pillarsData = typeof pillarsResponse === 'object' ? pillarsResponse : JSON.parse(pillarsResponse);
+            let finalGuideAPIResult;
+            try {
+                // Check if responseString is already an object
+                if (typeof finalGuideResponseString === 'object' && finalGuideResponseString !== null) {
+                    finalGuideAPIResult = finalGuideResponseString;
+                } else {
+                    finalGuideAPIResult = JSON.parse(finalGuideResponseString);
+                }
+            } catch (e) {
+                console.error("Failed to parse Final Guide JSON:", e);
+                throw e;
+            }
 
-            finalGuideData.contentPillars = pillarsData.contentPillars || ["Education", "Entertainment", "Inspiration"];
+            // Use the new roadmapSteps from API
+            if (finalGuideAPIResult.roadmapSteps && Array.isArray(finalGuideAPIResult.roadmapSteps)) {
+                finalGuideData.roadmapSteps = finalGuideAPIResult.roadmapSteps.map((step, index) => ({
+                    id: `step-${index + 1}`, // Generate string IDs
+                    title: step.title,
+                    description: step.description,
+                    detailedDescription: step.detailedDescription || step.description, // Fallback
+                    phase: step.phase,
+                    timeEstimate: step.timeEstimate || "30 mins",
+                    suggestions: step.suggestions || [],
+                    resources: step.resources || [],
+                    generatorLink: step.generatorLink || null,
+                    type: 'ai-generated'
+                }));
 
+                // Capture dynamic checklist and pillars
+                finalGuideData.sevenDayChecklist = finalGuideAPIResult.sevenDayChecklist || [
+                    "Day 1: Optimize Profile Bio",
+                    "Day 2: Research Competitors",
+                    "Day 3: Brainstorm 10 Ideas",
+                    "Day 4: Create Content Calendar",
+                    "Day 5: Film First Video",
+                    "Day 6: Edit & Polish",
+                    "Day 7: Publish & Engage"
+                ];
+                finalGuideData.contentPillars = finalGuideAPIResult.contentPillars || [
+                    "Educational / How-To",
+                    "Behind the Scenes",
+                    "Personal Stories",
+                    "Industry News"
+                ];
 
+            } else {
+                // Fallback if AI fails to return array
+                console.warn("AI did not return roadmapSteps array. Using fallback.");
+                finalGuideData.roadmapSteps = [
+                    { id: 'step-1', title: 'Setup Profile', description: 'Complete your bio and profile picture.', phase: 'Foundation', timeEstimate: "15 mins" },
+                    { id: 'step-2', title: 'First Post', description: 'Create and publish your first piece of content.', phase: 'Content Creation', timeEstimate: "1 hour" }
+                ];
+                finalGuideData.sevenDayChecklist = ["Day 1: Setup", "Day 2: Research", "Day 3: Plan", "Day 4: Create", "Day 5: Edit", "Day 6: Post", "Day 7: Engage"];
+                finalGuideData.contentPillars = ["Education", "Entertainment", "Inspiration"];
+            }
 
-            // C. Generate 7-Day Checklist (Derived from first 7 steps)
-
-            finalGuideData.sevenDayChecklist = finalGuideData.roadmapSteps.slice(0, 7).map((s, i) => `Day ${i + 1}: ${s.title}`);
-
-
-
-            // Keep legacy structure
-
-            finalGuideData.detailedGuide = { roadmapSteps: finalGuideData.roadmapSteps };
-
+            // Also keep legacy data structures if needed for other parts of the app, or just placeholders
+            finalGuideData.detailedGuide = finalGuideAPIResult; // Store full result just in case
 
         } catch (e) {
             console.error("Final Guide API Call Failed:", e);
@@ -636,7 +572,7 @@ export default function GuideFlow({ setOnboardedStatus }) {
 
             // Show notification if credits were awarded
             if (result.data && result.data.creditsAwarded > 0) {
-                alert(`?? ${result.data.message}\n\nYou now have ${result.data.newBalance} credits!`);
+                alert(`🎉 ${result.data.message}\n\nYou now have ${result.data.newBalance} credits!`);
             }
         } catch (creditError) {
             console.error("Failed to award completion credits:", creditError);
@@ -695,7 +631,7 @@ export default function GuideFlow({ setOnboardedStatus }) {
     if (loading) {
         return (
             <div className="guide-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 9999, background: 'rgba(10, 10, 15, 0.95)', backdropFilter: 'blur(10px)' }}>
-                <div className="ai-loader" style={{ fontSize: '3rem', marginBottom: '20px' }}>??</div>
+                <div className="ai-loader" style={{ fontSize: '3rem', marginBottom: '20px' }}>🚀</div>
                 <h2 style={{ color: 'white', marginBottom: '10px' }}>Generating Your 30-Step Roadmap...</h2>
                 <p style={{ color: '#a0a0b0' }}>This may take a few seconds. AI is crafting your custom strategy.</p>
             </div>

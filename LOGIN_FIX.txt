@@ -1,0 +1,81 @@
+// MANUAL FIX for Login.jsx
+// Location: src/pages/Login.jsx, lines 25-43
+
+// REPLACE THIS CODE:
+const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError(null);
+    // console.log("Starting Google Login flow...");
+    try {
+        const result = await signInWithPopup(auth, new GoogleAuthProvider());
+        // console.log("Google Login success:", result.user.uid);
+        const userRef = doc(db, "brands", result.user.uid);
+        const snap = await getDoc(userRef);
+        const onboarded = snap.exists() && snap.data()?.onboarded;
+        navigate(onboarded ? '/dashboard' : '/guide/onboarding', { replace: true });
+    } catch (err) {
+        console.error("Login failed:", err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+            setError(`Login failed: ${err.message || "Unknown error"}`);
+        }
+        setLoading(false);
+    }
+};
+
+// WITH THIS CODE:
+const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+        const result = await signInWithPopup(auth, new GoogleAuthProvider());
+        const userRef = doc(db, "brands", result.user.uid);
+        const snap = await getDoc(userRef);
+        const onboarded = snap.exists() && snap.data()?.onboarded;
+        navigate(onboarded ? '/dashboard' : '/guide/onboarding', { replace: true });
+    } catch (err) {
+        // Handle popup closed by user - show friendly message, don't log error
+        if (err.code === 'auth/popup-closed-by-user') {
+            setError('Sign-in cancelled. Click the button to try again.');
+            setLoading(false);
+            return;
+        }
+        
+        // For other errors, log and show message
+        console.error("Login failed:", err);
+        setError(`Login failed: ${err.message || "Unknown error"}`);
+        setLoading(false);
+    }
+};
+
+// ---------------------------------------------------
+
+// OPTIONAL: Update error message styling (lines 109-116)
+// Replace blue background for "cancelled" messages
+
+// REPLACE THIS:
+{error && (
+    <div style={{
+        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)',
+        color: '#fca5a5', padding: '12px', borderRadius: '12px', marginBottom: '24px', fontSize: '0.9rem'
+    }}>
+        {error}
+    </div>
+)}
+
+// WITH THIS:
+{error && (
+    <div style={{
+        background: error.includes('cancelled') 
+            ? 'rgba(59, 130, 246, 0.1)' 
+            : 'rgba(239, 68, 68, 0.1)',
+        border: error.includes('cancelled')
+            ? '1px solid rgba(59, 130, 246, 0.2)'
+            : '1px solid rgba(239, 68, 68, 0.2)',
+        color: error.includes('cancelled') 
+            ? '#93c5fd' 
+            : '#fca5a5',
+        padding: '12px', borderRadius: '12px', marginBottom: '24px', fontSize: '0.9rem'
+    }}>
+        {error}
+    </div>
+)}

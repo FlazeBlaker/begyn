@@ -105,7 +105,7 @@ export const uploadImageToStorage = async (uid, base64Data) => {
 
         // Get URL
         const downloadURL = await getDownloadURL(storageRef);
-        console.log("Image uploaded to storage:", downloadURL);
+        // console.log("Image uploaded to storage:", downloadURL);
         return downloadURL;
     } catch (error) {
         console.error("Error uploading image to storage:", error);
@@ -135,7 +135,7 @@ export const logUserAction = async (uid, type, content) => {
             content: sanitizedContent,
             timestamp: serverTimestamp(),
         });
-        console.log(`Action logged: ${type}`);
+        // console.log(`Action logged: ${type}`);
     } catch (e) {
         console.error("Error logging user action:", e);
     }

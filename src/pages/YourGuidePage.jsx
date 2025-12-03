@@ -6,41 +6,11 @@ import { generateContent } from "../services/aiApi";
 import "../styles/MobileMissionControl.css"; // New Mobile Styles
 import Roadmap from "./guide/Roadmap";
 import MobileRoadmap from "./guide/MobileRoadmap"; // New Mobile Component
+import { calculateStreak } from "../utils/streakUtils";
 
-// --- STATIC TACTICAL PLAYBOOK (Instant Load) ---
-const TACTICAL_PLAYBOOK = {
-    GEAR_EQUIPMENT: [
-        "**Camera:** Start with your smartphone (iPhone 13+ or Pixel 6+ recommended). Clean the lens!",
-        "**Audio:** Wireless lavalier mic (e.g., Boya or generic Amazon brand) is a game changer.",
-        "**Lighting:** Natural window light is best. If dark, get a cheap ring light or softbox.",
-        "**Editing:** CapCut (Mobile/Desktop) is free and powerful. DaVinci Resolve for advanced PC users."
-    ],
-    PRODUCTION_WORKFLOW: [
-        "**Batching:** Film 3-5 videos in one session to save setup time.",
-        "**Hook First:** Spend 50% of your scripting time on the first 3 seconds.",
-        "**B-Roll:** Film random clips of your day/work to overlay on voiceovers.",
-        "**Consistency:** Post at the same time daily to train the algorithm."
-    ],
-    GROWTH_MAINTENANCE: [
-        "**Engage:** Reply to every comment in the first hour.",
-        "**Analyze:** Check retention graphs. If people drop at 0:05, fix your hook.",
-        "**Trend Jacking:** Use trending audio but add your niche twist.",
-        "**Community:** DM 5 new followers daily to say thanks."
-    ]
-};
 
-// --- HELPER: Format Text (Converts **text** to Bold) ---
-const formatText = (text) => {
-    if (!text) return "";
-    const textString = String(text);
-    const parts = textString.split("**");
-    return parts.map((part, index) => {
-        if (index % 2 === 1) {
-            return <strong key={index} style={{ color: "var(--text-primary)", fontWeight: "700" }}>{part}</strong>;
-        }
-        return part;
-    });
-};
+
+
 
 // --- LOADING COMPONENT ---
 const LoadingCard = ({ height = "clamp(180px, 20vh, 250px)", title }) => (
@@ -54,88 +24,7 @@ const LoadingCard = ({ height = "clamp(180px, 20vh, 250px)", title }) => (
     </div>
 );
 
-const RoadmapTask = ({ item, category, index, onUpdate }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [currentText, setCurrentText] = useState(item);
 
-    const handleSave = async () => {
-        onUpdate(category, index, currentText);
-        setIsEditing(false);
-    };
-
-    return (
-        <li className="roadmap-item mobile-checklist-item" style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            marginBottom: 'clamp(8px, 2vw, 12px)',
-            padding: 'clamp(10px, 3vw, 16px)',
-            borderRadius: '8px'
-        }}>
-            {isEditing ? (
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <input
-                        className="styled-input"
-                        value={currentText}
-                        onChange={(e) => setCurrentText(e.target.value)}
-                        autoFocus
-                        style={{
-                            background: 'var(--bg-input)',
-                            color: 'var(--text-primary)',
-                            border: '1px solid var(--border-color)',
-                            padding: 'clamp(10px, 2vw, 12px)',
-                            borderRadius: '4px',
-                            fontSize: 'clamp(0.9rem, 3vw, 1rem)',
-                            flex: '1 1 auto',
-                            minWidth: 'clamp(180px, 30vw, 250px)'
-                        }}
-                    />
-                    <button
-                        onClick={handleSave}
-                        style={{
-                            whiteSpace: 'nowrap',
-                            background: '#34d399',
-                            color: '#000',
-                            border: 'none',
-                            borderRadius: '8px',
-                            padding: 'clamp(10px, 2vw, 12px) clamp(16px, 4vw, 20px)',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            minHeight: '44px',
-                            fontSize: 'clamp(0.9rem, 3vw, 1rem)'
-                        }}
-                    >
-                        Save
-                    </button>
-                </div>
-            ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                    <span className="mobile-checklist-text" style={{ flexGrow: 1, color: 'var(--text-secondary)', fontSize: 'clamp(0.9rem, 3vw, 1rem)', lineHeight: '1.5' }}>{formatText(item)}</span>
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        style={{
-                            background: 'rgba(168, 85, 247, 0.1)',
-                            border: '1px solid rgba(168, 85, 247, 0.3)',
-                            color: '#a855f7',
-                            cursor: 'pointer',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            fontSize: 'clamp(0.85rem, 3vw, 1rem)',
-                            minHeight: '44px',
-                            minWidth: 'clamp(40px, 8vw, 50px)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s'
-                        }}
-                        aria-label="Edit item"
-                    >
-                        ✏️
-                    </button>
-                </div>
-            )}
-        </li>
-    );
-};
 
 export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
     // Derived state from props
@@ -149,14 +38,13 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
 
     // Local loading states for independent sections
     const [loadingRoadmap, setLoadingRoadmap] = useState(isGenerating);
-    const [loadingChecklist, setLoadingChecklist] = useState(isGenerating);
-    const [loadingPillars, setLoadingPillars] = useState(isGenerating);
+
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // Mobile detection
     const navigate = useNavigate();
     const uid = auth.currentUser?.uid;
 
-    console.log("YourGuidePage Rendered. UserInfo present:", !!userInfo, "Generating:", isGenerating);
+    // console.log("YourGuidePage Rendered. UserInfo present:", !!userInfo, "Generating:", isGenerating);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -170,7 +58,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
             if (!uid || !brandData || !isGenerating || generationStartedRef.current) return;
 
             generationStartedRef.current = true;
-            console.log("STARTING PARALLEL AI GENERATION...");
+            // console.log("STARTING PARALLEL AI GENERATION...");
 
             // 1. Generate Roadmap Steps
             const pRoadmap = generateContent({
@@ -190,7 +78,9 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                     timeEstimate: step.timeEstimate || "30 mins",
                     suggestions: step.suggestions || [],
                     resources: step.resources || [],
-                    subNodes: step.subNodes || [],
+                    suggestions: step.suggestions || [],
+                    resources: step.resources || [],
+                    actionItems: step.actionItems || step.subNodes || [], // Fallback for old data
                     generatorLink: step.generatorLink || null,
                     type: 'ai-generated'
                 }));
@@ -205,80 +95,84 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                 setLoadingRoadmap(false);
             });
 
-            // 2. Generate Checklist
-            const pChecklist = generateContent({
-                type: "generateChecklist",
-                payload: { formData: brandData }
-            }).then(async (res) => {
-                let data = typeof res === 'object' ? res : JSON.parse(res);
-                await updateDoc(doc(db, "brands", uid), {
-                    "brandData.aiGenerated.sevenDayChecklist": data.sevenDayChecklist || []
-                });
-                setLoadingChecklist(false);
-            }).catch(e => {
-                console.error("Checklist Gen Failed:", e);
-                setLoadingChecklist(false);
-            });
-
-            // 3. Generate Pillars
-            const pPillars = generateContent({
-                type: "generatePillars",
-                payload: { formData: brandData }
-            }).then(async (res) => {
-                let data = typeof res === 'object' ? res : JSON.parse(res);
-                await updateDoc(doc(db, "brands", uid), {
-                    "brandData.aiGenerated.contentPillars": data.contentPillars || []
-                });
-                setLoadingPillars(false);
-            }).catch(e => {
-                console.error("Pillars Gen Failed:", e);
-                setLoadingPillars(false);
-            });
-
             // Wait for all to finish to mark global status as complete
-            await Promise.allSettled([pRoadmap, pChecklist, pPillars]);
+            await Promise.allSettled([pRoadmap]);
 
-            // Final update to remove 'generating' status and save static playbook
+            // Final update to remove 'generating' status
             await updateDoc(doc(db, "brands", uid), {
-                "brandData.roadmapStatus": "complete",
-                "brandData.aiGenerated.detailedGuide": TACTICAL_PLAYBOOK
+                "brandData.roadmapStatus": "complete"
             });
 
-            // Award Credits
-            try {
-                const { getFunctions, httpsCallable } = await import('firebase/functions');
-                const funcs = getFunctions();
-                const completeGuideFn = httpsCallable(funcs, 'completeGuide');
-                await completeGuideFn();
-            } catch (creditError) {
-                console.error("Failed to award completion credits:", creditError);
-            }
+            // Credits are now awarded on signup, not completion.
+            console.log("Guide completed.");
         };
 
         generateAll();
     }, [uid, brandData, isGenerating, userInfo]);
 
 
-    const updateRoadmapItem = async (category, index, newText) => {
-        if (!brandData || !uid) return;
-        const newBrandData = JSON.parse(JSON.stringify(brandData));
 
-        // Ensure aiGenerated and the category exist before updating
-        if (newBrandData.aiGenerated && Array.isArray(newBrandData.aiGenerated[category])) {
-            newBrandData.aiGenerated[category][index] = newText;
-            // No local state update needed, Firestore snapshot in App.jsx will trigger re-render
-            await updateDoc(doc(db, "brands", uid), { brandData: newBrandData });
-        }
-    };
+
+    // ... existing imports
+
+    // ... existing imports
 
     const handleStepComplete = async (stepId) => {
         if (!uid) return;
 
-        // No local state update needed, Firestore snapshot in App.jsx will trigger re-render
+        // --- PROGRESSION CHECKS ---
+        const stepIndex = dynamicRoadmapSteps.findIndex(s => s.id === stepId);
+        if (stepIndex === -1) return;
+
+        // 1. Check if previous steps are completed
+        if (stepIndex > 0) {
+            const prevStep = dynamicRoadmapSteps[stepIndex - 1];
+            const prevProgress = roadmapProgress[prevStep.id];
+            if (!prevProgress?.completed) {
+                alert("Please complete the previous step first!");
+                return;
+            }
+        }
+
+        // 2. Check if all action items are completed
+        const step = dynamicRoadmapSteps[stepIndex];
+        const currentProgress = roadmapProgress[stepId] || {};
+        const actionItems = step.actionItems || [];
+
+        // Check if every action item is marked as completed in progress
+        // We store action item completion in 'subNodes' field in DB to preserve backward compatibility or just reuse the field name
+        const allActionItemsDone = actionItems.every((_, i) => currentProgress.subNodes && currentProgress.subNodes[i]);
+
+        if (actionItems.length > 0 && !allActionItemsDone) {
+            alert("Please complete all action items first!");
+            return;
+        }
+
         try {
-            await updateDoc(doc(db, "brands", uid), {
+            // 1. Get current streak data
+            const brandRef = doc(db, "brands", uid);
+            const brandSnap = await getDoc(brandRef);
+
+            let updates = {
                 [`roadmapProgress.${stepId}.completed`]: true
-            });
+            };
+
+            if (brandSnap.exists()) {
+                const data = brandSnap.data();
+                const currentStreak = data.streak || 1;
+                const lastActiveDate = data.lastActiveDate || null;
+
+                // 2. Calculate new streak
+                const { streak, lastActiveDate: newDate } = calculateStreak(currentStreak, lastActiveDate);
+
+                // 3. Add to updates
+                updates.streak = streak;
+                updates.lastActiveDate = newDate;
+            }
+
+            // 4. Atomic update
+            await updateDoc(brandRef, updates);
+
         } catch (error) {
             console.error("Error updating roadmap progress:", error);
         }
@@ -303,14 +197,14 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
     }, [brandData, roadmapProgress]);
 
     if (loading) {
-        console.log("Rendering LOADING state");
+        // console.log("Rendering LOADING state");
         return <div className="guide-container"><div className="ai-loader">Begynning...</div></div>;
     }
 
     // Check if brandData exists AND aiGenerated data exists AND the roadmap steps exist
     // BUT if we are generating, we want to show the UI with loaders
     if (!isGenerating && (!brandData || !brandData.aiGenerated || !brandData.aiGenerated.roadmapSteps)) {
-        console.log("Rendering NO MISSION state. BrandData:", brandData);
+        // console.log("Rendering NO MISSION state. BrandData:", brandData);
         return (
             <div className="guide-container">
                 <div className="step-container" style={{ textAlign: 'center', padding: 'clamp(24px, 5vw, 40px)' }}>
@@ -328,19 +222,71 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
     const gen = brandData.aiGenerated || {};
     const { coreTopic, primaryGoal } = brandData;
     // Use local loading state or fallback to empty array
-    const sevenDayChecklist = gen.sevenDayChecklist || [];
-    const contentPillars = gen.contentPillars || [];
     const dynamicRoadmapSteps = (gen.roadmapSteps && gen.roadmapSteps.length > 0) ? gen.roadmapSteps : [];
-    // Use static playbook if generation is done or if it exists, otherwise static fallback
-    const detailedGuide = gen.detailedGuide || TACTICAL_PLAYBOOK;
 
     // Prepare steps with status for MobileRoadmap
-    const mobileSteps = dynamicRoadmapSteps.map(step => ({
-        ...step,
-        status: roadmapProgress[step.id]?.completed ? 'completed' : (step.id === progressStats.nextStep?.id ? 'in-progress' : 'locked')
-    }));
+    const mobileSteps = dynamicRoadmapSteps.map(step => {
+        const stepProgress = roadmapProgress[step.id] || {};
+        return {
+            ...step,
+            status: stepProgress.completed ? 'completed' : (step.id === progressStats.nextStep?.id ? 'in-progress' : 'locked'),
+            ...step,
+            status: stepProgress.completed ? 'completed' : (step.id === progressStats.nextStep?.id ? 'in-progress' : 'locked'),
+            actionItems: (step.actionItems || []).map((item, i) => ({
+                title: typeof item === 'string' ? item : item.title, // Handle both string and object (old data)
+                completed: stepProgress.subNodes && stepProgress.subNodes[i] ? true : false
+            }))
+        };
+    });
 
-    console.log("Rendering DASHBOARD state. Generating:", isGenerating);
+    const handleActionItemComplete = async (stepId, index) => {
+        if (!uid) return;
+        try {
+            const brandRef = doc(db, "brands", uid);
+            const brandSnap = await getDoc(brandRef);
+
+            if (brandSnap.exists()) {
+                const data = brandSnap.data();
+                const currentProgress = data.roadmapProgress || {};
+                const stepProgress = currentProgress[stepId] || {};
+                const currentActionItems = stepProgress.subNodes || []; // We reuse 'subNodes' field in DB
+
+                // Toggle the specific item
+                const newActionItems = [...currentActionItems];
+                // Ensure array is long enough
+                while (newActionItems.length <= index) newActionItems.push(false);
+                newActionItems[index] = !newActionItems[index];
+
+                // Check if all items are now complete
+                const step = dynamicRoadmapSteps.find(s => s.id === stepId);
+                const totalItems = step?.actionItems?.length || 0;
+
+                // We need to make sure we have enough booleans for all items
+                // But 'every' on newActionItems might be misleading if it's shorter than totalItems
+                // So let's check against the total count
+                let allDone = true;
+                if (totalItems > 0) {
+                    // Fill up to totalItems with false if needed for checking
+                    const checkArray = [...newActionItems];
+                    while (checkArray.length < totalItems) checkArray.push(false);
+                    allDone = checkArray.slice(0, totalItems).every(Boolean);
+                }
+
+                await updateDoc(brandRef, {
+                    [`roadmapProgress.${stepId}.subNodes`]: newActionItems
+                });
+
+                // Auto-complete parent step if all items are done
+                if (allDone) {
+                    await handleStepComplete(stepId);
+                }
+            }
+        } catch (error) {
+            console.error("Error updating action item progress:", error);
+        }
+    };
+
+    // console.log("Rendering DASHBOARD state. Generating:", isGenerating);
     return (
         <div className={`guide-container ${isMobile ? 'mobile-view' : ''}`} style={{
             minHeight: '100vh',
@@ -512,29 +458,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                                 <span style={{ fontSize: 'clamp(1.2rem, 5vw, 1.5rem)' }}>🗺️</span>
                                 <span>Roadmap</span>
                             </button>
-                            <button
-                                onClick={() => document.getElementById('checklist-section').scrollIntoView({ behavior: 'smooth' })}
-                                style={{
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-color)',
-                                    padding: 'clamp(12px, 3vw, 15px)',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-primary)',
-                                    cursor: 'pointer',
-                                    textAlign: 'center',
-                                    fontSize: 'clamp(0.85rem, 3vw, 0.95rem)',
-                                    minHeight: '60px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '4px',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <span style={{ fontSize: 'clamp(1.2rem, 5vw, 1.5rem)' }}>✅</span>
-                                <span>Checklist</span>
-                            </button>
+
                             <button
                                 onClick={() => {
                                     // Scroll to roadmap section first
@@ -571,7 +495,6 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                                     justifyContent: 'center',
                                     gap: '4px',
                                     transition: 'all 0.2s',
-                                    gridColumn: 'span 2',
                                     boxShadow: progressStats.nextStep ? '0 4px 12px rgba(52, 211, 153, 0.2)' : 'none'
                                 }}
                             >
@@ -583,113 +506,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                 )}
             </div >
 
-            {/* MAIN CONTENT SPLIT */}
-            < div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
-                gap: 'clamp(20px, 5vw, 30px)'
-            }}>
 
-                {/* LEFT COL: CHECKLISTS */}
-                < div id="checklist-section" >
-                    {loadingChecklist ? <LoadingCard height="300px" title /> : (
-                        <div className={`final-card ${isMobile ? 'mobile-card' : ''}`} style={{
-                            marginBottom: 'clamp(20px, 5vw, 30px)',
-                            border: '1px solid rgba(124, 58, 237, 0.3)',
-                            background: 'var(--bg-card)',
-                            padding: 'clamp(16px, 4vw, 20px)',
-                            borderRadius: '16px'
-                        }}>
-                            <h3 style={{
-                                borderBottom: '1px solid var(--border-color)',
-                                paddingBottom: 'clamp(10px, 2vw, 12px)',
-                                marginBottom: 'clamp(12px, 3vw, 15px)',
-                                color: 'var(--text-primary)',
-                                fontSize: 'clamp(1.1rem, 4vw, 1.3rem)'
-                            }}>🚀 7-Day Launchpad</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                {sevenDayChecklist.map((task, index) => (
-                                    <RoadmapTask key={index} item={task} category="sevenDayChecklist" index={index} onUpdate={updateRoadmapItem} />
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {loadingPillars ? <LoadingCard height="300px" title /> : (
-                        <div className={`final-card ${isMobile ? 'mobile-card' : ''}`} style={{
-                            border: '1px solid rgba(168, 85, 247, 0.3)',
-                            background: 'var(--bg-card)',
-                            padding: 'clamp(16px, 4vw, 20px)',
-                            borderRadius: '16px'
-                        }}>
-                            <h3 style={{
-                                borderBottom: '1px solid var(--border-color)',
-                                paddingBottom: 'clamp(10px, 2vw, 12px)',
-                                marginBottom: 'clamp(12px, 3vw, 15px)',
-                                color: 'var(--text-primary)',
-                                fontSize: 'clamp(1.1rem, 4vw, 1.3rem)'
-                            }}>🏛️ Content Pillars</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                {contentPillars.map((pillar, index) => (
-                                    <RoadmapTask key={index} item={pillar} category="contentPillars" index={index} onUpdate={updateRoadmapItem} />
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </div >
-
-                {/* RIGHT COL: DETAILED GUIDE (STATIC PLAYBOOK) */}
-                < div className={`final-card ${isMobile ? 'mobile-card' : ''}`} style={{
-                    height: 'fit-content',
-                    maxHeight: 'clamp(600px, 60vh, 800px)',
-                    overflowY: 'auto',
-                    background: 'var(--bg-card)',
-                    padding: 'clamp(16px, 4vw, 20px)',
-                    borderRadius: '16px',
-                    border: '1px solid var(--border-color)'
-                }}>
-                    <h3 style={{
-                        borderBottom: '1px solid var(--border-color)',
-                        paddingBottom: 'clamp(10px, 2vw, 12px)',
-                        marginBottom: 'clamp(12px, 3vw, 15px)',
-                        color: 'var(--text-primary)',
-                        fontSize: 'clamp(1.1rem, 4vw, 1.3rem)'
-                    }}>📘 Tactical Playbook</h3>
-
-                    {
-                        detailedGuide.GEAR_EQUIPMENT && (
-                            <div style={{ marginBottom: 'clamp(20px, 4vw, 25px)' }}>
-                                <h4 style={{ color: '#d8b4fe', marginBottom: 'clamp(8px, 2vw, 10px)', fontSize: 'clamp(1rem, 3.5vw, 1.1rem)' }}>🛠️ Gear & Tech</h4>
-                                <ul style={{ listStyle: 'none', padding: 0 }}>
-                                    {detailedGuide.GEAR_EQUIPMENT.map((c, i) => <li key={i} style={{ marginBottom: 'clamp(8px, 2vw, 10px)', color: 'var(--text-secondary)', fontSize: 'clamp(0.85rem, 3vw, 0.9rem)', paddingLeft: 'clamp(12px, 3vw, 15px)', borderLeft: '2px solid var(--border-color)', lineHeight: '1.5' }}>{formatText(c)}</li>)}
-                                </ul>
-                            </div>
-                        )
-                    }
-
-                    {
-                        detailedGuide.PRODUCTION_WORKFLOW && (
-                            <div style={{ marginBottom: 'clamp(20px, 4vw, 25px)' }}>
-                                <h4 style={{ color: '#d8b4fe', marginBottom: 'clamp(8px, 2vw, 10px)', fontSize: 'clamp(1rem, 3.5vw, 1.1rem)' }}>🎬 Workflow</h4>
-                                <ul style={{ listStyle: 'none', padding: 0 }}>
-                                    {detailedGuide.PRODUCTION_WORKFLOW.map((c, i) => <li key={i} style={{ marginBottom: 'clamp(8px, 2vw, 10px)', color: 'var(--text-secondary)', fontSize: 'clamp(0.85rem, 3vw, 0.9rem)', paddingLeft: 'clamp(12px, 3vw, 15px)', borderLeft: '2px solid var(--border-color)', lineHeight: '1.5' }}>{formatText(c)}</li>)}
-                                </ul>
-                            </div>
-                        )
-                    }
-
-                    {
-                        detailedGuide.GROWTH_MAINTENANCE && (
-                            <div>
-                                <h4 style={{ color: '#d8b4fe', marginBottom: 'clamp(8px, 2vw, 10px)', fontSize: 'clamp(1rem, 3.5vw, 1.1rem)' }}>📈 Growth Strategy</h4>
-                                <ul style={{ listStyle: 'none', padding: 0 }}>
-                                    {detailedGuide.GROWTH_MAINTENANCE.map((c, i) => <li key={i} style={{ marginBottom: 'clamp(8px, 2vw, 10px)', color: 'var(--text-secondary)', fontSize: 'clamp(0.85rem, 3vw, 0.9rem)', paddingLeft: 'clamp(12px, 3vw, 15px)', borderLeft: '2px solid var(--border-color)', lineHeight: '1.5' }}>{formatText(c)}</li>)}
-                                </ul>
-                            </div>
-                        )
-                    }
-                </div >
-            </div >
 
             {/* ROADMAP SECTION */}
             < div id="roadmap-section" style={{ marginTop: 'clamp(40px, 8vw, 50px)' }}>
@@ -699,6 +516,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                             <MobileRoadmap
                                 steps={mobileSteps}
                                 onStepComplete={handleStepComplete}
+                                onActionItemComplete={handleActionItemComplete}
                             />
                         ) : (
                             <>

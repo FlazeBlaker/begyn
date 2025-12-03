@@ -185,7 +185,7 @@ export default function OnboardingPage({ setOnboardedStatus }) {
                 <ChoiceCard
                     icon="🚀"
                     title="Start as New Creator"
-                    description="Let the AI guide you step-by-step to create your brand identity, content pillars, and a custom posting schedule. Complete the guide to earn 10 credits! (First-time only)"
+                    description="Let the AI guide you step-by-step to create your brand identity, content pillars, and a custom posting schedule."
                     onClick={handleStartGuide}
                     isPrimary={true}
                     isMobile={isMobile}

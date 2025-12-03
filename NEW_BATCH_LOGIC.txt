@@ -1,0 +1,64 @@
+            // A. Generate Roadmap Steps in Batches (6 batches of 5 = 30 steps)
+            const totalSteps = 30;
+            const batchSize = 5;
+            const batches = Math.ceil(totalSteps / batchSize);
+            let allSteps = [];
+
+            for (let i = 0; i < batches; i++) {
+                const startStep = i * batchSize + 1;
+                const endStep = startStep + batchSize - 1;
+                
+                console.log(`Generating batch ${i + 1}/${batches} (Steps ${startStep}-${endStep})...`);
+                
+                const batchResponse = await generateContent({
+                    type: "generateRoadmapBatch",
+                    payload: {
+                        formData: formData,
+                        dynamicAnswers: dynamicAnswers,
+                        startStep: startStep,
+                        endStep: endStep,
+                        numSteps: batchSize
+                    }
+                });
+
+                let batchData;
+                try {
+                    batchData = typeof batchResponse === 'object' ? batchResponse : JSON.parse(batchResponse);
+                } catch (e) {
+                    console.error(`Failed to parse batch ${i + 1}:`, e);
+                    continue;
+                }
+
+                if (batchData.steps && Array.isArray(batchData.steps)) {
+                    allSteps = [...allSteps, ...batchData.steps];
+                }
+            }
+
+            // Map all aggregated steps
+            finalGuideData.roadmapSteps = allSteps.map((step, index) => ({
+                id: `step-${index + 1}`,
+                title: step.title,
+                description: step.description,
+                detailedDescription: step.detailedDescription || step.description,
+                phase: step.phase,
+                timeEstimate: step.timeEstimate || "30 mins",
+                suggestions: step.suggestions || [],
+                resources: step.resources || [],
+                actionItems: step.actionItems || [],
+                generatorLink: step.generatorLink || null,
+                type: 'ai-generated'
+            }));
+
+            // B. Generate Pillars (Separate Call)
+            const pillarsResponse = await generateContent({
+                type: "generatePillars",
+                payload: { formData: formData }
+            });
+            const pillarsData = typeof pillarsResponse === 'object' ? pillarsResponse : JSON.parse(pillarsResponse);
+            finalGuideData.contentPillars = pillarsData.contentPillars || ["Education", "Entertainment", "Inspiration"];
+
+            // C. Generate 7-Day Checklist (Derived from first 7 steps)
+            finalGuideData.sevenDayChecklist = finalGuideData.roadmapSteps.slice(0, 7).map((s, i) => `Day ${i + 1}: ${s.title}`);
+
+            // Keep legacy structure
+            finalGuideData.detailedGuide = { roadmapSteps: finalGuideData.roadmapSteps };

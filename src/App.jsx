@@ -11,7 +11,6 @@ import Sidebar from "./components/Sidebar";
 import ImmersiveBackground from "./components/ImmersiveBackground";
 
 // Pages (lazy-loaded to improve startup performance)
-// Pages (lazy-loaded to improve startup performance)
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const BrandSetup = lazy(() => import("./pages/BrandSetup"));
@@ -30,6 +29,8 @@ const AutomationPage = lazy(() => import("./pages/AutomationPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 
 // --- HOOK: Detect Screen Width ---
 const useWindowWidth = () => {
@@ -137,7 +138,7 @@ function AppContent() {
                 const brandRef = doc(db, "brands", currentUser.uid);
 
                 // We use onSnapshot for the brand doc to get real-time credit updates
-                console.log(`[App] Attaching snapshot listener for user: ${currentUser.uid}`);
+                // console.log(`[App] Attaching snapshot listener for user: ${currentUser.uid}`);
                 brandUnsubscribeRef.current = onSnapshot(brandRef, async (brandSnap) => {
                     if (!mounted) return;
                     try {
@@ -161,7 +162,7 @@ function AppContent() {
                 }, (error) => {
                     // Suppress error if we are already unmounting or logging out
                     if (!mounted || !auth.currentUser) {
-                        console.log("Suppressing snapshot error during logout/unmount:", error.code);
+                        // console.log("Suppressing snapshot error during logout/unmount:", error.code);
                         return;
                     }
 
@@ -242,6 +243,8 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
     // Routes that should hide the main layout
     const hideLayout = location.pathname === "/login" ||
         location.pathname === "/" ||
+        location.pathname === "/terms" ||
+        location.pathname === "/privacy" ||
         location.pathname === "/guide/onboarding" ||
         location.pathname === "/guide/flow";
 
@@ -255,6 +258,8 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/" element={<LandingPage />} />
+                    <Route path="/terms" element={<TermsOfService />} />
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/guide/onboarding" element={
                         <GuideRoute user={user}>
                             <OnboardingPage setOnboardedStatus={(v) => { /* map as needed */ }} />
@@ -300,12 +305,6 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                         <Routes>
 
                             {/* Protected main routes */}
-                            <Route path="/dashboard" element={
-                                <PrivateRoute user={user} onboarded={onboarded}>
-                                    <Dashboard />
-                                </PrivateRoute>
-                            } />
-
                             <Route path="/dashboard" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
                                     <Dashboard />
@@ -381,9 +380,12 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
     );
 }
 
+import ScrollToTop from "./components/ScrollToTop";
+
 export default function App() {
     return (
         <Router>
+            <ScrollToTop />
             <AppContent />
         </Router>
     );

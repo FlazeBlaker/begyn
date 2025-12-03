@@ -25,7 +25,7 @@ const PostPreviewCard = ({ post, onInteract }) => {
     const handleDownload = async () => {
         if (!post.imageUrl) return;
 
-        console.log("Starting download process for post:", post.id);
+        // console.log("Starting download process for post:", post.id);
 
         // Create a sanitized filename
         let baseFilename = post.caption

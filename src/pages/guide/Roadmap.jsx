@@ -2,13 +2,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { auth, db, doc, getDoc, updateDoc, setDoc } from "../../services/firebase";
 
-const GRID_SIZE = 50;
-const NODE_RADIUS = 22;
-const NODE_SPACING = 180;
-const PANEL_WIDTH = 420;
-const PANEL_HEIGHT = 300;
-const SUBNODE_RADIUS = 8;
-const SUBNODE_DISTANCE = 38;
+// Constants removed, will be calculated dynamically
+
 
 export default function Roadmap({ steps = [] }) {
     const uid = auth.currentUser?.uid;
@@ -23,15 +18,25 @@ export default function Roadmap({ steps = [] }) {
     }); // saved settings
     const svgRef = useRef(null);
     const containerRef = useRef(null);
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    // --- Dynamic Constants ---
+    const isMobile = windowWidth < 768;
+    const NODE_RADIUS = isMobile ? Math.max(16, windowWidth * 0.04) : 22;
+    const NODE_SPACING = isMobile ? Math.min(windowWidth * 0.45, 160) : Math.max(180, windowWidth * 0.15);
+    const PANEL_WIDTH = isMobile ? windowWidth * 0.9 : Math.min(420, windowWidth * 0.35);
+    const PANEL_HEIGHT = 300; // Keep height static for now or make dynamic if needed
 
     // --- initialize nodes with positions and completed status ---
     const initializeNodes = useCallback((stepsArray, savedProgress = {}, savedNotes = {}) => {
         return stepsArray.map((step, i) => {
-            // Initialize subnodes with unique IDs and completion tracking
-            const subNodes = (step.subNodes || []).map((sub, j) => ({
-                ...sub,
-                id: `${step.id}-sub-${j}`,
-                completed: savedProgress[step.id]?.subNodes?.[j] || false,
+            // Initialize action items with unique IDs and completion tracking
+            // Handle both old subNodes (objects) and new actionItems (strings)
+            const rawItems = step.actionItems || step.subNodes || [];
+            const actionItems = rawItems.map((item, j) => ({
+                id: `${step.id}-action-${j}`,
+                title: typeof item === 'string' ? item : item.title,
+                completed: savedProgress[step.id]?.subNodes?.[j] || false, // Reuse subNodes field in DB
             }));
 
             return {
@@ -39,7 +44,7 @@ export default function Roadmap({ steps = [] }) {
                 title: step.title,
                 description: step.description,
                 detailedDescription: step.detailedDescription,
-                subNodes: subNodes,
+                actionItems: actionItems,
                 suggestions: step.suggestions,
                 resources: step.resources,
                 generatorLink: step.generatorLink,
@@ -50,7 +55,7 @@ export default function Roadmap({ steps = [] }) {
                 note: savedNotes[step.id] || "",
             };
         });
-    }, []);
+    }, [NODE_SPACING]); // Add NODE_SPACING dependency
 
     // --- load saved progress, notes, settings from Firestore and init nodes ---
     useEffect(() => {
@@ -88,8 +93,8 @@ export default function Roadmap({ steps = [] }) {
             const progress = currentNodes.reduce((acc, n) => {
                 acc[n.id] = {
                     completed: !!n.completed,
-                    // Save subnode completion as array of booleans
-                    subNodes: (n.subNodes || []).map(sub => sub.completed || false)
+                    // Save action item completion as array of booleans (stored in subNodes field)
+                    subNodes: (n.actionItems || []).map(item => item.completed || false)
                 };
                 return acc;
             }, {});
@@ -158,92 +163,47 @@ export default function Roadmap({ steps = [] }) {
         [saveProgress, selectedStep]
     );
 
-    // --- mark subnode complete ---
-    const completeSubNode = useCallback(
-        (nodeId, subnodeId) => {
-            let nextSelection = null;
-
+    // --- mark action item complete ---
+    const completeActionItem = useCallback(
+        (nodeId, actionItemId) => {
             setNodes((prev) => {
                 const next = prev.map((n) => {
                     if (n.id !== nodeId) return n;
 
-                    // Update the specific subnode
-                    const updatedSubNodes = n.subNodes.map((sub) =>
-                        sub.id === subnodeId ? { ...sub, completed: true } : sub
+                    // Update the specific action item
+                    const updatedItems = n.actionItems.map((item) =>
+                        item.id === actionItemId ? { ...item, completed: !item.completed } : item
                     );
 
-                    // Auto-complete parent if ALL subnodes are completed
-                    const allSubsComplete = updatedSubNodes.every((s) => s.completed);
+                    // Auto-complete parent if ALL items are completed (optional, maybe user wants to manually complete)
+                    // For now, let's NOT auto-complete parent here to give user control, or we can.
+                    // The user requested "auto-progression", so maybe we SHOULD auto-complete.
+                    const allItemsComplete = updatedItems.every((s) => s.completed);
 
                     return {
                         ...n,
-                        subNodes: updatedSubNodes,
-                        completed: allSubsComplete && n.completed ? true : n.completed,
+                        actionItems: updatedItems,
+                        // completed: allItemsComplete ? true : n.completed, // Uncomment to auto-complete parent
                     };
                 });
-
-                // Find the node and current subnode index
-                const currentNode = next.find(n => n.id === nodeId);
-                const currentSubIndex = currentNode?.subNodes.findIndex(s => s.id === subnodeId) ?? -1;
-
-                // Determine next selection
-                if (currentNode && currentSubIndex !== -1) {
-                    // Check if there's a next subnode in the same node
-                    if (currentSubIndex + 1 < currentNode.subNodes.length) {
-                        const nextSubnode = currentNode.subNodes[currentSubIndex + 1];
-                        nextSelection = {
-                            ...currentNode,
-                            isSubNode: true,
-                            selectedSubNode: nextSubnode,
-                            selectedSubNodeIndex: currentSubIndex + 1
-                        };
-                    } else {
-                        // No more subnodes, find next main node
-                        const currentNodeIndex = next.findIndex(n => n.id === nodeId);
-                        if (currentNodeIndex !== -1 && currentNodeIndex + 1 < next.length) {
-                            const nextNode = next[currentNodeIndex + 1];
-                            // If next node has subnodes, select first subnode, otherwise select the main node
-                            if (nextNode.subNodes && nextNode.subNodes.length > 0) {
-                                nextSelection = {
-                                    ...nextNode,
-                                    isSubNode: true,
-                                    selectedSubNode: nextNode.subNodes[0],
-                                    selectedSubNodeIndex: 0
-                                };
-                            } else {
-                                nextSelection = nextNode;
-                            }
-                        }
-                    }
-                }
 
                 // optimistic save
                 saveProgress(next);
                 return next;
             });
 
-            // Update selectedStep with the next selection
-            if (nextSelection) {
-                setSelectedStep(nextSelection);
-            } else {
-                // If no next selection, just update the current selectedStep to show completion
+            // Update selectedStep if it's the current one
+            if (selectedStep?.id === nodeId) {
                 setSelectedStep((prev) => {
-                    if (!prev || !prev.isSubNode || prev.id !== nodeId) return prev;
-                    const updatedSubNodes = prev.subNodes.map((sub) =>
-                        sub.id === subnodeId ? { ...sub, completed: true } : sub
+                    if (!prev || prev.id !== nodeId) return prev;
+                    const updatedItems = prev.actionItems.map((item) =>
+                        item.id === actionItemId ? { ...item, completed: !item.completed } : item
                     );
-                    const updatedSelectedSubNode = updatedSubNodes.find(s => s.id === subnodeId);
-                    const allSubsComplete = updatedSubNodes.every((s) => s.completed);
-                    return {
-                        ...prev,
-                        subNodes: updatedSubNodes,
-                        selectedSubNode: updatedSelectedSubNode,
-                        completed: allSubsComplete && prev.completed ? true : prev.completed,
-                    };
+                    return { ...prev, actionItems: updatedItems };
                 });
             }
         },
-        [saveProgress]
+        [saveProgress, selectedStep]
     );
 
     // Check if a node is locked (needs all previous nodes + their subnodes completed)
@@ -257,10 +217,10 @@ export default function Roadmap({ steps = [] }) {
             // Main node must be completed
             if (!prevNode.completed) return true;
 
-            // All subnodes must be completed
-            if (prevNode.subNodes && prevNode.subNodes.length > 0) {
-                const allSubsComplete = prevNode.subNodes.every((s) => s.completed);
-                if (!allSubsComplete) return true;
+            // All action items must be completed
+            if (prevNode.actionItems && prevNode.actionItems.length > 0) {
+                const allItemsComplete = prevNode.actionItems.every((s) => s.completed);
+                if (!allItemsComplete) return true;
             }
         }
 
@@ -331,7 +291,7 @@ export default function Roadmap({ steps = [] }) {
     };
 
     // Track window width for responsive SVG sizing
-    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
 
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
@@ -339,9 +299,35 @@ export default function Roadmap({ steps = [] }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Update node positions when window resizes (and thus NODE_SPACING changes)
+    useEffect(() => {
+        setNodes(prevNodes => {
+            return prevNodes.map((node, i) => ({
+                ...node,
+                x: 60 + i * NODE_SPACING,
+                // y: 140 + Math.sin(i * 0.4) * 40 // Y stays same relative to sine wave
+            }));
+        });
+    }, [NODE_SPACING]);
+
+    // Auto-scroll to selected step
+    useEffect(() => {
+        if (selectedStep && containerRef.current) {
+            const container = containerRef.current;
+            const nodeX = selectedStep.x;
+            const containerWidth = container.clientWidth;
+            const scrollLeft = nodeX - containerWidth / 2;
+
+            container.scrollTo({
+                left: Math.max(0, scrollLeft),
+                behavior: 'smooth'
+            });
+        }
+    }, [selectedStep]);
+
     // compute svg dimensions based on nodes
     const svgWidth = Math.max((nodes.length - 1) * NODE_SPACING + 200, windowWidth);
-    const svgHeight = 130;
+    const svgHeight = 300;
 
     // small helper to compute estimated days for the node based on dailyHours
     const estimateDays = (node) => {
@@ -418,89 +404,8 @@ export default function Roadmap({ steps = [] }) {
         return lines;
     };
 
-    // Render subnodes as vertical chain below parent node
-    const renderSubNodes = (node) => {
-        if (!node.subNodes || node.subNodes.length === 0) return null;
+    // Render subnodes function removed
 
-        const elements = [];
-        const VERTICAL_SPACING = 55;
-        const startY = node.y + 50; // Start below parent node
-
-        node.subNodes.forEach((subnode, i) => {
-            const sy = startY + (i * VERTICAL_SPACING);
-            const sx = node.x;
-
-            // Connector line from parent (or previous subnode) to current subnode
-            const fromY = i === 0 ? node.y : (startY + ((i - 1) * VERTICAL_SPACING));
-            const completed = subnode.completed;
-
-            elements.push(
-                <line
-                    key={`sub-line-${node.id}-${i}`}
-                    x1={sx}
-                    y1={fromY}
-                    x2={sx}
-                    y2={sy}
-                    stroke={completed ? "#4ade80" : "rgba(168, 85, 247, 0.3)"}
-                    strokeWidth={completed ? 3 : 2}
-                    style={{ pointerEvents: 'none' }}
-                />
-            );
-
-            // Subnode circle
-            elements.push(
-                <circle
-                    key={`sub-${subnode.id}`}
-                    cx={sx}
-                    cy={sy}
-                    r={SUBNODE_RADIUS}
-                    fill={completed ? "#16a34a" : "rgba(168, 85, 247, 0.6)"}
-                    stroke={completed ? "#4ade80" : "#a855f7"}
-                    strokeWidth={1.5}
-                    style={{
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer'
-                    }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // Select the subnode to show its details
-                        setSelectedStep({
-                            ...node,
-                            isSubNode: true,
-                            selectedSubNode: subnode,
-                            selectedSubNodeIndex: i
-                        });
-                    }}
-                    onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        // Double-click to mark complete
-                        if (!completed) {
-                            completeSubNode(node.id, subnode.id);
-                        }
-                    }}
-                >
-                    <title>{subnode.title}</title>
-                </circle>
-            );
-
-            // Subnode label
-            elements.push(
-                <text
-                    key={`sub-label-${subnode.id}`}
-                    x={sx + SUBNODE_RADIUS + 8}
-                    y={sy + 4}
-                    fill={completed ? "#4ade80" : "#c4b5fd"}
-                    fontSize="11"
-                    fontWeight="500"
-                    style={{ pointerEvents: 'none', userSelect: 'none' }}
-                >
-                    {subnode.title.length > 30 ? subnode.title.slice(0, 30) + "…" : subnode.title}
-                </text>
-            );
-        });
-
-        return elements;
-    };
 
     // update a note locally and optionally autosave
     const updateNote = (stepId, note, autosave = false) => {
@@ -580,8 +485,7 @@ export default function Roadmap({ steps = [] }) {
                                 const isLocked = isNodeLocked(i, nodes);
                                 return (
                                     <g key={node.id}>
-                                        {/* Subnodes - render first so they appear behind main node */}
-                                        {renderSubNodes(node)}
+                                        {/* Subnodes removed from graph */}
 
                                         <g
                                             onMouseDown={(e) => handleMouseDown(e, node, i)}
@@ -712,40 +616,49 @@ export default function Roadmap({ steps = [] }) {
                     </div>
 
                     <div style={{ color: "#e2e8f0", fontSize: "1rem", lineHeight: 1.7, marginBottom: 24 }}>
-                        {selectedStep.isSubNode ? (
-                            // Show subnode steps
-                            selectedStep.selectedSubNode.steps && selectedStep.selectedSubNode.steps.length > 0 ? (
-                                <ul style={{ margin: 0, paddingLeft: 20, color: "#cbd5e1" }}>
-                                    {selectedStep.selectedSubNode.steps.map((s, j) => (
-                                        <li key={j} style={{ marginBottom: 8 }}>{s}</li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p>{selectedStep.selectedSubNode.title}</p>
-                            )
-                        ) : (
-                            selectedStep.detailedDescription || selectedStep.description
-                        )}
+                        {selectedStep.detailedDescription || selectedStep.description}
                     </div>
 
-                    {/* Sub Nodes */}
-                    {selectedStep.subNodes && selectedStep.subNodes.length > 0 && (
+                    {/* Action Items Checklist */}
+                    {selectedStep.actionItems && selectedStep.actionItems.length > 0 && (
                         <div style={{ marginBottom: 24 }}>
                             <h4 style={{ color: "#4ade80", margin: "0 0 16px 0", fontSize: "1rem" }}>📝 Action Plan:</h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {selectedStep.subNodes.map((node, i) => (
-                                    <div key={i} style={{
-                                        background: 'rgba(255,255,255,0.03)',
-                                        padding: '12px',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(255,255,255,0.05)'
-                                    }}>
-                                        <h5 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '0.95rem' }}>{i + 1}. {node.title}</h5>
-                                        <ul style={{ margin: 0, paddingLeft: 20, color: "#cbd5e1", fontSize: "0.9rem" }}>
-                                            {node.steps && node.steps.map((s, j) => (
-                                                <li key={j} style={{ marginBottom: 4 }}>{s}</li>
-                                            ))}
-                                        </ul>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {selectedStep.actionItems.map((item, i) => (
+                                    <div key={i}
+                                        onClick={() => completeActionItem(selectedStep.id, item.id)}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.03)',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(255,255,255,0.05)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '4px',
+                                            border: item.completed ? 'none' : '2px solid rgba(255,255,255,0.3)',
+                                            background: item.completed ? '#4ade80' : 'transparent',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            {item.completed && <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold' }}>✓</span>}
+                                        </div>
+                                        <h5 style={{
+                                            margin: 0,
+                                            color: item.completed ? '#4ade80' : '#e2e8f0',
+                                            fontSize: '0.95rem',
+                                            textDecoration: item.completed ? 'line-through' : 'none'
+                                        }}>
+                                            {item.title}
+                                        </h5>
                                     </div>
                                 ))}
                             </div>
@@ -815,55 +728,12 @@ export default function Roadmap({ steps = [] }) {
                     )}
 
                     {(() => {
-                        // Handle subnode completion
-                        if (selectedStep.isSubNode) {
-                            const subnode = selectedStep.selectedSubNode;
-                            const isCompleted = subnode.completed;
-
-                            return (
-                                <>
-                                    {!isCompleted ? (
-                                        <button
-                                            onClick={() => {
-                                                completeSubNode(selectedStep.id, subnode.id);
-                                            }}
-                                            style={{
-                                                padding: "14px 20px",
-                                                background: "#22c55e",
-                                                color: "#fff",
-                                                border: "none",
-                                                borderRadius: 10,
-                                                cursor: "pointer",
-                                                fontWeight: 700,
-                                                fontSize: "1rem",
-                                                width: "100%",
-                                                boxShadow: "0 4px 15px rgba(34, 197, 94, 0.3)",
-                                                transition: "all 0.2s"
-                                            }}
-                                        >
-                                            ✅ Mark Sub-task Complete
-                                        </button>
-                                    ) : (
-                                        <div style={{
-                                            color: "#4ade80",
-                                            fontWeight: 700,
-                                            fontSize: "1.1rem",
-                                            textAlign: "center",
-                                            padding: "14px",
-                                            background: "rgba(34, 197, 94, 0.1)",
-                                            borderRadius: "10px",
-                                            border: "1px solid rgba(34, 197, 94, 0.2)"
-                                        }}>
-                                            🎉 Sub-task Completed!
-                                        </div>
-                                    )}
-                                </>
-                            );
-                        }
-
                         // Handle main node completion
                         const idx = nodes.findIndex((n) => n.id === selectedStep.id);
                         const isLocked = isNodeLocked(idx, nodes);
+
+                        // Check if all action items are completed
+                        const hasIncompleteItems = selectedStep.actionItems && selectedStep.actionItems.some(item => !item.completed);
 
                         return (
                             <>
@@ -871,30 +741,35 @@ export default function Roadmap({ steps = [] }) {
                                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                                         <button
                                             onClick={() => {
-                                                if (!isLocked) completeStep(selectedStep.id);
+                                                if (!isLocked && !hasIncompleteItems) completeStep(selectedStep.id);
                                             }}
-                                            disabled={isLocked}
+                                            disabled={isLocked || hasIncompleteItems}
                                             style={{
                                                 padding: "14px 20px",
-                                                background: isLocked ? "#334155" : "#22c55e",
-                                                color: "#fff",
+                                                background: (isLocked || hasIncompleteItems) ? "#334155" : "#22c55e",
+                                                color: (isLocked || hasIncompleteItems) ? "rgba(255,255,255,0.5)" : "#fff",
                                                 border: "none",
                                                 borderRadius: 10,
-                                                cursor: isLocked ? "not-allowed" : "pointer",
+                                                cursor: (isLocked || hasIncompleteItems) ? "not-allowed" : "pointer",
                                                 fontWeight: 700,
                                                 fontSize: "1rem",
                                                 width: "100%",
-                                                boxShadow: isLocked
+                                                boxShadow: (isLocked || hasIncompleteItems)
                                                     ? "none"
                                                     : "0 4px 15px rgba(34, 197, 94, 0.3)",
                                                 transition: "all 0.2s"
                                             }}
                                         >
-                                            {isLocked ? "🔒 Locked" : "✅ Mark Step Complete"}
+                                            {isLocked
+                                                ? "🔒 Locked"
+                                                : hasIncompleteItems
+                                                    ? "Complete Action Plan First"
+                                                    : "✅ Mark Step Complete"
+                                            }
                                         </button>
                                         {isLocked && (
                                             <div style={{ color: "#94a3b8", fontSize: 13, textAlign: "center" }}>
-                                                Complete previous steps and their sub-tasks to unlock
+                                                Complete previous steps and their action items to unlock
                                             </div>
                                         )}
                                     </div>

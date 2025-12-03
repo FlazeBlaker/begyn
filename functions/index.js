@@ -7,6 +7,23 @@ const { FieldValue } = require("firebase-admin/firestore");
 admin.initializeApp();
 const db = admin.firestore();
 
+const rateLimit = require("express-rate-limit");
+// --- SECURITY: Input Validation Helper ---
+function validateInput(text, fieldName = 'input', maxLength = 5000) {
+    if (!text) throw new Error(`${fieldName} is required`);
+    if (typeof text !== 'string') throw new Error(`${fieldName} must be a string`);
+    if (text.length > maxLength) throw new Error(`${fieldName} exceeds maximum length of ${maxLength} characters`);
+    return text.replace(/<[^>]*>/g, '').trim(); // Remove HTML tags
+}
+// --- SECURITY: Rate Limiter (100 requests per 15 minutes) ---
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // --- GEMINI SETUP ---
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const sharp = require("sharp");
@@ -234,11 +251,41 @@ exports.generateContent = onRequest(
             const { type, payload } = body || {};
 
             // Extract variables from payload
-            const { topic, image, options, videoLength } = payload || {};
+            const { topic, image, options: rawOptions, videoLength } = payload || {};
+
+            // Fix: Frontend sends options at payload root, not nested.
+            // We construct 'options' from payload root if 'rawOptions' is missing.
+            const options = rawOptions || {
+                numOutputs: payload?.numOutputs,
+                numIdeas: payload?.numIdeas,
+                length: payload?.length,
+                language: payload?.language,
+                includeHashtags: payload?.includeHashtags,
+                includeEmojis: payload?.includeEmojis,
+                outputSize: payload?.outputSize,
+                videoLength: payload?.videoLength || videoLength,
+                numVariations: payload?.numVariations
+            };
 
             console.log("DEBUG: topic =", topic);
             console.log("DEBUG: image present =", !!image);
             console.log("DEBUG: payload keys =", Object.keys(payload || {}));
+
+            // --- SECURITY: Validate and sanitize user inputs ---
+            if (topic) {
+                try {
+                    payload.topic = validateInput(topic, 'topic', 2000);
+                } catch (error) {
+                    return res.status(400).json({ error: error.message });
+                }
+            }
+            if (payload?.prompt) {
+                try {
+                    payload.prompt = validateInput(payload.prompt, 'prompt', 3000);
+                } catch (error) {
+                    return res.status(400).json({ error: error.message });
+                }
+            }
 
             // --- 1. CREDIT CALCULATION & DEDUCTION ---
             let requiredCredits = 0;
@@ -362,23 +409,30 @@ exports.generateContent = onRequest(
 
             const prompts = {
                 caption: `
-          You are an expert social media strategist. Generate 3 unique, high-energy Instagram captions.
+          You are an expert social media strategist. Generate ${options?.numOutputs || 3} unique, high-energy Instagram captions.
           **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}
           **Post Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
           **Advanced Instructions:** ${captionAdvancedInstruction}
+          - Length: ${options?.length || "Medium"}
+          - Language: ${options?.language || "English"}
+          ${options?.includeHashtags ? "- Include 5-7 relevant hashtags." : "- DO NOT include hashtags."}
+          ${options?.includeEmojis ? "- Use emojis to make it engaging." : "- DO NOT use emojis."}
+          
           **Format Instructions:**
           - DO NOT include any introductory text.
           - You MUST return ONLY a valid JSON array matching this exact structure: ${jsonOutputFormat}
         `,
                 idea: `
-          You are an expert social media strategist. Give ${options?.numIdeas || 10} unique, "viral-style" content ideas.
+          You are an expert social media strategist. Give ${options?.numOutputs || options?.numIdeas || 10} unique, "viral-style" content ideas.
           **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}
           **Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
           **Advanced Instructions:** ${ideaAdvancedInstruction}
+          - Language: ${options?.language || "English"}
+          
           **Instructions:**
           - Format each idea EXACTLY as follows:
             Video Title: [Catchy Title]
@@ -398,17 +452,21 @@ exports.generateContent = onRequest(
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
           **Advanced Instructions:**
-          - Approx 100-150 words. Strong hook, valuable content, clear CTA.
-          - Include 5-7 relevant hashtags.
+          - Length: ${options?.length || "Medium"} (Approx ${options?.length === 'Short' ? '50-100' : options?.length === 'Long' ? '200-300' : '100-150'} words).
+          - Language: ${options?.language || "English"}
+          - Strong hook, valuable content, clear CTA.
+          ${options?.includeHashtags ? "- Include 5-7 relevant hashtags." : "- DO NOT include hashtags."}
+          ${options?.includeEmojis ? "- Use emojis." : "- DO NOT use emojis."}
           - DO NOT include any introductory text.
         `,
                 videoScript: `
           You are a professional YouTube and TikTok scriptwriter. Write a script for a video.
-          **Target Length:** ${videoLength} (${videoLength === 'Short' ? '30s-1min' : videoLength === 'Medium' ? '2-5min' : '10-15min'})
+          **Target Length:** ${options?.videoLength || videoLength || 'Medium'} (${(options?.videoLength || videoLength) === 'Short' ? '30s-1min' : (options?.videoLength || videoLength) === 'Long' ? '10-15min' : '2-5min'})
           **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}
           **Video Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
+          - Language: ${options?.language || "English"}
           
           **IMPORTANT: Return ONLY a valid JSON object with this exact structure:**
           {
@@ -431,11 +489,15 @@ exports.generateContent = onRequest(
           - NO markdown formatting outside the JSON.
         `,
                 tweet: `
-          You are a witty and viral-style Twitter/X copywriter. Generate 3 short, punchy tweets.
+          You are a witty and viral-style Twitter/X copywriter. Generate ${options?.numOutputs || 3} short, punchy tweets.
           **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.tone || 'Professional'}
           **Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
+          - Language: ${options?.language || "English"}
+          ${options?.includeHashtags ? "- Include 1-2 hashtags." : "- DO NOT include hashtags."}
+          ${options?.includeEmojis ? "- Use emojis." : "- DO NOT use emojis."}
+          - Max Length: ${options?.outputSize || 280} characters per tweet.
           
           **IMPORTANT: Return ONLY a valid JSON object with this exact structure:**
           {
@@ -447,8 +509,6 @@ exports.generateContent = onRequest(
           }
 
           **Instructions:**
-          - Under 280 characters.
-          - 1-2 hashtags max.
           - DO NOT include any introductory text.
           - Return ONLY the JSON object.
         `,
@@ -780,7 +840,7 @@ Post Topic: "${topic}"
 
             try {
                 const model = genAI.getGenerativeModel({
-                    model: "gemini-3-pro-preview",
+                    model: "gemini-2.5-pro",
                     systemInstruction: "You are an expert social media strategist who ONLY responds in the requested format."
                 });
 

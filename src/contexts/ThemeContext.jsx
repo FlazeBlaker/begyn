@@ -21,8 +21,16 @@ export const ThemeProvider = ({ children }) => {
         // Apply default dark theme immediately
         applyTheme(true);
 
+        let unsubscribeSnapshot = null;
+
         // Listen to auth state changes
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            // Clean up previous listener if it exists
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+                unsubscribeSnapshot = null;
+            }
+
             if (!user) {
                 // Default to dark mode if not logged in
                 applyTheme(true);
@@ -32,27 +40,29 @@ export const ThemeProvider = ({ children }) => {
 
             // Listen to user preferences in Firestore
             const userRef = doc(db, 'users', user.uid);
-            const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
+            unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const darkMode = data.darkMode ?? true;
                     setIsDarkMode(darkMode);
                     applyTheme(darkMode);
-                    console.log('Theme applied:', darkMode ? 'dark' : 'light');
                 }
             }, (error) => {
-                console.error("Theme snapshot error:", error);
                 // Ignore permission errors during logout
                 if (error.code === 'permission-denied') {
                     console.warn("Theme context permission denied (likely logout). Ignoring.");
+                } else {
+                    console.error("Theme snapshot error:", error);
                 }
             });
-
-            // Return cleanup for snapshot listener
-            return () => unsubscribeSnapshot();
         });
 
-        return () => unsubscribeAuth();
+        return () => {
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+            }
+            unsubscribeAuth();
+        };
     }, []);
 
     const applyTheme = (darkMode) => {

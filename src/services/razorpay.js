@@ -11,24 +11,24 @@ export const CREDIT_PACKAGES = [
         id: 'starter',
         name: 'Starter Pack',
         credits: 10,
-        price: 99,
+        price: 49,
         currency: 'INR',
         popular: false
     },
     {
         id: 'ultimate',
-        name: 'Ultimate Pack',
+        name: 'Ultimate Creator',
         credits: 60,
-        price: 399,
+        price: 199,
         currency: 'INR',
         popular: true,
         savings: '33%'
     },
     {
         id: 'enterprise',
-        name: 'Enterprise Pack',
+        name: 'Agency Scale',
         credits: 500,
-        price: 1999,
+        price: 999,
         currency: 'INR',
         popular: false,
         savings: '60%'
@@ -105,7 +105,7 @@ export const openRazorpayCheckout = async (packageInfo, onSuccess, onFailure) =>
                 order_id: orderId, // Secure Order ID from backend
                 handler: async function (response) {
                     try {
-                        console.log('Payment successful, verifying...', response);
+                        // console.log('Payment successful, verifying...', response);
 
                         // 3. Call Backend to Verify Payment & Add Credits
                         const verifyPaymentFn = httpsCallable(functions, 'verifyRazorpayPayment');

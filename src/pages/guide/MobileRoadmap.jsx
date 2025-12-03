@@ -2,8 +2,31 @@ import React, { useState } from 'react';
 import { auth, db, doc, updateDoc } from '../../services/firebase';
 import AdUnit from '../../components/AdUnit';
 
-const MobileRoadmap = ({ steps, onStepComplete }) => {
+const MobileRoadmap = ({ steps, onStepComplete, onActionItemComplete }) => {
     const [expandedStep, setExpandedStep] = useState(null);
+
+    const toggleActionItem = (stepId, index) => {
+        if (onActionItemComplete) {
+            onActionItemComplete(stepId, index);
+        }
+
+        // Auto-scroll to next item
+        const step = steps.find(s => s.id === stepId);
+        if (step && step.actionItems) {
+            const currentItem = step.actionItems[index];
+            // If we are marking as done (currently not completed)
+            if (!currentItem.completed) {
+                // Find next incomplete after this one
+                const nextIndex = step.actionItems.findIndex((item, idx) => idx > index && !item.completed);
+                if (nextIndex !== -1) {
+                    setTimeout(() => {
+                        const el = document.getElementById(`action-item-${stepId}-${nextIndex}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                }
+            }
+        }
+    };
 
     const handleMarkDone = async (stepId) => {
         // Call parent callback to update state
@@ -90,26 +113,50 @@ const MobileRoadmap = ({ steps, onStepComplete }) => {
                                             <span>{step.category || 'General'}</span>
                                         </div>
 
-                                        {/* Sub Nodes */}
-                                        {step.subNodes && step.subNodes.length > 0 && (
+                                        {/* Action Items */}
+                                        {step.actionItems && step.actionItems.length > 0 && (
                                             <div style={{ marginTop: 16 }}>
                                                 <h4 style={{ color: "#4ade80", margin: "0 0 12px 0", fontSize: "0.9rem" }}>📝 Action Plan:</h4>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                    {step.subNodes.map((node, i) => (
-                                                        <div key={i} style={{
-                                                            background: 'rgba(255,255,255,0.03)',
-                                                            padding: '10px',
-                                                            borderRadius: '8px',
-                                                            border: '1px solid rgba(255,255,255,0.05)'
-                                                        }}>
-                                                            <h5 style={{ margin: '0 0 6px 0', color: '#e2e8f0', fontSize: '0.9rem' }}>{i + 1}. {node.title}</h5>
-                                                            <ul style={{ margin: 0, paddingLeft: 20, color: "#cbd5e1", fontSize: "0.85rem" }}>
-                                                                {node.steps && node.steps.map((s, j) => (
-                                                                    <li key={j} style={{ marginBottom: 4 }}>{s}</li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    ))}
+                                                    {step.actionItems.map((item, i) => {
+                                                        const isDone = item.completed || false;
+                                                        const title = item.title || item; // Handle object or string
+                                                        return (
+                                                            <div key={i} id={`action-item-${step.id}-${i}`} style={{
+                                                                background: 'rgba(255,255,255,0.03)',
+                                                                padding: '12px',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid rgba(255,255,255,0.05)'
+                                                            }}>
+                                                                <div
+                                                                    onClick={() => toggleActionItem(step.id, i)}
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '10px',
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    <div style={{
+                                                                        minWidth: '20px',
+                                                                        height: '20px',
+                                                                        borderRadius: '4px',
+                                                                        border: isDone ? 'none' : '2px solid rgba(255,255,255,0.3)',
+                                                                        background: isDone ? '#4ade80' : 'transparent',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        transition: 'all 0.2s'
+                                                                    }}>
+                                                                        {isDone && <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold' }}>✓</span>}
+                                                                    </div>
+                                                                    <h5 style={{ margin: 0, color: isDone ? '#4ade80' : '#e2e8f0', fontSize: '0.9rem', textDecoration: isDone ? 'line-through' : 'none' }}>
+                                                                        {i + 1}. {title}
+                                                                    </h5>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         )}
@@ -181,22 +228,31 @@ const MobileRoadmap = ({ steps, onStepComplete }) => {
                                             <button
                                                 className="mark-done-btn"
                                                 onClick={() => handleMarkDone(step.id)}
+                                                disabled={step.subNodes && step.subNodes.some(sub => !sub.completed)}
                                                 style={{
                                                     marginTop: '16px',
                                                     width: '100%',
                                                     padding: '12px 20px',
-                                                    background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
-                                                    color: '#fff',
+                                                    background: (step.subNodes && step.subNodes.some(sub => !sub.completed))
+                                                        ? 'rgba(255,255,255,0.1)'
+                                                        : 'linear-gradient(135deg, #8b5cf6, #a855f7)',
+                                                    color: (step.subNodes && step.subNodes.some(sub => !sub.completed))
+                                                        ? 'rgba(255,255,255,0.3)'
+                                                        : '#fff',
                                                     border: 'none',
                                                     borderRadius: '8px',
                                                     fontSize: '1rem',
                                                     fontWeight: '700',
-                                                    cursor: 'pointer',
-                                                    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                                                    cursor: (step.subNodes && step.subNodes.some(sub => !sub.completed)) ? 'not-allowed' : 'pointer',
+                                                    boxShadow: (step.subNodes && step.subNodes.some(sub => !sub.completed))
+                                                        ? 'none'
+                                                        : '0 4px 12px rgba(139, 92, 246, 0.3)',
                                                     transition: 'all 0.2s'
                                                 }}
                                             >
-                                                ✅ Mark Done
+                                                {(step.subNodes && step.subNodes.some(sub => !sub.completed))
+                                                    ? 'Complete Action Plan First'
+                                                    : '✅ Mark Done'}
                                             </button>
                                         )}
 

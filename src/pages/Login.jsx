@@ -25,10 +25,8 @@ export default function Login() {
     const handleGoogleLogin = async () => {
         setLoading(true);
         setError(null);
-        console.log("Starting Google Login flow...");
         try {
             const result = await signInWithPopup(auth, new GoogleAuthProvider());
-            console.log("Google Login success:", result.user.uid);
             const userRef = doc(db, "brands", result.user.uid);
             const snap = await getDoc(userRef);
             const onboarded = snap.exists() && snap.data()?.onboarded;
@@ -116,10 +114,7 @@ export default function Login() {
                     )}
 
                     <button
-                        onClick={() => {
-                            console.log("Google Login Clicked");
-                            handleGoogleLogin();
-                        }}
+                        onClick={handleGoogleLogin}
                         disabled={loading}
                         className="cyber-button"
                         style={{

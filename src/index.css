@@ -1,4 +1,5 @@
 /* src/index.css */
+@import './styles/Marquee.css';
 
 /* --- CSS VARIABLES FOR THEMING --- */
 :root[data-theme="dark"] {
@@ -803,6 +804,22 @@ select:focus {
     max-width: 1400px;
 }
 
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+.mobile-only {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: block;
+    }
+}
+
 .grid {
     display: grid;
     gap: var(--spacing-md);
@@ -814,4 +831,35 @@ select:focus {
 
 .hidden {
     display: none;
+}
+
+/* Deep Dive Section */
+.deep-dive-wrapper {
+    display: flex;
+    gap: 60px;
+    position: relative;
+}
+
+.deep-dive-section {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-right: 40px;
+    transition: opacity 0.5s ease;
+}
+
+@media (max-width: 768px) {
+    .deep-dive-wrapper {
+        flex-direction: column;
+        gap: 40px;
+    }
+
+    .deep-dive-section {
+        min-height: auto;
+        padding-right: 0;
+        margin-bottom: 60px;
+        opacity: 1 !important;
+        /* Always visible on mobile */
+    }
 }

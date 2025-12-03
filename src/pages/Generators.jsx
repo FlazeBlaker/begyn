@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import GeneratorLayout, {
     StyledSlider,
@@ -149,7 +149,9 @@ const Generators = () => {
         aspectRatio: "1:1",
         includeBody: false, // New: Toggle for text generation in Post
         videoLength: "Medium", // New: Video script duration (Short/Medium/Long)
-        useBrandData: true // New: Toggle to use brand data or defaults
+        useBrandData: true, // New: Toggle to use brand data or defaults
+        outputSize: 40, // New: Character limit for Tweet/Caption
+        numOutputs: 3 // New: Number of outputs (Tweets/Captions/Ideas)
     });
 
     // Modal State
@@ -172,8 +174,6 @@ const Generators = () => {
         if (platformFromUrl) {
             setAdvancedOptions(prev => ({ ...prev, platform: platformFromUrl }));
         }
-
-
     }, [searchParams]);
 
     // Fetch Brand Data
@@ -200,6 +200,15 @@ const Generators = () => {
             setAdvancedOptions(prev => ({ ...prev, platform: "twitter" }));
         }
     }, [currentType, initialPlatform]);
+
+    // Auto-set defaults when type changes
+    useEffect(() => {
+        if (currentType === "idea") {
+            setAdvancedOptions(prev => ({ ...prev, numOutputs: 5 }));
+        } else if (currentType === "tweet" || currentType === "caption") {
+            setAdvancedOptions(prev => ({ ...prev, numOutputs: 3, outputSize: 40 }));
+        }
+    }, [currentType]);
 
     // Handle Generation
     const handleGenerate = async () => {
@@ -274,7 +283,8 @@ const Generators = () => {
                         includeHashtags: advancedOptions.includeHashtags,
                         includeEmojis: advancedOptions.includeEmojis,
                         videoLength: advancedOptions.videoLength, // For video scripts
-
+                        outputSize: advancedOptions.outputSize, // New: Char limit
+                        numOutputs: advancedOptions.numOutputs // New: Quantity
                     }
                 });
                 if (textResult.error && currentType !== "post") throw new Error(textResult.error); // Only throw if it's the main action
@@ -615,9 +625,47 @@ const Generators = () => {
                                 let parsed = content.text;
                                 if (typeof content.text === 'string') {
                                     try {
-                                        parsed = JSON.parse(content.text);
+                                        // Attempt to strip markdown code blocks if present
+                                        const cleanText = content.text.replace(/```json\n?|\n?```/g, "").trim();
+                                        parsed = JSON.parse(cleanText);
                                     } catch (e) {
-                                        // Not JSON, keep as string
+                                        // JSON Parse Failed. Try Heuristic Parsing for "Idea" lists.
+                                        // The user reported output like: "Video Title: ... \n Length: ... \n Idea: ... \n Explanation: ..."
+                                        if (currentType === 'idea') {
+                                            const ideas = [];
+                                            const blocks = content.text.split(/Video Title:/i).filter(b => b.trim());
+
+                                            if (blocks.length > 0) {
+                                                blocks.forEach(block => {
+                                                    const titleMatch = block.match(/^(.*?)(?:\n|$)/);
+                                                    const lengthMatch = block.match(/Length:\s*(.*?)(?:\n|$)/i);
+                                                    const ideaMatch = block.match(/Idea:\s*(.*?)(?:\n|$)/i);
+
+                                                    // Extract explanation (bullet points)
+                                                    const explanationMatch = block.match(/Explanation:\s*([\s\S]*?)(?=$|Video Title:)/i);
+                                                    let explanation = [];
+                                                    if (explanationMatch) {
+                                                        explanation = explanationMatch[1]
+                                                            .split('\n')
+                                                            .map(line => line.trim().replace(/^-\s*/, ''))
+                                                            .filter(line => line.length > 0);
+                                                    }
+
+                                                    if (titleMatch) {
+                                                        ideas.push({
+                                                            title: titleMatch[1].trim(),
+                                                            length: lengthMatch ? lengthMatch[1].trim() : "Unknown",
+                                                            idea: ideaMatch ? ideaMatch[1].trim() : "No summary provided",
+                                                            explanation: explanation.length > 0 ? explanation : ["No explanation provided"]
+                                                        });
+                                                    }
+                                                });
+
+                                                if (ideas.length > 0) {
+                                                    parsed = ideas;
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
@@ -628,8 +676,15 @@ const Generators = () => {
 
                                 // 2. Handle Tweets (JSON with array)
                                 if (parsed.tweets && Array.isArray(parsed.tweets)) {
+                                    const isSingle = parsed.tweets.length === 1;
                                     return (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                        <div style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "16px",
+                                            maxWidth: isSingle ? "800px" : "100%", // Constrain width for single items
+                                            margin: isSingle ? "0 auto" : undefined // Center single items
+                                        }}>
                                             {parsed.tweets.map((tweet, idx) => (
                                                 <div key={idx} style={{
                                                     background: "rgba(30, 32, 45, 0.6)",
@@ -703,57 +758,139 @@ const Generators = () => {
 
                                 // 3. Handle Arrays (Captions, Ideas, etc.)
                                 if (Array.isArray(parsed)) {
+                                    const isSingle = parsed.length === 1;
                                     return (
-                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
-                                            {parsed.map((item, idx) => (
-                                                <div key={idx} style={{
-                                                    background: "rgba(255, 255, 255, 0.03)",
-                                                    border: "1px solid rgba(255, 255, 255, 0.05)",
-                                                    borderRadius: "16px",
-                                                    padding: "24px",
-                                                    position: "relative",
-                                                    transition: "transform 0.2s, border-color 0.2s",
-                                                    cursor: "default"
-                                                }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.transform = "translateY(-2px)";
-                                                        e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.3)";
+                                        <div style={{
+                                            display: isSingle ? "flex" : "grid",
+                                            flexDirection: isSingle ? "column" : undefined,
+                                            gridTemplateColumns: isSingle ? undefined : "repeat(auto-fit, minmax(300px, 1fr))",
+                                            gap: "20px",
+                                            maxWidth: isSingle ? "800px" : "100%", // Constrain width for single items
+                                            margin: isSingle ? "0 auto" : undefined // Center single items
+                                        }}>
+                                            {parsed.map((item, idx) => {
+                                                // Check if it's an Idea Object
+                                                const isIdea = item.title && item.idea && item.explanation;
+
+                                                return (
+                                                    <div key={idx} style={{
+                                                        background: isIdea ? "linear-gradient(145deg, rgba(30, 32, 45, 0.8), rgba(20, 22, 35, 0.9))" : "rgba(255, 255, 255, 0.03)",
+                                                        border: isIdea ? "1px solid rgba(168, 85, 247, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)",
+                                                        borderRadius: "20px",
+                                                        padding: "24px",
+                                                        position: "relative",
+                                                        transition: "transform 0.2s, border-color 0.2s, box-shadow 0.2s",
+                                                        cursor: "default",
+                                                        boxShadow: isIdea ? "0 4px 20px rgba(0,0,0,0.2)" : "none"
                                                     }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.transform = "translateY(0)";
-                                                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)";
-                                                    }}
-                                                >
-                                                    <div style={{
-                                                        whiteSpace: "pre-wrap",
-                                                        lineHeight: "1.6",
-                                                        color: "#e0e0e0",
-                                                        fontSize: "1rem"
-                                                    }}>
-                                                        {formatText(typeof item === 'string' ? item : item.caption || JSON.stringify(item))}
-                                                    </div>
-                                                    <button
-                                                        onClick={() => navigator.clipboard.writeText(typeof item === 'string' ? item : item.caption || JSON.stringify(item))}
-                                                        style={{
-                                                            marginTop: "16px",
-                                                            padding: "8px 16px",
-                                                            borderRadius: "8px",
-                                                            background: "rgba(255, 255, 255, 0.05)",
-                                                            border: "none",
-                                                            color: "#a855f7",
-                                                            fontSize: "0.85rem",
-                                                            fontWeight: "600",
-                                                            cursor: "pointer",
-                                                            transition: "background 0.2s",
-                                                            width: "100%"
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.transform = "translateY(-4px)";
+                                                            e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.5)";
+                                                            e.currentTarget.style.boxShadow = "0 10px 30px rgba(168, 85, 247, 0.15)";
                                                         }}
-                                                        onMouseEnter={(e) => e.target.style.background = "rgba(168, 85, 247, 0.1)"}
-                                                        onMouseLeave={(e) => e.target.style.background = "rgba(255, 255, 255, 0.05)"}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.transform = "translateY(0)";
+                                                            e.currentTarget.style.borderColor = isIdea ? "rgba(168, 85, 247, 0.2)" : "rgba(255, 255, 255, 0.05)";
+                                                            e.currentTarget.style.boxShadow = isIdea ? "0 4px 20px rgba(0,0,0,0.2)" : "none";
+                                                        }}
                                                     >
-                                                        Copy
-                                                    </button>
-                                                </div>
-                                            ))}
+                                                        {isIdea ? (
+                                                            <>
+                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", gap: "12px" }}>
+                                                                    <h3 style={{ margin: 0, color: "white", fontSize: "1.2rem", lineHeight: "1.4", fontWeight: "700", letterSpacing: "-0.02em" }}>{item.title}</h3>
+                                                                    <span style={{
+                                                                        background: "rgba(139, 92, 246, 0.15)",
+                                                                        color: "#d8b4fe",
+                                                                        padding: "6px 12px",
+                                                                        borderRadius: "12px",
+                                                                        fontSize: "0.75rem",
+                                                                        whiteSpace: "nowrap",
+                                                                        fontWeight: "700",
+                                                                        border: "1px solid rgba(139, 92, 246, 0.3)",
+                                                                        textTransform: "uppercase",
+                                                                        letterSpacing: "0.05em"
+                                                                    }}>
+                                                                        {item.length}
+                                                                    </span>
+                                                                </div>
+                                                                <div style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: "12px", marginBottom: "20px", borderLeft: "4px solid #a855f7" }}>
+                                                                    <p style={{ margin: 0, color: "#e2e8f0", fontStyle: "italic", fontSize: "1rem", lineHeight: "1.6" }}>"{item.idea}"</p>
+                                                                </div>
+                                                                <div style={{ marginBottom: "20px" }}>
+                                                                    <h4 style={{ margin: "0 0 10px 0", color: "#94a3b8", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>Why it works:</h4>
+                                                                    <ul style={{ paddingLeft: "0", listStyle: "none", color: "#cbd5e1", fontSize: "0.95rem", margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                                                                        {Array.isArray(item.explanation) ? item.explanation.map((point, i) => (
+                                                                            <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                                                                                <span style={{ color: "#a855f7", marginTop: "4px" }}>•</span>
+                                                                                <span>{point}</span>
+                                                                            </li>
+                                                                        )) : <li>{item.explanation}</li>}
+                                                                    </ul>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div style={{
+                                                                whiteSpace: "pre-wrap",
+                                                                lineHeight: "1.6",
+                                                                color: "#e0e0e0",
+                                                                fontSize: "1rem"
+                                                            }}>
+                                                                {formatText(typeof item === 'string' ? item : item.caption || JSON.stringify(item))}
+                                                            </div>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => {
+                                                                let textToCopy = "";
+                                                                if (isIdea) {
+                                                                    textToCopy = `Video Title: ${item.title}\nLength: ${item.length}\nIdea: ${item.idea}\nExplanation:\n${Array.isArray(item.explanation) ? item.explanation.map(p => `- ${p}`).join('\n') : item.explanation}`;
+                                                                } else {
+                                                                    textToCopy = typeof item === 'string' ? item : item.caption || JSON.stringify(item);
+                                                                }
+                                                                navigator.clipboard.writeText(textToCopy);
+                                                            }}
+                                                            style={{
+                                                                marginTop: "auto",
+                                                                padding: "12px 20px",
+                                                                borderRadius: "12px",
+                                                                background: isIdea ? "linear-gradient(135deg, #8b5cf6, #a855f7)" : "rgba(255, 255, 255, 0.05)",
+                                                                border: isIdea ? "none" : "none",
+                                                                color: isIdea ? "white" : "#a855f7",
+                                                                fontSize: "0.95rem",
+                                                                fontWeight: "700",
+                                                                cursor: "pointer",
+                                                                transition: "all 0.2s",
+                                                                width: "100%",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                gap: "8px",
+                                                                boxShadow: isIdea ? "0 4px 15px rgba(139, 92, 246, 0.3)" : "none"
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                if (isIdea) {
+                                                                    e.target.style.transform = "translateY(-2px)";
+                                                                    e.target.style.boxShadow = "0 6px 20px rgba(139, 92, 246, 0.4)";
+                                                                } else {
+                                                                    e.target.style.background = "rgba(168, 85, 247, 0.15)";
+                                                                    e.target.style.color = "#c084fc";
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                if (isIdea) {
+                                                                    e.target.style.transform = "translateY(0)";
+                                                                    e.target.style.boxShadow = "0 4px 15px rgba(139, 92, 246, 0.3)";
+                                                                } else {
+                                                                    e.target.style.background = "rgba(255, 255, 255, 0.05)";
+                                                                    e.target.style.color = "#a855f7";
+                                                                }
+                                                            }}
+                                                        >
+                                                            {isIdea ? "✨ Copy Idea" : "📋 Copy Content"}
+                                                        </button>
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
                                     );
                                 }
@@ -780,7 +917,7 @@ const Generators = () => {
                                                 marginTop: "20px",
                                                 padding: "12px 24px",
                                                 borderRadius: "12px",
-                                                background: "var(--primary-gradient)",
+                                                background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
                                                 border: "none",
                                                 color: "white",
                                                 fontSize: "1rem",
@@ -801,7 +938,15 @@ const Generators = () => {
         );
     };
 
-    const sliderConfig = getSliderConfig(currentType, advancedOptions.length);
+    // Helper to calculate credit cost
+    const getCreditCost = () => {
+        if (currentType === "idea") {
+            const count = advancedOptions.numOutputs || 5;
+            return count > 5 ? 2 : 1;
+        }
+        if (currentType === "post") return 2; // Image + Text
+        return 1; // Tweet, Caption, VideoScript
+    };
 
     return (
         <>
@@ -886,46 +1031,92 @@ const Generators = () => {
                                 </>
                             )}
 
-                            {/* Slider & Toggles: Show if NOT Post, OR if Post + includeBody */}
-                            {(currentType !== "post" || advancedOptions.includeBody) && (
+                            {/* Tweet & Caption: Size & Count */}
+                            {(currentType === "tweet" || currentType === "caption") && (
                                 <>
                                     <div style={{ width: "100%", maxWidth: "90%" }}>
-                                        <StyledSlider
-                                            label={sliderConfig.label}
-                                            min={1} max={3} step={1}
-                                            value={advancedOptions.length === "Short" ? 1 : advancedOptions.length === "Medium" ? 2 : 3}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                setAdvancedOptions(prev => ({ ...prev, length: val === 1 ? "Short" : val === 2 ? "Medium" : "Long" }));
-                                            }}
-                                        />
-                                        <div style={{ textAlign: "center", color: "#a855f7", fontSize: "0.9rem", fontWeight: "600", marginTop: "-10px" }}>
-                                            {sliderConfig.displayValue}
+                                        <label style={{ display: "block", color: "#a0a0b0", marginBottom: "12px", fontSize: "0.9rem", fontWeight: "600", textTransform: "uppercase" }}>
+                                            Size (Words)
+                                        </label>
+                                        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                                            {[10, 20, 40].map(size => (
+                                                <button
+                                                    key={size}
+                                                    onClick={() => setAdvancedOptions(prev => ({ ...prev, outputSize: size }))}
+                                                    style={{
+                                                        padding: "10px 20px",
+                                                        borderRadius: "10px",
+                                                        background: advancedOptions.outputSize === size ? "linear-gradient(135deg, #8b5cf6, #ec4899)" : "rgba(255,255,255,0.05)",
+                                                        border: advancedOptions.outputSize === size ? "none" : "1px solid rgba(255,255,255,0.1)",
+                                                        color: "white",
+                                                        fontWeight: "600",
+                                                        cursor: "pointer",
+                                                        flex: 1
+                                                    }}
+                                                >
+                                                    {size}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
-                                    <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", justifyContent: "center" }}>
-                                        <ToggleSwitch
-                                            label="🎯 Use Brand Data"
-                                            checked={advancedOptions.useBrandData}
-                                            onChange={(val) => setAdvancedOptions(prev => ({ ...prev, useBrandData: val }))}
+
+                                    <div style={{ width: "100%", maxWidth: "90%", marginTop: "16px" }}>
+                                        <StyledSlider
+                                            label="Number of Outputs"
+                                            min={1} max={3} step={1}
+                                            value={advancedOptions.numOutputs || 1}
+                                            onChange={(e) => setAdvancedOptions(prev => ({ ...prev, numOutputs: parseInt(e.target.value) }))}
                                         />
-                                        <ToggleSwitch
-                                            label="# Hashtags"
-                                            checked={advancedOptions.includeHashtags}
-                                            onChange={(val) => setAdvancedOptions(prev => ({ ...prev, includeHashtags: val }))}
-                                        />
-                                        <ToggleSwitch
-                                            label="😊 Emojis"
-                                            checked={advancedOptions.includeEmojis}
-                                            onChange={(val) => setAdvancedOptions(prev => ({ ...prev, includeEmojis: val }))}
-                                        />
+                                        <div style={{ textAlign: "center", color: "#a855f7", fontSize: "0.9rem", fontWeight: "600", marginTop: "-10px" }}>
+                                            {advancedOptions.numOutputs || 1}
+                                        </div>
                                     </div>
                                 </>
+                            )}
+
+                            {/* Idea: Number of Ideas */}
+                            {currentType === "idea" && (
+                                <div style={{ width: "100%", maxWidth: "90%" }}>
+                                    <StyledSlider
+                                        label="Number of Ideas"
+                                        min={1} max={10} step={1}
+                                        value={advancedOptions.numOutputs || 5}
+                                        onChange={(e) => setAdvancedOptions(prev => ({ ...prev, numOutputs: parseInt(e.target.value) }))}
+                                    />
+                                    <div style={{ textAlign: "center", color: "#a855f7", fontSize: "0.9rem", fontWeight: "600", marginTop: "-10px" }}>
+                                        {(advancedOptions.numOutputs || 5) > 5 ? "2 Credits" : "1 Credit"}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Common Toggles (Brand Data, Hashtags, Emojis) */}
+                            {(currentType !== "post" || advancedOptions.includeBody) && (
+                                <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", justifyContent: "center", marginTop: "20px" }}>
+                                    <ToggleSwitch
+                                        label="🎯 Use Brand Data"
+                                        checked={advancedOptions.useBrandData}
+                                        onChange={(val) => setAdvancedOptions(prev => ({ ...prev, useBrandData: val }))}
+                                    />
+                                    {currentType !== "idea" && (
+                                        <>
+                                            <ToggleSwitch
+                                                label="# Hashtags"
+                                                checked={advancedOptions.includeHashtags}
+                                                onChange={(val) => setAdvancedOptions(prev => ({ ...prev, includeHashtags: val }))}
+                                            />
+                                            <ToggleSwitch
+                                                label="😊 Emojis"
+                                                checked={advancedOptions.includeEmojis}
+                                                onChange={(val) => setAdvancedOptions(prev => ({ ...prev, includeEmojis: val }))}
+                                            />
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </AdvancedOptionsPanel>
                 }
-                generateButtonText={`Generate ${GENERATOR_TYPES.find(t => t.id === currentType)?.name}`}
+                generateButtonText={`Generate ${GENERATOR_TYPES.find(t => t.id === currentType)?.name} (${getCreditCost()} Credit${getCreditCost() > 1 ? 's' : ''})`}
                 loading={loading}
                 handleGenerate={handleGenerate}
                 error={error}
