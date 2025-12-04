@@ -327,7 +327,7 @@ export default function Roadmap({ steps = [] }) {
 
     // compute svg dimensions based on nodes
     const svgWidth = Math.max((nodes.length - 1) * NODE_SPACING + 200, windowWidth);
-    const svgHeight = 300;
+    const svgHeight = 150;
 
     // small helper to compute estimated days for the node based on dailyHours
     const estimateDays = (node) => {

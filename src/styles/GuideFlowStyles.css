@@ -2,52 +2,110 @@
 
 /* --- ANIMATIONS --- */
 @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes slideInFromLeft {
-    from { opacity: 0; transform: translateX(-30px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
 }
 
 @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(140, 100, 255, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(140, 100, 255, 0.6); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(140, 100, 255, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(140, 100, 255, 0.6);
+    }
 }
 
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 @keyframes typewriter {
-    from { width: 0; }
-    to { width: 100%; }
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 100%;
+    }
 }
 
 @keyframes blink {
-    50% { border-color: transparent; }
+    50% {
+        border-color: transparent;
+    }
 }
 
 /* --- GLOBAL STYLES --- */
-body, html {
+body,
+html {
     margin: 0;
     padding: 0;
     font-family: 'Inter', 'Roboto', sans-serif;
@@ -73,7 +131,7 @@ body, html {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: 
+    background-image:
         radial-gradient(circle at 20% 50%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
     pointer-events: none;
@@ -87,7 +145,7 @@ body, html {
     background: rgba(25, 25, 45, 0.95);
     border-radius: 24px;
     border: 2px solid rgba(140, 100, 255, 0.3);
-    box-shadow: 
+    box-shadow:
         0 20px 60px rgba(0, 0, 0, 0.5),
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
     backdrop-filter: blur(20px);
@@ -257,7 +315,7 @@ label {
 .card.selected {
     border-color: #a855f7;
     background: linear-gradient(135deg, #7c3aed, #a855f7);
-    box-shadow: 
+    box-shadow:
         0 0 30px rgba(168, 85, 247, 0.8),
         0 8px 30px rgba(0, 0, 0, 0.4);
     transform: scale(1.05);
@@ -306,7 +364,7 @@ label {
 
 .styled-input:focus {
     border-color: #a855f7;
-    box-shadow: 
+    box-shadow:
         0 0 0 4px rgba(168, 85, 247, 0.1),
         0 0 20px rgba(168, 85, 247, 0.4);
     outline: none;
@@ -350,7 +408,8 @@ textarea.styled-input {
     font-weight: 700;
 }
 
-.final-card p, .final-card ul {
+.final-card p,
+.final-card ul {
     color: #e0e0e0;
     margin: 0;
     line-height: 1.6;
@@ -384,7 +443,9 @@ textarea.styled-input {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* --- RESPONSIVE --- */

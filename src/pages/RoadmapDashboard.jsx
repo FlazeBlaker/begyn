@@ -73,7 +73,7 @@ export default function RoadmapDashboard() {
 
     return (
         <div className="guide-container">
-            <div className="step-container fadeIn" style={{ maxWidth: '1200px' }}>
+            <div className="step-container fadeIn" style={{ maxWidth: '900px' }}>
                 <h2 style={{ color: '#d946ef' }}>🚀 Your Personalized Creator Roadmap</h2>
                 {/* Removed fixed gridTemplateColumns to allow responsive wrapping */}
                 <div className="final-review-grid">
