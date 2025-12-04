@@ -14,6 +14,10 @@ export default function Login() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
+                // We let the handleGoogleLogin handle the redirect logic for new logins
+                // But if they are already logged in and just visiting /login, we redirect to dashboard
+                // This might need refinement if we want to support the intro flow for existing sessions
+                // For now, let's assume if they are here, they are not logged in or we want to redirect them
                 navigate('/dashboard', { replace: true });
             } else {
                 setAuthChecking(false);
@@ -29,8 +33,15 @@ export default function Login() {
             const result = await signInWithPopup(auth, new GoogleAuthProvider());
             const userRef = doc(db, "brands", result.user.uid);
             const snap = await getDoc(userRef);
+
+            const introSeen = snap.exists() && snap.data()?.introSeen;
             const onboarded = snap.exists() && snap.data()?.onboarded;
-            navigate(onboarded ? '/dashboard' : '/guide/onboarding', { replace: true });
+
+            if (!introSeen) {
+                navigate('/intro', { replace: true });
+            } else {
+                navigate(onboarded ? '/dashboard' : '/flow', { replace: true });
+            }
         } catch (err) {
             console.error("Login failed:", err);
             if (err.code !== 'auth/popup-closed-by-user') {
@@ -46,7 +57,7 @@ export default function Login() {
         <div className="login-container" style={{ minHeight: '100vh', display: 'flex', position: 'relative', overflow: 'hidden' }}>
             {/* Background Elements */}
             <div className="orb-glowing" style={{ top: '-10%', left: '-10%' }}></div>
-            <div className="orb-glowing" style={{ bottom: '-10%', right: '-10%', background: 'radial-gradient(circle, rgba(236,72,153,0.4) 0%, transparent 70%)' }}></div>
+            <div className="orb-glowing" style={{ bottom: '-10%', right: '-10%', background: 'radial-gradient(circle, rgba(206, 147, 216, 0.4) 0%, transparent 70%)' }}></div>
             <div className="scan-line"></div>
 
             {/* LEFT SIDE: Visuals */}
@@ -58,8 +69,8 @@ export default function Login() {
                     <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: '8px',
                         padding: '8px 16px', borderRadius: '99px',
-                        background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)',
-                        color: '#d8b4fe', marginBottom: '32px', fontWeight: '600'
+                        background: 'rgba(124, 77, 255, 0.1)', border: '1px solid rgba(124, 77, 255, 0.2)',
+                        color: '#CE93D8', marginBottom: '32px', fontWeight: '600'
                     }} className="reflection">
                         <Cpu size={16} /> AI-Powered Creation Engine
                     </div>

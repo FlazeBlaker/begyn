@@ -65,11 +65,11 @@
 
     0%,
     100% {
-        box-shadow: 0 0 20px rgba(140, 100, 255, 0.3);
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.3);
     }
 
     50% {
-        box-shadow: 0 0 40px rgba(140, 100, 255, 0.6);
+        box-shadow: 0 0 40px rgba(124, 77, 255, 0.6);
     }
 }
 
@@ -100,7 +100,7 @@
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #a855f7, #ec4899);
+    background: linear-gradient(135deg, #7C4DFF, #CE93D8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -112,7 +112,7 @@
 .generator-title {
     font-size: 2.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #a855f7, #ec4899);
+    background: linear-gradient(135deg, #7C4DFF, #CE93D8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -183,9 +183,9 @@
 .enhanced-input:focus,
 .enhanced-textarea:focus {
     outline: none;
-    border-color: #a855f7;
+    border-color: #7C4DFF;
     background: rgba(0, 0, 0, 0.4);
-    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1), 0 0 20px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.1), 0 0 20px rgba(124, 77, 255, 0.3);
 }
 
 .enhanced-textarea {
@@ -246,15 +246,15 @@
 }
 
 .option-card:hover {
-    border-color: rgba(168, 85, 247, 0.5);
+    border-color: rgba(124, 77, 255, 0.5);
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(168, 85, 247, 0.2);
+    box-shadow: 0 8px 25px rgba(124, 77, 255, 0.2);
 }
 
 .option-card.selected {
-    border-color: #a855f7;
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(168, 85, 247, 0.3));
-    box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+    border-color: #7C4DFF;
+    background: linear-gradient(135deg, rgba(98, 0, 234, 0.3), rgba(124, 77, 255, 0.3));
+    box-shadow: 0 0 30px rgba(124, 77, 255, 0.4);
 }
 
 .option-card.selected::after {
@@ -264,7 +264,7 @@
     right: 8px;
     width: 24px;
     height: 24px;
-    background: #a855f7;
+    background: #7C4DFF;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -289,7 +289,7 @@
 .generate-button {
     width: 100%;
     padding: 18px;
-    background: linear-gradient(135deg, #8b5cf6, #a855f7);
+    background: linear-gradient(135deg, #7C4DFF, #9C27B0);
     color: white;
     border: none;
     border-radius: 12px;
@@ -321,9 +321,9 @@
 }
 
 .generate-button:hover {
-    background: linear-gradient(135deg, #a855f7, #ec4899);
+    background: linear-gradient(135deg, #7C4DFF, #CE93D8);
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(140, 100, 255, 0.4);
+    box-shadow: 0 10px 30px rgba(124, 77, 255, 0.4);
 }
 
 .generate-button:disabled {
@@ -333,7 +333,7 @@
 }
 
 .generate-button:disabled:hover {
-    background: linear-gradient(135deg, #8b5cf6, #a855f7);
+    background: linear-gradient(135deg, #7C4DFF, #9C27B0);
     box-shadow: none;
 }
 
@@ -375,7 +375,7 @@
 }
 
 .result-card {
-    background: rgba(50, 10, 120, 0.25);
+    background: rgba(74, 20, 140, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 24px;
@@ -386,8 +386,8 @@
 
 .result-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(140, 100, 255, 0.3);
-    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 12px 40px rgba(124, 77, 255, 0.3);
+    border-color: rgba(124, 77, 255, 0.3);
 }
 
 .result-content {
@@ -407,10 +407,10 @@
 
 .action-button {
     padding: 10px 20px;
-    background: rgba(140, 100, 255, 0.2);
-    border: 1px solid rgba(168, 85, 247, 0.3);
+    background: rgba(124, 77, 255, 0.2);
+    border: 1px solid rgba(124, 77, 255, 0.3);
     border-radius: 8px;
-    color: #a855f7;
+    color: #CE93D8;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
@@ -421,8 +421,8 @@
 }
 
 .action-button:hover {
-    background: rgba(140, 100, 255, 0.3);
-    border-color: #a855f7;
+    background: rgba(124, 77, 255, 0.3);
+    border-color: #7C4DFF;
     transform: translateY(-2px);
 }
 

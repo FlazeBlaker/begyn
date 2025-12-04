@@ -1,6 +1,8 @@
 ﻿// src/pages/guide/Roadmap.jsx
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { auth, db, doc, getDoc, updateDoc, setDoc } from "../../services/firebase";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Constants removed, will be calculated dynamically
 
@@ -380,7 +382,7 @@ export default function Roadmap({ steps = [] }) {
                 <path
                     key={`conn-${a.id}-${b.id}`}
                     d={path}
-                    stroke={completed ? "#4ade80" : "rgba(200,180,255,0.45)"}
+                    stroke={completed ? "#4ade80" : "rgba(206,147,216,0.45)"}
                     strokeWidth={completed ? 4 : 2.2}
                     fill="none"
                     style={{
@@ -396,7 +398,7 @@ export default function Roadmap({ steps = [] }) {
                     cx={mx}
                     cy={(a.y + b.y) / 2}
                     r={6}
-                    fill={completed ? "#4ade80" : "rgba(150,120,255,0.25)"}
+                    fill={completed ? "#4ade80" : "rgba(124,77,255,0.25)"}
                     stroke="rgba(255,255,255,0.06)"
                 />
             );
@@ -438,6 +440,17 @@ export default function Roadmap({ steps = [] }) {
         });
     };
 
+    // --- Navigation Handlers ---
+    const handlePrev = () => {
+        const idx = nodes.findIndex(n => n.id === selectedStep.id);
+        if (idx > 0) handleSelect(nodes[idx - 1]);
+    };
+
+    const handleNext = () => {
+        const idx = nodes.findIndex(n => n.id === selectedStep.id);
+        if (idx < nodes.length - 1) handleSelect(nodes[idx + 1]);
+    };
+
     // Save single node note on demand
     const handleSaveNote = async (stepId) => {
         await saveNotesToFirestore({ ...roadmapNotes });
@@ -463,8 +476,8 @@ export default function Roadmap({ steps = [] }) {
                     <svg ref={svgRef} width={svgWidth} height={svgHeight} style={{ display: "block", overflow: "visible" }}>
                         <defs>
                             <linearGradient id="nodeGrad" x1="0" x2="1">
-                                <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.95" />
-                                <stop offset="100%" stopColor="#a855f7" stopOpacity="0.95" />
+                                <stop offset="0%" stopColor="#7C4DFF" stopOpacity="0.95" />
+                                <stop offset="100%" stopColor="#CE93D8" stopOpacity="0.95" />
                             </linearGradient>
                             <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
                                 <feGaussianBlur stdDeviation="6" result="coloredBlur" />
@@ -515,7 +528,7 @@ export default function Roadmap({ steps = [] }) {
                                                 strokeWidth={isSelected ? 2 : 1}
                                                 style={{
                                                     transition: "transform 180ms ease, filter 180ms ease",
-                                                    filter: isSelected ? "drop-shadow(0 10px 30px rgba(124,58,237,0.25))" : "none",
+                                                    filter: isSelected ? "drop-shadow(0 10px 30px rgba(124,77,255,0.25))" : "none",
                                                     pointerEvents: isLocked ? "none" : "auto",
                                                 }}
                                             />
@@ -529,7 +542,7 @@ export default function Roadmap({ steps = [] }) {
                                                 x={node.x}
                                                 y={node.y - NODE_RADIUS - 12}
                                                 textAnchor="middle"
-                                                fill={isLocked ? "#999" : "#d8b4fe"}
+                                                fill={isLocked ? "#999" : "#E1BEE7"}
                                                 fontSize="13"
                                                 fontWeight="700"
                                                 style={{ pointerEvents: "none", userSelect: "none" }}
@@ -562,7 +575,7 @@ export default function Roadmap({ steps = [] }) {
                         padding: 24,
                         borderRadius: 16,
                         background: "linear-gradient(145deg, rgba(20, 20, 28, 0.98), rgba(15, 15, 22, 0.98))",
-                        border: "1px solid rgba(168, 85, 247, 0.3)",
+                        border: "1px solid rgba(124, 77, 255, 0.3)",
                         boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
                         transition: "all 300ms ease",
                     }}
@@ -572,7 +585,7 @@ export default function Roadmap({ steps = [] }) {
                             <h3 style={{ margin: "0 0 8px 0", color: "#fff", fontSize: "clamp(1.2rem, 4vw, 1.6rem)" }}>
                                 {selectedStep.isSubNode ? (
                                     <>
-                                        <span style={{ color: "#a855f7", fontSize: "0.9em" }}>Sub-task: </span>
+                                        <span style={{ color: "#CE93D8", fontSize: "0.9em" }}>Sub-task: </span>
                                         {selectedStep.selectedSubNode.title}
                                     </>
                                 ) : (
@@ -582,8 +595,8 @@ export default function Roadmap({ steps = [] }) {
                             {!selectedStep.isSubNode && selectedStep.timeEstimate && (
                                 <span style={{
                                     display: "inline-block",
-                                    background: "rgba(139, 92, 246, 0.15)",
-                                    color: "#c4b5fd",
+                                    background: "rgba(124, 77, 255, 0.15)",
+                                    color: "#E1BEE7",
                                     padding: "4px 10px",
                                     borderRadius: "20px",
                                     fontSize: "0.85rem",
@@ -593,26 +606,67 @@ export default function Roadmap({ steps = [] }) {
                                 </span>
                             )}
                         </div>
-                        <button
-                            aria-label="Close details"
-                            onClick={() => setSelectedStep(null)}
-                            style={{
-                                background: "rgba(255, 255, 255, 0.05)",
-                                border: "none",
-                                color: "#a0a0b0",
-                                fontSize: 24,
-                                cursor: "pointer",
-                                borderRadius: "50%",
-                                width: 36,
-                                height: 36,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                transition: "all 0.2s"
-                            }}
-                        >
-                            ×
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                                onClick={handlePrev}
+                                disabled={nodes.findIndex(n => n.id === selectedStep.id) === 0}
+                                style={{
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    border: "none",
+                                    color: nodes.findIndex(n => n.id === selectedStep.id) === 0 ? "rgba(255,255,255,0.1)" : "#a0a0b0",
+                                    cursor: nodes.findIndex(n => n.id === selectedStep.id) === 0 ? "not-allowed" : "pointer",
+                                    borderRadius: "50%",
+                                    width: 36,
+                                    height: 36,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    transition: "all 0.2s"
+                                }}
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+                            <button
+                                onClick={handleNext}
+                                disabled={nodes.findIndex(n => n.id === selectedStep.id) === nodes.length - 1}
+                                style={{
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    border: "none",
+                                    color: nodes.findIndex(n => n.id === selectedStep.id) === nodes.length - 1 ? "rgba(255,255,255,0.1)" : "#a0a0b0",
+                                    cursor: nodes.findIndex(n => n.id === selectedStep.id) === nodes.length - 1 ? "not-allowed" : "pointer",
+                                    borderRadius: "50%",
+                                    width: 36,
+                                    height: 36,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    transition: "all 0.2s"
+                                }}
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                            <button
+                                aria-label="Close details"
+                                onClick={() => setSelectedStep(null)}
+                                style={{
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    border: "none",
+                                    color: "#a0a0b0",
+                                    fontSize: 24,
+                                    cursor: "pointer",
+                                    borderRadius: "50%",
+                                    width: 36,
+                                    height: 36,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    transition: "all 0.2s",
+                                    marginLeft: '8px'
+                                }}
+                            >
+                                ×
+                            </button>
+                        </div>
                     </div>
 
                     <div style={{ color: "#e2e8f0", fontSize: "1rem", lineHeight: 1.7, marginBottom: 24 }}>
@@ -668,7 +722,7 @@ export default function Roadmap({ steps = [] }) {
                     {/* Suggestions */}
                     {selectedStep.suggestions && selectedStep.suggestions.length > 0 && (
                         <div style={{ marginBottom: 24 }}>
-                            <h4 style={{ color: "#a855f7", margin: "0 0 12px 0", fontSize: "1rem" }}>💡 Pro Suggestions:</h4>
+                            <h4 style={{ color: "#CE93D8", margin: "0 0 12px 0", fontSize: "1rem" }}>💡 Pro Suggestions:</h4>
                             <ul style={{ margin: 0, paddingLeft: 20, color: "#cbd5e1" }}>
                                 {selectedStep.suggestions.map((s, i) => (
                                     <li key={i} style={{ marginBottom: 6 }}>{s}</li>
@@ -706,26 +760,45 @@ export default function Roadmap({ steps = [] }) {
                     )}
 
                     {/* Generator Button */}
-                    {selectedStep.generatorLink && (
-                        <div style={{ marginBottom: 24 }}>
-                            <a
-                                href={selectedStep.generatorLink}
-                                style={{
-                                    display: "block",
-                                    textAlign: "center",
-                                    background: "linear-gradient(90deg, #7c3aed, #db2777)",
-                                    color: "white",
-                                    padding: "14px",
-                                    borderRadius: "10px",
-                                    textDecoration: "none",
-                                    fontWeight: "bold",
-                                    boxShadow: "0 4px 15px rgba(124, 58, 237, 0.4)"
-                                }}
-                            >
-                                ✨ Use AI Generator for this Step
-                            </a>
-                        </div>
-                    )}
+                    {(() => {
+                        // Helper to determine the correct generator link
+                        const getGeneratorLink = (step) => {
+                            const text = (step.title + " " + step.description).toLowerCase();
+                            if (text.includes("idea") || text.includes("brainstorm") || text.includes("topic")) return "/generate?type=idea";
+                            if (text.includes("script") || text.includes("video") || text.includes("tiktok") || text.includes("reel")) return "/generate?type=videoScript";
+                            if (text.includes("caption") || text.includes("instagram") || text.includes("post")) return "/generate?type=caption";
+                            if (text.includes("tweet") || text.includes("twitter") || text.includes("thread") || text.includes("x.com")) return "/generate?type=tweet";
+                            // Default fallback or if specific link exists and we want to trust it (but user said it's old)
+                            // Let's default to idea if nothing matches but we have a generator flag
+                            return "/generate?type=idea";
+                        };
+
+                        const link = getGeneratorLink(selectedStep);
+
+                        if (selectedStep.generatorLink || link) {
+                            return (
+                                <div style={{ marginBottom: 24 }}>
+                                    <Link
+                                        to={link}
+                                        style={{
+                                            display: "block",
+                                            textAlign: "center",
+                                            background: "linear-gradient(90deg, #7C4DFF, #9C27B0)",
+                                            color: "white",
+                                            padding: "14px",
+                                            borderRadius: "10px",
+                                            textDecoration: "none",
+                                            fontWeight: "bold",
+                                            boxShadow: "0 4px 15px rgba(124, 77, 255, 0.4)"
+                                        }}
+                                    >
+                                        ✨ Use AI Generator for this Step
+                                    </Link>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
 
                     {(() => {
                         // Handle main node completion
@@ -806,7 +879,9 @@ const styles = {
         fontFamily: "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
         minHeight: "calc(100vh - 80px)",
         background:
-            "radial-gradient(1200px 400px at 10% 10%, rgba(124,58,237,0.06), transparent), linear-gradient(180deg, rgba(6,6,10,1), rgba(10,8,18,1))",
+            "radial-gradient(1200px 400px at 10% 10%, rgba(124, 77, 255, 0.15), transparent), linear-gradient(180deg, #4A148C, #2a0a55)",
+        borderRadius: "30px",
+        overflow: "hidden",
     },
     header: {
         marginBottom: "clamp(16px, 4vw, 24px)",

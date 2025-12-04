@@ -1,42 +1,37 @@
 ﻿import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { auth, db, doc, setDoc, getDoc } from "../services/firebase";
 import { generateContent } from "../services/aiApi";
 import "../styles/GuideFlowStyles.css";
 
 // --- PHASE 1 OPTIONS ---
 const TONE_OPTIONS = ["Witty", "Professional", "Cozy", "Bold", "Playful", "Inspirational"];
-const CORE_STEPS_COUNT = 3; // Niche, Platform, AI Generation
+const CORE_STEPS_COUNT = 3;
 
-// --- CUSTOM BUTTON ---
-const CustomButton = ({ text, onClick, loading, isSecondary, disabled, style }) => {
-    const [hover, setHover] = useState(false);
+// --- TRANSITION OVERLAY ---
+const TransitionOverlay = ({ show }) => {
+    if (!show) return null;
     return (
-        <button className="custom-button" style={{
-            padding: "12px 24px", borderRadius: "10px", border: "1px solid transparent",
-            fontSize: "1rem", fontWeight: 600, transition: "all 0.3s ease-in-out",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-            background: isSecondary ? (loading ? "rgba(255,255,255,0.1)" : (loading ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)")) : (loading ? "rgba(168, 85, 247, 0.6)" : "rgba(140,100,255,0.8)"),
-            color: isSecondary ? "#f0f0f0" : "white",
-            opacity: disabled || loading ? 0.6 : 1, cursor: disabled || loading ? "not-allowed" : "pointer",
-            ...style
-        }} onClick={onClick} disabled={disabled || loading}
-            onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-            {loading && !isSecondary && <div className="spin-loader" />}{text}
-        </button>
-    );
-};
-
-// --- PROGRESS BAR ---
-const ProgressBar = ({ current, total }) => {
-    return (
-        <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${Math.min(current / total, 1) * 100}%` }} />
+        <div className="transition-overlay">
+            <div className="processing-orb"></div>
+            <div className="processing-text">AI is processing...</div>
         </div>
     );
 };
 
-// --- STEP 1: Define the Niche & Goal (Phase 1) ---
+// --- LEFT PANEL COMPONENT (CONTEXT) ---
+const LeftPanel = ({ stepNumber, title, description }) => {
+    return (
+        <div className="left-panel">
+            <div className="ai-avatar-large">✨</div>
+            <div className="context-step">Step {stepNumber.toString().padStart(2, '0')}</div>
+            <h1 className="context-title">{title}</h1>
+            <p className="context-description">{description}</p>
+        </div>
+    );
+};
+
+// --- STEP 1: Define the Niche & Goal ---
 const Step1Niche = ({ data, updateData, next, usingBrandData }) => {
     const handleChange = (e) => updateData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleToneSelect = (tone) => {
@@ -50,45 +45,54 @@ const Step1Niche = ({ data, updateData, next, usingBrandData }) => {
     const isNextDisabled = !data.coreTopic || !data.targetAudience || !data.primaryGoal || (data.tone || []).length === 0;
 
     return (
-        <div className="step-container fadeIn">
-            <h2>🏗️ 1. Core Foundation & Niche Definition</h2>
+        <div className="form-container">
             {usingBrandData && (
-                <div style={{
-                    background: 'rgba(140, 100, 255, 0.1)',
-                    border: '1px solid rgba(140, 100, 255, 0.3)',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    marginBottom: '20px',
-                    color: '#a855f7',
-                    fontSize: '0.9rem'
-                }}>
-                    💡 Pre-filled from your Brand Setup! You can edit these values.
+                <div style={{ background: 'rgba(124, 77, 255, 0.1)', padding: '16px', borderRadius: '12px', marginBottom: '24px', color: '#CE93D8', border: '1px solid rgba(124, 77, 255, 0.3)' }}>
+                    ✨ Pre-filled from your Brand Setup!
                 </div>
             )}
-            <label htmlFor="coreTopic">Core Topic/Niche (e.g., retro gaming) *</label>
-            <input id="coreTopic" className="styled-input" name="coreTopic" value={data.coreTopic || ""} onChange={handleChange} />
-            <label htmlFor="targetAudience">Target Audience (Who are you reaching?) *</label>
-            <input id="targetAudience" className="styled-input" name="targetAudience" value={data.targetAudience || ""} onChange={handleChange} />
-            <label>Creator Personality/Tone (Select max 3) *</label>
-            <div className="grid-columns">
-                {TONE_OPTIONS.map(tone => {
-                    const isSelected = (data.tone || []).includes(tone);
-                    return <div key={tone} className={`card ${isSelected ? "selected" : ""}`} onClick={() => handleToneSelect(tone)}>{tone}</div>;
-                })}
+
+            <div className="input-group">
+                <label className="input-label">Core Topic / Niche *</label>
+                <input className="premium-input" name="coreTopic" value={data.coreTopic || ""} onChange={handleChange} placeholder="e.g., Retro Gaming" />
             </div>
-            <label htmlFor="primaryGoal">Primary Goal (e.g., build community, generate income) *</label>
-            <input id="primaryGoal" className="styled-input" name="primaryGoal" value={data.primaryGoal || ""} onChange={handleChange} />
-            <div className="button-row">
-                <CustomButton text="Next Step" onClick={next} disabled={isNextDisabled} />
+
+            <div className="input-group">
+                <label className="input-label">Target Audience *</label>
+                <input className="premium-input" name="targetAudience" value={data.targetAudience || ""} onChange={handleChange} placeholder="Who are you talking to?" />
+            </div>
+
+            <div className="input-group">
+                <label className="input-label">Creator Personality (Max 3) *</label>
+                <div className="options-grid">
+                    {TONE_OPTIONS.map(tone => {
+                        const isSelected = (data.tone || []).includes(tone);
+                        return (
+                            <div key={tone} className={`option-card ${isSelected ? "selected" : ""}`} onClick={() => handleToneSelect(tone)}>
+                                {tone}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="input-group">
+                <label className="input-label">Primary Goal *</label>
+                <input className="premium-input" name="primaryGoal" value={data.primaryGoal || ""} onChange={handleChange} placeholder="e.g., Build Community" />
+            </div>
+
+            <div className="action-bar">
+                <button className="premium-button" onClick={next} disabled={isNextDisabled}>
+                    Continue <span>→</span>
+                </button>
             </div>
         </div>
     );
 };
 
-// --- STEP 2: Platform Selection (Phase 1) ---
+// --- STEP 2: Platform Selection ---
 const Step2Platform = ({ data, updateData, next }) => {
     const CONTENT_PREFS = ["Short Video (Reels/TikTok)", "Long Video (YouTube)", "Images (Carousels/Posts)", "Text (Threads/Tweets)"];
-
     const handleChange = (e) => updateData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleContentPrefSelect = (pref) => {
         updateData(prev => {
@@ -101,49 +105,53 @@ const Step2Platform = ({ data, updateData, next }) => {
     const isNextDisabled = !data.timeCommitment || (data.contentPreference || []).length === 0;
 
     return (
-        <div className="step-container fadeIn">
-            <h2>📱 2. Platform Selection</h2>
-            <label htmlFor="timeCommitment">Time Commitment (Hours per week) *</label>
-            <input id="timeCommitment" className="styled-input" name="timeCommitment" value={data.timeCommitment || ""} onChange={handleChange} placeholder="e.g., 8-10 hours/week" />
-            <label>Content Preference (Select up to 3) *</label>
-            <div className="grid-columns">
-                {CONTENT_PREFS.map(pref => {
-                    const isSelected = (data.contentPreference || []).includes(pref);
-                    return <div key={pref} className={`card ${isSelected ? "selected" : ""}`} onClick={() => handleContentPrefSelect(pref)}>{pref}</div>;
-                })}
+        <div className="form-container">
+            <div className="input-group">
+                <label className="input-label">Time Commitment (Hours/Week) *</label>
+                <input className="premium-input" name="timeCommitment" value={data.timeCommitment || ""} onChange={handleChange} placeholder="e.g., 10 hours" />
             </div>
-            <div className="button-row">
-                <CustomButton text="Next Step" onClick={next} disabled={isNextDisabled} />
+
+            <div className="input-group">
+                <label className="input-label">Content Preference (Max 3) *</label>
+                <div className="options-grid">
+                    {CONTENT_PREFS.map(pref => {
+                        const isSelected = (data.contentPreference || []).includes(pref);
+                        return (
+                            <div key={pref} className={`option-card ${isSelected ? "selected" : ""}`} onClick={() => handleContentPrefSelect(pref)}>
+                                {pref}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="action-bar">
+                <button className="premium-button" onClick={next} disabled={isNextDisabled}>
+                    Continue <span>→</span>
+                </button>
             </div>
         </div>
     );
 };
 
-// --- STEP 3: DYNAMIC GENERATION (The new main API call) ---
+// --- STEP 3: AI Analysis ---
 const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
-
-    // --- Define the Expected Dynamic AI Output Schema ---
     const AI_SCHEMA = {
         type: "object",
         properties: {
             questions: {
                 type: "array",
-                description: "An array defining the subsequent steps/questions for the user.",
                 items: {
                     type: "object",
                     properties: {
-                        stepId: { type: "number", description: "Unique ID for this specific question (e.g., 4, 5, 6...)" },
-                        question: { type: "string", description: "The question to ask the user (e.g., 'What PFP style do you prefer?')." },
-                        keyName: { type: "string", description: "The key to store the answer in formData (e.g., pfpStyle)." },
-                        type: { type: "string", description: "Input type: 'radio', 'text', or 'select'." },
-                        options: {
-                            type: "array",
-                            description: "Required if type is 'radio' or 'select'. Array of strings for choices.",
-                            items: { type: "string" }
-                        },
+                        stepId: { type: "number" },
+                        question: { type: "string" },
+                        keyName: { type: "string" },
+                        type: { type: "string", description: "Always use 'radio' or 'select'" },
+                        options: { type: "array", items: { type: "string" }, description: "List of 3-4 options for the user to choose from. REQUIRED." },
                         required: { type: "boolean" }
                     },
-                    required: ["stepId", "question", "keyName", "type", "required"]
+                    required: ["stepId", "question", "keyName", "type", "options", "required"]
                 }
             }
         },
@@ -153,54 +161,34 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
     const startGeneration = async () => {
         setLoading(true);
         try {
-            // Call the Cloud Function 'generateContent' with type 'dynamicGuide'
             const responseString = await generateContent({
                 type: "dynamicGuide",
                 payload: {
-                    topic: formData.coreTopic, // Required to pass backend validation
-                    coreData: {
-                        niche: formData.coreTopic,
-                        tone: formData.tone,
-                        commitment: formData.timeCommitment
-                    },
+                    topic: formData.coreTopic,
+                    coreData: { niche: formData.coreTopic, tone: formData.tone, commitment: formData.timeCommitment },
                     schema: AI_SCHEMA
                 }
             });
 
             let result;
             try {
-                // Check if responseString is already an object (common with some fetch wrappers)
-                if (typeof responseString === 'object' && responseString !== null) {
-                    result = responseString;
-                } else {
-                    result = JSON.parse(responseString);
-                }
+                result = (typeof responseString === 'object' && responseString !== null) ? responseString : JSON.parse(responseString);
             } catch (e) {
                 console.error("Failed to parse AI JSON:", e);
-
-                // Fallback if JSON is malformed
                 result = { questions: [] };
             }
 
-            // Ensure we have questions, even if result was parsed but empty
             const dynamicQuestions = (result.questions && result.questions.length > 0) ? result.questions : [
                 { stepId: 4, question: "What is your main struggle?", keyName: "struggle", type: "text", required: true },
                 { stepId: 5, question: "Do you have a budget?", keyName: "budget", type: "radio", options: ["No", "Small", "Large"], required: true }
             ];
 
-            setFormData(prev => ({
-                ...prev,
-                dynamicSteps: dynamicQuestions,
-                totalDynamicSteps: dynamicQuestions.length
-            }));
-
+            setFormData(prev => ({ ...prev, dynamicSteps: dynamicQuestions, totalDynamicSteps: dynamicQuestions.length }));
             setLoading(false);
-            next(); // Move to Step 4 (First Dynamic Step)
-
+            next();
         } catch (error) {
             console.error("AI Generation Error:", error);
             setLoading(false);
-            // Fallback for error state
             setFormData(prev => ({
                 ...prev,
                 dynamicSteps: [
@@ -215,172 +203,129 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
     };
 
     return (
-        <div className="step-container fadeIn" style={{ textAlign: "center" }}>
-            <h2>🤖 3. Branding & Name Generation (AI)</h2>
-            <p>Based on your Niche and Goals, the AI will now dynamically generate the remaining custom setup steps (4-{formData.dynamicSteps?.length + CORE_STEPS_COUNT || 'N'}).</p>
-            {loading ? <div className="ai-loader">🤖 Generating Custom Roadmap...</div> :
-                <CustomButton text="Start Custom AI Guide" onClick={startGeneration} disabled={!formData.coreTopic} />
-            }
+        <div className="form-container" style={{ textAlign: 'center', paddingTop: '40px' }}>
+            <div className="processing-orb" style={{ width: '120px', height: '120px', margin: '0 auto 40px auto' }}></div>
+            <button className="premium-button" onClick={startGeneration} disabled={loading || !formData.coreTopic} style={{ margin: '0 auto' }}>
+                {loading ? "Generating..." : "Generate Custom Roadmap"}
+            </button>
         </div>
     );
 };
 
-// --- DYNAMIC STEP RENDERING COMPONENT (Steps 4 through N) ---
+// --- DYNAMIC STEP ---
 const Step4ToN_Dynamic = ({ step, stepNumber, totalSteps, data, updateData, next, finish }) => {
     const [currentAnswer, setCurrentAnswer] = useState(data[step.keyName] || '');
     const [radioAnswer, setRadioAnswer] = useState(data[step.keyName] && step.options?.includes(data[step.keyName]) ? data[step.keyName] : (data[step.keyName] ? 'Other' : ''));
     const [otherText, setOtherText] = useState(data[step.keyName] && !step.options?.includes(data[step.keyName]) ? data[step.keyName] : '');
 
+    const inputType = (step.type || 'text').toLowerCase();
+    // Force ALL dynamic steps to be choice types to satisfy user request
+    // "text field should only apear if i clicked the other options"
+    const isChoiceType = true;
+    const isTextType = false;
+
     const handleNext = () => {
         let answerToSave = '';
 
-        if (step.type === 'text') {
+        if (isChoiceType) {
+            answerToSave = (radioAnswer === 'Other') ? otherText : radioAnswer;
+        } else {
+            // Default to text handling for text types AND unknown types (fallback)
             answerToSave = currentAnswer;
-        } else if (step.type === 'radio' || step.type === 'select') {
-            if (radioAnswer === 'Other') {
-                answerToSave = otherText;
-            } else {
-                answerToSave = radioAnswer;
-            }
         }
 
-        // Validation
         if (step.required && !answerToSave) {
             alert(`Please answer the question for Step ${stepNumber}.`);
             return;
         }
 
-        // Save the answer to formData under the correct key
         updateData({ [step.keyName]: answerToSave });
-
-        // Check if this is the last step (totalSteps includes the final review step)
-        if (stepNumber === totalSteps) {
-            finish();
-        } else {
-            next();
-        }
+        if (stepNumber === totalSteps) finish();
+        else next();
     };
 
     const isNextDisabled = step.required && (
-        (step.type === 'text' && !currentAnswer) ||
-        ((step.type === 'radio' || step.type === 'select') && (!radioAnswer || (radioAnswer === 'Other' && !otherText)))
+        (isChoiceType && (!radioAnswer || (radioAnswer === 'Other' && !otherText))) ||
+        (!isChoiceType && !currentAnswer)
     );
 
-    // --- Input Renderer ---
     const renderInput = () => {
-        switch (step.type) {
-            case 'text':
-                return (
-                    <input
-                        className="styled-input"
-                        value={currentAnswer}
-                        onChange={(e) => setCurrentAnswer(e.target.value)}
-                        placeholder="Type your answer here..."
-                    />
-                );
-            case 'radio':
-            case 'select':
-                return (
-                    <div className="input-group">
-                        <div className="grid-columns">
-                            {step.options.map(option => {
-                                const isSelected = radioAnswer === option;
-                                return (
-                                    <div
-                                        key={option}
-                                        className={`card ${isSelected ? "selected" : ""}`}
-                                        onClick={() => {
-                                            setRadioAnswer(option);
-                                            setOtherText(''); // Clear other text if regular option selected
-                                        }}
-                                    >
-                                        {option}
-                                    </div>
-                                );
-                            })}
-                            {/* Always show Other option if not present */}
-                            {!step.options.includes("Other") && (
-                                <div
-                                    className={`card ${radioAnswer === "Other" ? "selected" : ""}`}
-                                    onClick={() => setRadioAnswer("Other")}
-                                >
-                                    Other
-                                </div>
-                            )}
-                        </div>
+        // Force choice type logic
+        if (isChoiceType) {
+            // Create a safe copy of options, defaulting to empty array if undefined
+            let optionsToRender = step.options ? [...step.options] : [];
 
-                        {/* Show text input if "Other" is selected */}
-                        {radioAnswer === "Other" && (
-                            <div className="other-input-container fadeIn" style={{ marginTop: '15px' }}>
-                                <label>Please specify:</label>
-                                <input
-                                    className="styled-input"
-                                    value={otherText}
-                                    onChange={(e) => setOtherText(e.target.value)}
-                                    placeholder="Type your custom answer..."
-                                    autoFocus
-                                />
-                            </div>
-                        )}
+            // Ensure 'Other' is always present
+            if (!optionsToRender.includes("Other")) {
+                optionsToRender.push("Other");
+            }
+
+            return (
+                <div className="input-group">
+                    <div className="options-grid">
+                        {optionsToRender.map((option, index) => {
+                            const isSelected = radioAnswer === option;
+                            return (
+                                <div
+                                    key={`${option}-${index}`}
+                                    className={`option-card ${isSelected ? "selected" : ""}`}
+                                    onClick={() => {
+                                        setRadioAnswer(option);
+                                        if (option !== 'Other') setOtherText('');
+                                    }}
+                                >
+                                    {option}
+                                </div>
+                            );
+                        })}
                     </div>
-                );
-            default:
-                return <p>Error: Unknown input type.</p>;
+                    {radioAnswer === "Other" && (
+                        <div style={{ marginTop: '15px' }}>
+                            <input
+                                className="premium-input"
+                                value={otherText}
+                                onChange={(e) => setOtherText(e.target.value)}
+                                placeholder="Type your custom answer..."
+                                autoFocus
+                            />
+                        </div>
+                    )}
+                </div>
+            );
         }
+
+        // Fallback (should not be reached given isChoiceType=true)
+        return <input className="premium-input" value={currentAnswer} onChange={(e) => setCurrentAnswer(e.target.value)} placeholder="Type your answer here..." />;
     };
 
     return (
-        <div className="step-container fadeIn">
-            <h2>{stepNumber}. {step.question}</h2>
-            {step.required && <p style={{ color: '#ff6b6b', marginTop: '-10px' }}>(Required)</p>}
-
-            <label>{step.question} {step.required ? '*' : ''}</label>
-
-            {renderInput()}
-
-            <div className="button-row">
-                <CustomButton text={stepNumber === totalSteps ? "Complete & Save" : "Next Step"} onClick={handleNext} disabled={isNextDisabled} />
+        <div className="form-container">
+            {step.required && <p style={{ color: '#F48FB1', fontSize: '0.9rem', marginBottom: '16px' }}>(Required)</p>}
+            <div className="input-group">{renderInput()}</div>
+            <div className="action-bar">
+                <button className="premium-button" onClick={handleNext} disabled={isNextDisabled}>
+                    {stepNumber === totalSteps ? "Finish" : "Next"} <span>→</span>
+                </button>
             </div>
         </div>
     );
 };
 
-// --- FINAL REVIEW STEP (Dynamic Summary) ---
+// --- FINAL REVIEW STEP ---
 const FinalReviewStep = ({ data, finish }) => {
-    const dynamicAnswers = (data.dynamicSteps || []).map(s => ({
-        question: s.question,
-        answer: data[s.keyName] || 'N/A'
-    }));
+    const dynamicAnswers = (data.dynamicSteps || []).map(s => ({ question: s.question, answer: data[s.keyName] || 'N/A' }));
 
     return (
-        <div className="step-container fadeIn">
-            <h2>📋 Final Action Plan Review</h2>
-            <p>Review the complete AI-generated strategy and confirm your brand setup.</p>
-            <div className="final-review-grid" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '16px',
-                width: '100%'
-            }}>
-
+        <div className="form-container">
+            <div className="final-review-grid">
                 <div className="final-card"><h3>Core Foundation</h3><p>Niche: {data.coreTopic}</p><p>Tone: {(data.tone || []).join(', ')}</p></div>
                 <div className="final-card"><h3>Commitment</h3><p>{data.timeCommitment}</p></div>
-
-                {/* DYNAMIC ANSWERS */}
                 {dynamicAnswers.map((item, i) => (
-                    <div key={i} className="final-card">
-                        <h3>{item.question.length > 50 ? item.question.substring(0, 50) + '...' : item.question}</h3>
-                        <p>{item.answer}</p>
-                    </div>
+                    <div key={i} className="final-card"><h3>{item.question}</h3><p>{item.answer}</p></div>
                 ))}
-
-                <div className="final-card" style={{ gridColumn: '1 / -1' }}>
-                    <h3>Ready to Generate?</h3>
-                    <p>Click below to generate your detailed 30-step roadmap.</p>
-                </div>
             </div>
-            <div className="button-row">
-                <CustomButton text="Complete & Save" onClick={finish} />
+            <div className="action-bar">
+                <button className="premium-button" onClick={finish}>Generate Roadmap <span>✨</span></button>
             </div>
         </div>
     );
@@ -392,83 +337,89 @@ export default function GuideFlow({ setOnboardedStatus }) {
     const [formData, setFormData] = useState({
         coreTopic: "", targetAudience: "", primaryGoal: "", tone: [],
         timeCommitment: "", contentPreference: [],
-        aiGenerated: null,
-        dynamicSteps: null, // Stores the AI-generated question structure
-        totalDynamicSteps: 0 // Stores the total count of dynamic steps
+        aiGenerated: null, dynamicSteps: null, totalDynamicSteps: 0
     });
     const [loading, setLoading] = useState(false);
     const [brandSetupData, setBrandSetupData] = useState(null);
     const [usingBrandData, setUsingBrandData] = useState(false);
+    const [showProcessing, setShowProcessing] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState("");
+
     const navigate = useNavigate();
+    const location = useLocation(); // Import useLocation
     const uid = auth.currentUser?.uid;
 
-    // Fetch existing brand data on mount
+    useEffect(() => {
+        // Access Control: Only allow entry if state.allowed is true
+        if (!location.state?.allowed) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [location, navigate]);
+
     useEffect(() => {
         const fetchBrandData = async () => {
             if (!uid) return;
             try {
                 const brandRef = doc(db, "brands", uid);
                 const brandSnap = await getDoc(brandRef);
-
                 if (brandSnap.exists()) {
                     const data = brandSnap.data();
                     setBrandSetupData(data);
-
-                    // Pre-fill form data if brand setup exists
                     if (data.brandName || data.industry || data.tone || data.audience) {
                         setUsingBrandData(true);
                         setFormData(prev => ({
                             ...prev,
                             coreTopic: data.industry || prev.coreTopic,
                             targetAudience: data.audience || prev.targetAudience,
-                            // Parse tone if it's a string, otherwise use as array
-                            tone: typeof data.tone === 'string'
-                                ? data.tone.split(',').map(t => t.trim()).filter(t => TONE_OPTIONS.includes(t)).slice(0, 3)
-                                : (Array.isArray(data.tone) ? data.tone : prev.tone)
+                            tone: typeof data.tone === 'string' ? data.tone.split(',').map(t => t.trim()).filter(t => TONE_OPTIONS.includes(t)).slice(0, 3) : (Array.isArray(data.tone) ? data.tone : prev.tone)
                         }));
                     }
                 }
-            } catch (error) {
-                console.error("Error fetching brand data:", error);
-            }
+            } catch (error) { console.error("Error fetching brand data:", error); }
         };
-
         fetchBrandData();
     }, [uid]);
 
-    const updateData = useCallback((fn) => {
-        if (typeof fn === 'function') {
-            setFormData(fn);
-        } else {
-            setFormData(prev => ({ ...prev, ...fn }));
-        }
-    }, []);
+    useEffect(() => {
+        const handleBeforeUnload = (e) => { e.preventDefault(); e.returnValue = "Warning"; return "Warning"; };
+        const handlePopState = () => {
+            if (window.confirm("Warning: Leave now?")) {
+                window.removeEventListener("popstate", handlePopState);
+                if (uid) setDoc(doc(db, "brands", uid), { onboarded: true }, { merge: true }).catch(console.error);
+                if (setOnboardedStatus) setOnboardedStatus(true);
+                navigate('/dashboard');
+            } else {
+                window.history.pushState(null, "", window.location.pathname);
+            }
+        };
+        window.history.pushState(null, "", window.location.pathname);
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        window.addEventListener("popstate", handlePopState);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, [navigate, uid, setOnboardedStatus]);
 
-    const nextStep = () => setCurrentStep(prev => prev + 1);
+    const updateData = useCallback((fn) => { if (typeof fn === 'function') setFormData(fn); else setFormData(prev => ({ ...prev, ...fn })); }, []);
 
-    const [loadingProgress, setLoadingProgress] = useState("");
+    const nextStep = () => {
+        setShowProcessing(true);
+        setTimeout(() => {
+            setShowProcessing(false);
+            setCurrentStep(prev => prev + 1);
+        }, 800);
+    };
 
     const finishGuide = async () => {
         if (!uid) return;
-
         setLoading(true);
         setLoadingProgress("Initializing roadmap generation...");
 
-        // 1. Compile Dynamic Answers for AI Final Guide Prompt
-        const dynamicAnswers = (formData.dynamicSteps || []).map(s => ({
-            question: s.question,
-            answer: formData[s.keyName] || 'N/A'
-        }));
-
-        // 2. Call AI to generate the detailed, multi-step plan
-        let finalGuideData = {
-            roadmapSteps: [],
-            sevenDayChecklist: [],
-            contentPillars: []
-        };
+        const dynamicAnswers = (formData.dynamicSteps || []).map(s => ({ question: s.question, answer: formData[s.keyName] || 'N/A' }));
+        let finalGuideData = { roadmapSteps: [], sevenDayChecklist: [], contentPillars: [] };
 
         try {
-            // A. Generate Roadmap Steps in Batches (6 batches of 5 = 30 steps)
             const totalSteps = 30;
             const batchSize = 5;
             const batches = Math.ceil(totalSteps / batchSize);
@@ -477,242 +428,102 @@ export default function GuideFlow({ setOnboardedStatus }) {
             for (let i = 0; i < batches; i++) {
                 const startStep = i * batchSize + 1;
                 const endStep = startStep + batchSize - 1;
-
-                const progressMsg = `This may take a few minutes generating step (${startStep} to ${endStep}). AI is crafting your custom strategy.`;
-
-                setLoadingProgress(progressMsg);
-
-
-
+                setLoadingProgress(`Generating steps ${startStep}-${endStep} of 30...`);
                 const batchResponse = await generateContent({
-
                     type: "generateRoadmapBatch",
-
-                    payload: {
-
-                        topic: formData.coreTopic || 'General Content Strategy',
-
-                        formData: formData,
-
-                        dynamicAnswers: dynamicAnswers,
-
-                        startStep: startStep,
-
-                        endStep: endStep,
-
-                        numSteps: batchSize
-
-                    }
-
+                    payload: { topic: formData.coreTopic || 'General Content Strategy', formData: formData, dynamicAnswers: dynamicAnswers, startStep: startStep, endStep: endStep, numSteps: batchSize }
                 });
-
-
-
                 let batchData;
-
-                try {
-
-                    batchData = typeof batchResponse === 'object' ? batchResponse : JSON.parse(batchResponse);
-
-                } catch (e) {
-
-
-
-                    continue;
-
-                }
-
-
-
-                if (batchData.steps && Array.isArray(batchData.steps)) {
-
-                    allSteps = [...allSteps, ...batchData.steps];
-
-                }
-
+                try { batchData = typeof batchResponse === 'object' ? batchResponse : JSON.parse(batchResponse); } catch (e) { continue; }
+                if (batchData.steps && Array.isArray(batchData.steps)) allSteps = [...allSteps, ...batchData.steps];
             }
 
-
-
-            // Map all aggregated steps
-
             finalGuideData.roadmapSteps = allSteps.map((step, index) => ({
-
-                id: `step-${index + 1}`,
-
-                title: step.title,
-
-                description: step.description,
-
-                detailedDescription: step.detailedDescription || step.description,
-
-                phase: step.phase,
-
-                timeEstimate: step.timeEstimate || "30 mins",
-
-                suggestions: step.suggestions || [],
-
-                resources: step.resources || [],
-
-                actionItems: step.actionItems || [],
-
-                generatorLink: step.generatorLink || null,
-
-                type: 'ai-generated'
-
+                id: `step-${index + 1}`, title: step.title, description: step.description, detailedDescription: step.detailedDescription || step.description, phase: step.phase, timeEstimate: step.timeEstimate || "30 mins", suggestions: step.suggestions || [], resources: step.resources || [], actionItems: step.actionItems || [], generatorLink: step.generatorLink || null, type: 'ai-generated'
             }));
 
-
-
-            // B. Generate Pillars (Separate Call)
-
-            const pillarsResponse = await generateContent({
-
-                type: "generatePillars",
-
-                payload: { formData: formData }
-
-            });
-
+            const pillarsResponse = await generateContent({ type: "generatePillars", payload: { formData: formData } });
             const pillarsData = typeof pillarsResponse === 'object' ? pillarsResponse : JSON.parse(pillarsResponse);
-
             finalGuideData.contentPillars = pillarsData.contentPillars || ["Education", "Entertainment", "Inspiration"];
-
-
-
-            // C. Generate 7-Day Checklist (Derived from first 7 steps)
-
             finalGuideData.sevenDayChecklist = finalGuideData.roadmapSteps.slice(0, 7).map((s, i) => `Day ${i + 1}: ${s.title}`);
-
-
-
-            // Keep legacy structure
-
             finalGuideData.detailedGuide = { roadmapSteps: finalGuideData.roadmapSteps };
-
 
         } catch (e) {
             console.error("Final Guide API Call Failed:", e);
-            // Fallback data
-            finalGuideData.roadmapSteps = [
-                { id: 'step-1', title: 'Setup Profile', description: 'Complete your bio and profile picture.', phase: 'Foundation', timeEstimate: "15 mins" },
-                { id: 'step-2', title: 'First Post', description: 'Create and publish your first piece of content.', phase: 'Content Creation', timeEstimate: "1 hour" }
-            ];
-            finalGuideData.sevenDayChecklist = ["Day 1: Setup", "Day 2: Research", "Day 3: Plan", "Day 4: Create", "Day 5: Edit", "Day 6: Post", "Day 7: Engage"];
-            finalGuideData.contentPillars = ["Education", "Entertainment", "Inspiration"];
+            finalGuideData.roadmapSteps = [{ id: 'step-1', title: 'Setup Profile', description: 'Complete your bio.', phase: 'Foundation', timeEstimate: "15 mins" }];
+            finalGuideData.sevenDayChecklist = ["Day 1: Setup"];
+            finalGuideData.contentPillars = ["Education"];
         }
 
-        // 3. Save Everything & RESET PROGRESS - Merge with existing brand data
         const brandRef = doc(db, "brands", uid);
+        const mergedBrandData = { ...brandSetupData, industry: formData.coreTopic || brandSetupData?.industry, audience: formData.targetAudience || brandSetupData?.audience, tone: Array.isArray(formData.tone) ? formData.tone.join(', ') : (formData.tone || brandSetupData?.tone) };
+        await setDoc(brandRef, { ...mergedBrandData, onboarded: true, brandData: { ...formData, aiGenerated: finalGuideData }, roadmapProgress: {} }, { merge: true });
 
-        // Merge formData with existing brand setup data
-        const mergedBrandData = {
-            ...brandSetupData,
-            industry: formData.coreTopic || brandSetupData?.industry,
-            audience: formData.targetAudience || brandSetupData?.audience,
-            tone: Array.isArray(formData.tone) ? formData.tone.join(', ') : (formData.tone || brandSetupData?.tone)
-        };
-
-        // RESET roadmapProgress to empty object to clear previous ticks
-        await setDoc(brandRef, {
-            ...mergedBrandData,
-            onboarded: true,
-            brandData: { ...formData, aiGenerated: finalGuideData },
-            roadmapProgress: {} // <--- CRITICAL: RESET PROGRESS
-        }, { merge: true });
-
-        // 4. Award completion credits (10 credits for first-time completion)
         try {
             const { getFunctions, httpsCallable } = await import('firebase/functions');
             const funcs = getFunctions();
             const completeGuideFn = httpsCallable(funcs, 'completeGuide');
-
             const result = await completeGuideFn();
-
-            // Show notification if credits were awarded
-            if (result.data && result.data.creditsAwarded > 0) {
-                alert(`🎉 ${result.data.message}\n\nYou now have ${result.data.newBalance} credits!`);
-            }
-        } catch (creditError) {
-            console.error("Failed to award completion credits:", creditError);
-            // Don't block navigation if credit award fails
-        }
+            if (result.data && result.data.creditsAwarded > 0) alert(`🎉 ${result.data.message}\n\nYou now have ${result.data.newBalance} credits!`);
+        } catch (creditError) { console.error("Failed to award completion credits:", creditError); }
 
         if (setOnboardedStatus) setOnboardedStatus(true);
         setLoading(false);
-        navigate("/guide/roadmap");
+        navigate("/roadmap");
     };
 
-    // Calculate total steps (Static 1-3 + Dynamic N)
-    const totalSteps = CORE_STEPS_COUNT + (formData.dynamicSteps?.length || 0) + 1; // +1 for the final review/save step
+    const totalSteps = CORE_STEPS_COUNT + (formData.dynamicSteps?.length || 0) + 1;
 
-    // Step Rendering Logic
-    const renderStep = () => {
+    // --- RENDER HELPERS ---
+    const getStepInfo = () => {
+        if (currentStep === 1) return { title: "Core Foundation", description: "Let's define the soul of your brand." };
+        if (currentStep === 2) return { title: "Platform Strategy", description: "Where will you build your empire?" };
+        if (currentStep === 3) return { title: "AI Analysis", description: "Analyzing your niche to generate custom strategy steps." };
+        if (currentStep > CORE_STEPS_COUNT && formData.dynamicSteps) {
+            const dynamicIndex = currentStep - CORE_STEPS_COUNT - 1;
+            if (dynamicIndex >= formData.dynamicSteps.length) return { title: "Final Review", description: "Confirm your strategy before we generate the roadmap." };
+            return { title: formData.dynamicSteps[dynamicIndex].question, description: "Help us tailor the roadmap to your specific needs." };
+        }
+        return { title: "Loading...", description: "Please wait." };
+    };
+
+    const stepInfo = getStepInfo();
+
+    const renderRightPanel = () => {
         if (currentStep === 1) return <Step1Niche data={formData} updateData={updateData} next={nextStep} usingBrandData={usingBrandData} />;
         if (currentStep === 2) return <Step2Platform data={formData} updateData={updateData} next={nextStep} />;
         if (currentStep === 3) return <Step3AI formData={formData} setFormData={setFormData} loading={loading} setLoading={setLoading} next={nextStep} />;
-
-        // --- Dynamic Steps Logic ---
         if (currentStep > CORE_STEPS_COUNT && formData.dynamicSteps) {
             const dynamicIndex = currentStep - CORE_STEPS_COUNT - 1;
-
-            if (dynamicIndex >= formData.dynamicSteps.length) {
-                return <FinalReviewStep data={formData} finish={finishGuide} />;
-            }
-
-            const step = formData.dynamicSteps[dynamicIndex];
-            return (
-                <Step4ToN_Dynamic
-                    key={step.stepId}
-                    step={step}
-                    stepNumber={currentStep}
-                    totalSteps={totalSteps}
-                    data={formData}
-                    updateData={updateData}
-                    next={nextStep}
-                    finish={finishGuide}
-                />
-            );
+            if (dynamicIndex >= formData.dynamicSteps.length) return <FinalReviewStep data={formData} finish={finishGuide} />;
+            return <Step4ToN_Dynamic key={formData.dynamicSteps[dynamicIndex].stepId} step={formData.dynamicSteps[dynamicIndex]} stepNumber={currentStep} totalSteps={totalSteps} data={formData} updateData={updateData} next={nextStep} finish={finishGuide} />;
         }
-
-        if (currentStep > CORE_STEPS_COUNT && !formData.dynamicSteps) {
-            return <div className="step-container">Loading custom guide...</div>;
-        }
-
-        if (currentStep === totalSteps && formData.dynamicSteps) {
-            return <FinalReviewStep data={formData} finish={finishGuide} />;
-        }
-
-        return <div className="step-container">Step Not Found.</div>;
+        return <div>Loading...</div>;
     };
 
-    // --- LOADING OVERLAY ---
     if (loading) {
         return (
-            <div className="guide-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 9999, background: 'rgba(10, 10, 15, 0.95)', backdropFilter: 'blur(10px)' }}>
-                <div className="ai-loader" style={{ fontSize: '3rem', marginBottom: '20px' }}>🤖</div>
-                <h2 style={{ color: 'white', marginBottom: '10px' }}>Generating Your 30-Step Roadmap...</h2>
-                <p style={{ color: '#a0a0b0', fontSize: '1.1rem', animation: 'pulse 2s infinite' }}>
-                    {loadingProgress || "This may take a few minutes. AI is crafting your custom strategy."}
-                </p>
-                <p style={{ color: '#ef4444', marginTop: '20px', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    ⚠️ Do not close or refresh this page
-                </p>
-                <style>{`
-                    @keyframes pulse {
-                        0% { opacity: 0.6; }
-                        50% { opacity: 1; }
-                        100% { opacity: 0.6; }
-                    }
-                `}</style>
+            <div className="guide-flow-split-layout" style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999, background: 'rgba(5, 5, 7, 0.98)' }}>
+                <div className="processing-orb" style={{ width: '150px', height: '150px' }}></div>
+                <h2 style={{ color: 'white', marginTop: '40px', fontSize: '2rem' }}>Generating Your Roadmap...</h2>
+                <p style={{ color: '#a0a0b0', fontSize: '1.2rem', marginTop: '16px' }}>{loadingProgress}</p>
+                <p style={{ color: '#ef4444', marginTop: '32px', fontWeight: 'bold' }}>⚠️ Do not close this page</p>
             </div>
         );
     }
 
     return (
-        <div className="guide-container">
-            <ProgressBar current={currentStep} total={totalSteps} />
-            {renderStep()}
+        <div className="guide-flow-split-layout">
+            <TransitionOverlay show={showProcessing} />
+            <LeftPanel stepNumber={currentStep} title={stepInfo.title} description={stepInfo.description} />
+            <div className="right-panel">
+                <div className="progress-container">
+                    <div className="progress-fill" style={{ width: `${Math.min(currentStep / totalSteps, 1) * 100}%` }} />
+                </div>
+                {renderRightPanel()}
+            </div>
         </div>
     );
 }
+
+

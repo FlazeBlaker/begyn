@@ -35,7 +35,7 @@ const Navbar = ({ user }) => {
                     }}>
                         <div style={{
                             width: '32px', height: '32px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+                            background: 'linear-gradient(135deg, #7C4DFF 0%, #CE93D8 100%)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: '0.9rem', fontWeight: '700', color: '#fff'
                         }}>
@@ -89,8 +89,8 @@ const Hero = ({ user }) => {
         }}>
             <div className="stagger-1" style={{
                 display: 'inline-block', padding: '6px 16px', borderRadius: '99px',
-                background: 'rgba(168, 85, 247, 0.1)', color: '#d8b4fe', marginBottom: '24px',
-                border: '1px solid rgba(168, 85, 247, 0.2)', fontSize: '0.9rem', fontWeight: '600'
+                background: 'rgba(124, 77, 255, 0.1)', color: '#CE93D8', marginBottom: '24px',
+                border: '1px solid rgba(124, 77, 255, 0.2)', fontSize: '0.9rem', fontWeight: '600'
             }}>
                 ✨ The #1 AI Content Suite
             </div>
@@ -103,14 +103,14 @@ const Hero = ({ user }) => {
                     display: 'flex', alignItems: 'center', gap: '24px',
                     background: 'rgba(255, 255, 255, 0.03)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                    boxShadow: '0 20px 50px -10px rgba(168, 85, 247, 0.3)'
+                    boxShadow: '0 20px 50px -10px rgba(124, 77, 255, 0.3)'
                 }}>
                     <img
                         src="/logos/logo.png"
                         alt="Begyn Logo"
                         style={{
                             height: 'clamp(60px, 10vw, 100px)',
-                            filter: 'drop-shadow(0 0 20px rgba(168, 85, 247, 0.5))'
+                            filter: 'drop-shadow(0 0 20px rgba(124, 77, 255, 0.5))'
                         }}
                     />
                     <h1 style={{
@@ -146,8 +146,8 @@ const Hero = ({ user }) => {
 const FeatureCard = ({ icon: Icon, title, desc }) => (
     <div className="glass-premium hover-lift-glow tech-corners" style={{ padding: '32px', borderRadius: '16px' }}>
         <div style={{
-            width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(168, 85, 247, 0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', color: '#a855f7'
+            width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(124, 77, 255, 0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', color: '#7C4DFF'
         }}>
             <Icon size={28} />
         </div>
@@ -359,7 +359,7 @@ const DeepDive = () => {
             desc: "Stop guessing what to post. Our interactive guide gives you daily tasks tailored to your brand goals. From setting up your profile to your first viral hit, we walk you through every step.",
             icon: "🗺️",
             image: "/assets/guide_preview.png",
-            placeholderColor: "rgba(168, 85, 247, 0.1)"
+            placeholderColor: "rgba(124, 77, 255, 0.1)"
         },
         {
             id: 1,
@@ -367,7 +367,7 @@ const DeepDive = () => {
             desc: "Track your growth, monitor your streaks, and manage your content pipeline all in one place. The dashboard keeps you focused and motivated to create consistently.",
             icon: "📊",
             image: "/assets/dashboard_preview.png",
-            placeholderColor: "rgba(59, 130, 246, 0.1)"
+            placeholderColor: "rgba(74, 20, 140, 0.1)"
         },
         {
             id: 2,
@@ -375,7 +375,7 @@ const DeepDive = () => {
             desc: "Need a caption? A video script? A brand new idea? Our suite of AI generators creates high-quality, brand-safe content in seconds. It's like having a pro marketing team in your pocket.",
             icon: "⚡",
             image: "/assets/generator_preview.png",
-            placeholderColor: "rgba(236, 72, 153, 0.1)"
+            placeholderColor: "rgba(206, 147, 216, 0.1)"
         }
     ];
 
@@ -399,7 +399,7 @@ const DeepDive = () => {
                             >
                                 <div style={{
                                     fontSize: '4rem', marginBottom: '24px',
-                                    filter: activeStep === index ? 'drop-shadow(0 0 20px rgba(168, 85, 247, 0.5))' : 'none',
+                                    filter: activeStep === index ? 'drop-shadow(0 0 20px rgba(124, 77, 255, 0.5))' : 'none',
                                     transition: 'all 0.5s ease'
                                 }}>
                                     {step.icon}
@@ -529,7 +529,7 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => (
         }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#fff' }}>{question}</h3>
             <div style={{
-                color: '#a855f7',
+                color: '#7C4DFF',
                 transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.3s ease'
             }}>

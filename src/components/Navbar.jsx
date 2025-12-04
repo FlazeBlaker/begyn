@@ -97,7 +97,7 @@ export default function Navbar({ isTestActive, userInfo, isMobile, onMenuClick }
                 {!isTestActive && (
                     <Link to="/pricing" style={{ textDecoration: "none" }}>
                         <button style={{
-                            background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                            background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                             border: "none",
                             borderRadius: "8px",
                             padding: "8px 16px",
@@ -105,7 +105,7 @@ export default function Navbar({ isTestActive, userInfo, isMobile, onMenuClick }
                             fontSize: "0.9rem",
                             fontWeight: "600",
                             cursor: "pointer",
-                            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+                            boxShadow: "0 4px 12px rgba(124, 77, 255, 0.3)",
                             transition: "transform 0.2s",
                             whiteSpace: "nowrap",
                             display: "flex",

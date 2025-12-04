@@ -192,7 +192,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
             // 2. Reset local/firestore state
             if (setOnboardedStatus) setOnboardedStatus(false);
             await updateDoc(doc(db, "brands", uid), { onboarded: false });
-            navigate("/guide/flow");
+            navigate("/flow");
 
         } catch (error) {
             console.error("Reset failed:", error);

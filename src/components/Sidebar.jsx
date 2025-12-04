@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { auth } from "../services/firebase";
 
 // --- SUB-COMPONENT: NavLink ---
-const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick }) => {
+const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick, state }) => {
     const [hover, setHover] = useState(false);
     const location = useLocation();
     const isActive = location.pathname === to;
@@ -25,11 +25,11 @@ const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick }) =
             minHeight: "24px",
             cursor: isDisabled ? "not-allowed" : "pointer",
             background: isActive
-                ? "linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.05))"
+                ? "linear-gradient(90deg, rgba(124, 77, 255, 0.15), rgba(206, 147, 216, 0.05))"
                 : "transparent",
             color: isActive ? "var(--text-primary)" : "var(--text-muted)",
-            borderLeft: isActive ? "3px solid #d946ef" : "3px solid transparent",
-            boxShadow: isActive ? "0 4px 12px rgba(168, 85, 247, 0.1)" : "none",
+            borderLeft: isActive ? "3px solid #7C4DFF" : "3px solid transparent",
+            boxShadow: isActive ? "0 4px 12px rgba(124, 77, 255, 0.1)" : "none",
             ...(hover && !isActive && !isDisabled && {
                 background: "var(--bg-hover)",
                 color: "var(--text-primary)",
@@ -49,7 +49,7 @@ const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick }) =
         lineHeight: 0,
         flexShrink: 0,
         transition: "all 0.3s ease",
-        filter: isActive ? "drop-shadow(0 0 8px rgba(217, 70, 239, 0.5))" : "none",
+        filter: isActive ? "drop-shadow(0 0 8px rgba(124, 77, 255, 0.5))" : "none",
         transform: isActive ? "scale(1.1)" : "scale(1)",
     };
 
@@ -75,7 +75,7 @@ const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick }) =
         </div>
     );
 
-    return isDisabled ? Content : <Link to={to} onClick={onClick}>{Content}</Link>;
+    return isDisabled ? Content : <Link to={to} state={state} onClick={onClick}>{Content}</Link>;
 };
 
 // --- SUB-COMPONENT: Profile Menu Item ---
@@ -219,7 +219,7 @@ const UserProfile = ({ isSidebarOpen }) => {
                     width: "36px",
                     height: "36px",
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #a855f7, #ec4899)",
+                    background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -274,7 +274,7 @@ export default function Sidebar({
 }) {
     const onboarded = userInfo?.onboarded;
     const guideButtonText = onboarded ? "Your Guide" : "Go to Guide (Earn 10 credits!)";
-    const guideButtonPath = onboarded ? "/guide/roadmap" : "/guide/onboarding";
+    const guideButtonPath = onboarded ? "/roadmap" : "/flow";
 
     const sidebarStyle = useMemo(
         () => ({
@@ -465,6 +465,7 @@ export default function Sidebar({
                         <li>
                             <NavLink
                                 to={guideButtonPath}
+                                state={{ allowed: true }}
                                 icon="🗺️"
                                 isTestActive={isTestActive}
                                 isSidebarOpen={isSidebarOpen}

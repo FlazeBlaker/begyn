@@ -341,9 +341,9 @@ const Generators = () => {
                                 padding: "12px 24px",
                                 borderRadius: "12px",
                                 background: activeTab === tab.id
-                                    ? "linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.15))"
+                                    ? "linear-gradient(135deg, rgba(124, 77, 255, 0.2), rgba(206, 147, 216, 0.15))"
                                     : "transparent",
-                                border: activeTab === tab.id ? "1px solid rgba(168, 85, 247, 0.4)" : "1px solid transparent",
+                                border: activeTab === tab.id ? "1px solid rgba(124, 77, 255, 0.4)" : "1px solid transparent",
                                 cursor: "pointer",
                                 fontWeight: activeTab === tab.id ? "700" : "500",
                                 color: activeTab === tab.id ? "#ffffff" : "#94a3b8",
@@ -378,13 +378,13 @@ const Generators = () => {
                                         position: "absolute",
                                         top: "-14px",
                                         left: "24px",
-                                        background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                                        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                         color: "white",
                                         padding: "6px 16px",
                                         borderRadius: "20px",
                                         fontSize: "0.8rem",
                                         fontWeight: "700",
-                                        boxShadow: "0 4px 10px rgba(139, 92, 246, 0.3)",
+                                        boxShadow: "0 4px 10px rgba(124, 77, 255, 0.3)",
                                         textTransform: "uppercase",
                                         letterSpacing: "1px"
                                     }}>
@@ -407,11 +407,11 @@ const Generators = () => {
                                             marginTop: "24px",
                                             padding: "12px 20px",
                                             borderRadius: "12px",
-                                            background: "rgba(139, 92, 246, 0.1)",
-                                            border: "1px solid rgba(139, 92, 246, 0.3)",
+                                            background: "rgba(124, 77, 255, 0.1)",
+                                            border: "1px solid rgba(124, 77, 255, 0.3)",
                                             cursor: "pointer",
                                             fontWeight: "600",
-                                            color: "#d8b4fe",
+                                            color: "#CE93D8",
                                             width: "100%",
                                             fontSize: "0.95rem",
                                             transition: "all 0.2s",
@@ -425,8 +425,8 @@ const Generators = () => {
                                             e.target.style.color = "#fff";
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.target.style.background = "rgba(139, 92, 246, 0.1)";
-                                            e.target.style.color = "#d8b4fe";
+                                            e.target.style.background = "rgba(124, 77, 255, 0.1)";
+                                            e.target.style.color = "#CE93D8";
                                         }}
                                     >
                                         📋 Copy Intro {idx + 1}
@@ -460,14 +460,14 @@ const Generators = () => {
                                     marginTop: "32px",
                                     padding: "14px 24px",
                                     borderRadius: "14px",
-                                    background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
+                                    background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                     border: "none",
                                     cursor: "pointer",
                                     fontWeight: "700",
                                     color: "white",
                                     width: "100%",
                                     fontSize: "1rem",
-                                    boxShadow: "0 4px 15px rgba(139, 92, 246, 0.3)",
+                                    boxShadow: "0 4px 15px rgba(124, 77, 255, 0.3)",
                                     transition: "all 0.2s"
                                 }}
                                 onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
@@ -493,13 +493,13 @@ const Generators = () => {
                                         position: "absolute",
                                         top: "-14px",
                                         left: "24px",
-                                        background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                                        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                         color: "white",
                                         padding: "6px 16px",
                                         borderRadius: "20px",
                                         fontSize: "0.8rem",
                                         fontWeight: "700",
-                                        boxShadow: "0 4px 10px rgba(139, 92, 246, 0.3)",
+                                        boxShadow: "0 4px 10px rgba(124, 77, 255, 0.3)",
                                         textTransform: "uppercase",
                                         letterSpacing: "1px"
                                     }}>
@@ -522,11 +522,11 @@ const Generators = () => {
                                             marginTop: "24px",
                                             padding: "12px 20px",
                                             borderRadius: "12px",
-                                            background: "rgba(139, 92, 246, 0.1)",
-                                            border: "1px solid rgba(139, 92, 246, 0.3)",
+                                            background: "rgba(124, 77, 255, 0.1)",
+                                            border: "1px solid rgba(124, 77, 255, 0.3)",
                                             cursor: "pointer",
                                             fontWeight: "600",
-                                            color: "#d8b4fe",
+                                            color: "#CE93D8",
                                             width: "100%",
                                             fontSize: "0.95rem",
                                             transition: "all 0.2s",
@@ -540,8 +540,8 @@ const Generators = () => {
                                             e.target.style.color = "#fff";
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.target.style.background = "rgba(139, 92, 246, 0.1)";
-                                            e.target.style.color = "#d8b4fe";
+                                            e.target.style.background = "rgba(124, 77, 255, 0.1)";
+                                            e.target.style.color = "#CE93D8";
                                         }}
                                     >
                                         📋 Copy Outro {idx + 1}
@@ -565,7 +565,7 @@ const Generators = () => {
             <div style={{ padding: "20px", color: "#e0e0e0", background: "#0a0e1a", height: "100%", display: "flex", flexDirection: "column" }}>
                 {/* Header with title and actions */}
                 <div style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-                    <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: "700", background: "linear-gradient(135deg, #a855f7, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: "700", background: "linear-gradient(135deg, #7C4DFF, #CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                         ✨ Generated Results
                     </h3>
                     {content.image && (
@@ -573,7 +573,7 @@ const Generators = () => {
                             href={content.image}
                             download={`generated-image-${Date.now()}.png`}
                             style={{
-                                padding: "8px 16px", borderRadius: "8px", background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
+                                padding: "8px 16px", borderRadius: "8px", background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                 border: "none", cursor: "pointer", fontWeight: "600", color: "white",
                                 textDecoration: "none", display: "inline-block", fontSize: "0.85rem"
                             }}
@@ -591,13 +591,13 @@ const Generators = () => {
                                 display: "flex",
                                 justifyContent: "center",
                                 alignItems: "center",
-                                background: "rgba(139, 92, 246, 0.05)",
+                                background: "rgba(124, 77, 255, 0.05)",
                                 borderRadius: "16px",
                                 padding: "16px",
                                 marginBottom: "24px",
                                 cursor: "zoom-in",
                                 aspectRatio: advancedOptions.aspectRatio ? advancedOptions.aspectRatio.replace(":", "/") : "1/1",
-                                border: "1px solid rgba(139, 92, 246, 0.2)",
+                                border: "1px solid rgba(124, 77, 255, 0.2)",
                                 overflow: "hidden"
                             }}
                             onClick={() => {
@@ -775,7 +775,7 @@ const Generators = () => {
                                                 return (
                                                     <div key={idx} style={{
                                                         background: isIdea ? "linear-gradient(145deg, rgba(30, 32, 45, 0.8), rgba(20, 22, 35, 0.9))" : "rgba(255, 255, 255, 0.03)",
-                                                        border: isIdea ? "1px solid rgba(168, 85, 247, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)",
+                                                        border: isIdea ? "1px solid rgba(124, 77, 255, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)",
                                                         borderRadius: "20px",
                                                         padding: "24px",
                                                         position: "relative",
@@ -785,12 +785,12 @@ const Generators = () => {
                                                     }}
                                                         onMouseEnter={(e) => {
                                                             e.currentTarget.style.transform = "translateY(-4px)";
-                                                            e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.5)";
-                                                            e.currentTarget.style.boxShadow = "0 10px 30px rgba(168, 85, 247, 0.15)";
+                                                            e.currentTarget.style.borderColor = "rgba(124, 77, 255, 0.5)";
+                                                            e.currentTarget.style.boxShadow = "0 10px 30px rgba(124, 77, 255, 0.15)";
                                                         }}
                                                         onMouseLeave={(e) => {
                                                             e.currentTarget.style.transform = "translateY(0)";
-                                                            e.currentTarget.style.borderColor = isIdea ? "rgba(168, 85, 247, 0.2)" : "rgba(255, 255, 255, 0.05)";
+                                                            e.currentTarget.style.borderColor = isIdea ? "rgba(124, 77, 255, 0.2)" : "rgba(255, 255, 255, 0.05)";
                                                             e.currentTarget.style.boxShadow = isIdea ? "0 4px 20px rgba(0,0,0,0.2)" : "none";
                                                         }}
                                                     >

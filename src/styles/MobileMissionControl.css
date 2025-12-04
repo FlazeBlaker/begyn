@@ -6,8 +6,8 @@
     /* --- Global Mobile Container --- */
     .guide-container.mobile-view {
         padding: 0 !important;
-        background: #0f0f13;
-        /* Darker, app-like background */
+        background: radial-gradient(circle at top center, #4A148C, #2a0a55);
+        /* Deep Purple Gradient */
     }
 
     .guide-container.mobile-view>div {
@@ -39,10 +39,11 @@
     }
 
     .mobile-card {
-        background: #1e1e24;
+        background: rgba(74, 20, 140, 0.4);
+        backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(124, 77, 255, 0.2);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
@@ -50,7 +51,7 @@
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: #a855f7;
+        color: #CE93D8;
         margin-bottom: 12px;
         opacity: 0.9;
     }
@@ -100,8 +101,8 @@
         width: 24px;
         height: 24px;
         border-radius: 50%;
-        background: #2d2d3a;
-        border: 2px solid rgba(255, 255, 255, 0.2);
+        background: #2a0a55;
+        border: 2px solid rgba(124, 77, 255, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -116,28 +117,28 @@
     }
 
     .timeline-step.current .timeline-icon {
-        background: #a855f7;
-        border-color: #a855f7;
-        box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.2);
+        background: #7C4DFF;
+        border-color: #7C4DFF;
+        box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.2);
     }
 
     .timeline-step.locked .timeline-icon {
-        background: #1e1e24;
+        background: #1a0530;
         border-color: rgba(255, 255, 255, 0.1);
         color: #666;
     }
 
     /* Step Content */
     .timeline-content {
-        background: #1e1e24;
+        background: rgba(42, 10, 85, 0.6);
         border-radius: 12px;
         padding: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(124, 77, 255, 0.1);
     }
 
     .timeline-step.current .timeline-content {
-        border-color: rgba(168, 85, 247, 0.4);
-        background: linear-gradient(145deg, #1e1e24, #252530);
+        border-color: rgba(124, 77, 255, 0.6);
+        background: linear-gradient(145deg, rgba(74, 20, 140, 0.6), rgba(124, 77, 255, 0.2));
     }
 
     .timeline-title {
@@ -163,14 +164,14 @@
 
     /* --- Checklist & Guide Mobile --- */
     .mobile-checklist-item {
-        background: #18181e;
+        background: rgba(255, 255, 255, 0.05);
         padding: 12px;
         border-radius: 8px;
         margin-bottom: 8px;
         display: flex;
         align-items: center;
         gap: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(124, 77, 255, 0.1);
     }
 
     .mobile-checklist-text {

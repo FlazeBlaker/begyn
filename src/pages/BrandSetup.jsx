@@ -28,8 +28,8 @@ const KeyframeStyles = () => (
 }
 
 @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(140, 100, 255, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(140, 100, 255, 0.6); }
+    0%, 100% { box-shadow: 0 0 20px rgba(124, 77, 255, 0.3); }
+    50% { box-shadow: 0 0 30px rgba(124, 77, 255, 0.6); }
 }
 `}
     </style>
@@ -42,7 +42,7 @@ const AIAvatar = () => {
             width: 'clamp(60px, 15vw, 80px)',
             height: 'clamp(60px, 15vw, 80px)',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+            background: 'linear-gradient(135deg, #7C4DFF, #CE93D8)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -103,8 +103,8 @@ const EnhancedInput = ({ label, placeholder, description, value, onChange, chara
         boxSizing: "border-box",
         transition: "all 0.3s ease-in-out",
         outline: "none",
-        borderColor: focus ? "rgba(140, 100, 255, 0.8)" : "var(--border-color)",
-        boxShadow: focus ? "0 0 20px rgba(140, 100, 255, 0.3)" : "var(--shadow-sm)",
+        borderColor: focus ? "rgba(124, 77, 255, 0.8)" : "var(--border-color)",
+        boxShadow: focus ? "0 0 20px rgba(124, 77, 255, 0.3)" : "var(--shadow-sm)",
         minHeight: "50px" // Touch target
     };
 
@@ -130,7 +130,7 @@ const EnhancedInput = ({ label, placeholder, description, value, onChange, chara
         width: `${Math.min(percentage, 100)}%`,
         background: percentage > 90 ? "linear-gradient(90deg, #f87171, #ef4444)" :
             percentage > 70 ? "linear-gradient(90deg, #fbbf24, #f59e0b)" :
-                "linear-gradient(90deg, #a855f7, #ec4899)",
+                "linear-gradient(90deg, #7C4DFF, #CE93D8)",
         transition: "width 0.3s ease",
         borderRadius: "2px"
     };
@@ -218,8 +218,8 @@ const EnhancedTextarea = ({ label, placeholder, description, value, onChange, ch
         minHeight: "120px",
         fontFamily: "inherit",
         lineHeight: "1.6",
-        borderColor: focus ? "rgba(140, 100, 255, 0.8)" : "var(--border-color)",
-        boxShadow: focus ? "0 0 20px rgba(140, 100, 255, 0.3)" : "var(--shadow-sm)"
+        borderColor: focus ? "rgba(124, 77, 255, 0.8)" : "var(--border-color)",
+        boxShadow: focus ? "0 0 20px rgba(124, 77, 255, 0.3)" : "var(--shadow-sm)"
     };
 
     const charCounterStyle = {
@@ -244,7 +244,7 @@ const EnhancedTextarea = ({ label, placeholder, description, value, onChange, ch
         width: `${Math.min(percentage, 100)}%`,
         background: percentage > 90 ? "linear-gradient(90deg, #f87171, #ef4444)" :
             percentage > 70 ? "linear-gradient(90deg, #fbbf24, #f59e0b)" :
-                "linear-gradient(90deg, #a855f7, #ec4899)",
+                "linear-gradient(90deg, #7C4DFF, #CE93D8)",
         transition: "width 0.3s ease",
         borderRadius: "2px"
     };
@@ -301,10 +301,10 @@ const SaveButton = ({ loading, saved, completionPercentage, ...props }) => {
         background: saved
             ? "linear-gradient(135deg, #22c55e, #16a34a)"
             : (hover
-                ? "linear-gradient(135deg, #a855f7, #ec4899)"
-                : "linear-gradient(135deg, #8b5cf6, #a855f7)"),
+                ? "linear-gradient(135deg, #7C4DFF, #CE93D8)"
+                : "linear-gradient(135deg, #651FFF, #7C4DFF)"),
         boxShadow: hover && !saved
-            ? "0 0 30px rgba(140, 100, 255, 0.6)"
+            ? "0 0 30px rgba(124, 77, 255, 0.6)"
             : (saved ? "0 0 30px rgba(34, 197, 94, 0.6)" : "0 4px 15px rgba(0, 0, 0, 0.3)"),
         transform: hover ? "translateY(-2px)" : "translateY(0)",
         opacity: loading ? 0.7 : 1,
@@ -422,7 +422,7 @@ export default function BrandSetup() {
     const titleStyle = {
         fontSize: "clamp(2rem, 6vw, 2.5rem)",
         fontWeight: "800",
-        background: "linear-gradient(135deg, #a855f7, #ec4899)",
+        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
         backgroundClip: "text",
@@ -470,7 +470,7 @@ export default function BrandSetup() {
         width: `${completionPercentage}%`,
         background: completionPercentage === 100
             ? "linear-gradient(90deg, #22c55e, #16a34a)"
-            : "linear-gradient(90deg, #a855f7, #ec4899)",
+            : "linear-gradient(90deg, #7C4DFF, #CE93D8)",
         transition: "width 0.5s ease",
         borderRadius: "8px"
     };
@@ -478,7 +478,7 @@ export default function BrandSetup() {
     const progressPercentStyle = {
         fontSize: "1.5rem",
         fontWeight: "700",
-        color: completionPercentage === 100 ? "#22c55e" : "#a855f7",
+        color: completionPercentage === 100 ? "#22c55e" : "#7C4DFF",
         marginTop: "12px",
         textAlign: "center"
     };

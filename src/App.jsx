@@ -20,7 +20,8 @@ const Generators = lazy(() => import("./pages/Generators"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 
 
-const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+
+const IntroPage = lazy(() => import("./pages/IntroPage"));
 const GuideFlow = lazy(() => import("./pages/GuideFlow"));
 const YourGuidePage = lazy(() => import("./pages/YourGuidePage"));
 const AutomationPage = lazy(() => import("./pages/AutomationPage"));
@@ -54,20 +55,85 @@ const SuspenseFallback = () => (
 );
 
 // Full-screen loader while auth initializes
+// Full-screen loader while auth initializes
 const FullScreenLoader = () => (
     <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', width: '100vw', background: '#0b1020', color: 'white',
-        fontSize: '1.25rem', fontFamily: 'system-ui, sans-serif'
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        width: '100vw',
+        background: 'radial-gradient(circle at center, #2a0a55 0%, #0b1020 100%)',
+        color: 'white',
+        fontFamily: 'system-ui, sans-serif',
+        gap: '20px'
     }}>
-        Loading Studio...
+        <style>
+            {`
+            @keyframes pulse-glow {
+                0%, 100% { box-shadow: 0 0 20px rgba(124, 77, 255, 0.2); transform: scale(1); }
+                50% { box-shadow: 0 0 40px rgba(124, 77, 255, 0.6); transform: scale(1.05); }
+            }
+            @keyframes spin-slow {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            `}
+        </style>
+        <div style={{
+            position: 'relative',
+            width: '80px',
+            height: '80px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            {/* Outer Ring */}
+            <div style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                border: '2px solid transparent',
+                borderTopColor: '#7C4DFF',
+                borderRightColor: '#7C4DFF',
+                animation: 'spin-slow 2s linear infinite'
+            }} />
+
+            {/* Inner Logo/Icon */}
+            <div style={{
+                width: '60px',
+                height: '60px',
+                background: 'linear-gradient(135deg, #7C4DFF, #4A148C)',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                boxShadow: '0 0 20px rgba(124, 77, 255, 0.4)',
+                animation: 'pulse-glow 2s ease-in-out infinite'
+            }}>
+                AI
+            </div>
+        </div>
+        <div style={{
+            fontSize: '1.2rem',
+            fontWeight: '500',
+            letterSpacing: '1px',
+            background: 'linear-gradient(to right, #fff, #a0a0b0)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+        }}>
+            Initializing Studio...
+        </div>
     </div>
 );
 
-// PrivateRoute: returns children if user authed and onboarded (if required)
-function PrivateRoute({ user, onboarded, onboardedRequired = true, children }) {
-    if (!user) return <Navigate to="/login" replace />;
-    if (onboardedRequired && onboarded === false) return <Navigate to="/guide/onboarding" replace />;
+// PrivateRoute: returns children if user authed
+function PrivateRoute({ user, children }) {
+    if (!user) return <Navigate to="/" replace />;
     return children;
 }
 
@@ -245,8 +311,8 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
         location.pathname === "/" ||
         location.pathname === "/terms" ||
         location.pathname === "/privacy" ||
-        location.pathname === "/guide/onboarding" ||
-        location.pathname === "/guide/flow";
+        location.pathname === "/intro" ||
+        location.pathname === "/flow";
 
     // Sidebar width values used by Sidebar component
     // On mobile, sidebar width doesn't push content, so we can set it to 0 or handle it in CSS
@@ -255,28 +321,41 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
     if (hideLayout) {
         return (
             <Suspense fallback={<SuspenseFallback />}>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
+                <Routes location={location} key={location.pathname}>
+                    {/* Landing Page */}
                     <Route path="/" element={<LandingPage />} />
-                    <Route path="/terms" element={<TermsOfService />} />
-                    <Route path="/privacy" element={<PrivacyPolicy />} />
-                    <Route path="/guide/onboarding" element={
+
+                    {/* Login Page */}
+                    <Route path="/login" element={<Login />} />
+
+                    {/* Intro Page - Shown only once */}
+                    <Route path="/intro" element={
                         <GuideRoute user={user}>
-                            {onboarded ? <Navigate to="/dashboard" replace /> : <OnboardingPage setOnboardedStatus={(v) => { /* map as needed */ }} />}
-                        </GuideRoute>
-                    } />
-                    <Route path="/guide/flow" element={
-                        <GuideRoute user={user}>
-                            <GuideFlow setOnboardedStatus={(status) => {
+                            <IntroPage setIntroSeenStatus={(status) => {
                                 if (setUserInfo) {
-                                    setUserInfo(prev => ({ ...prev, onboarded: status }));
+                                    setUserInfo(prev => ({ ...prev, introSeen: status }));
                                 }
                             }} />
                         </GuideRoute>
                     } />
-                    <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+
+                    {/* Guide Flow Route - Renamed from /guide/flow to /flow */}
+                    <Route path="/flow" element={
+                        <GuideRoute user={user}>
+                            {onboarded ? (
+                                <Navigate to="/dashboard" replace />
+                            ) : (
+                                <GuideFlow setOnboardedStatus={(status) => {
+                                    if (setUserInfo) {
+                                        setUserInfo(prev => ({ ...prev, onboarded: status }));
+                                    }
+                                }} />
+                            )}
+                        </GuideRoute>
+                    } />
+                    <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
                 </Routes>
-            </Suspense>
+            </Suspense >
         );
     }
 
@@ -302,7 +381,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
 
                 <div style={{ flex: 1, overflowY: "auto" }}>
                     <Suspense fallback={<SuspenseFallback />}>
-                        <Routes>
+                        <Routes location={location} key={location.pathname}>
 
                             {/* Protected main routes */}
                             <Route path="/dashboard" element={
@@ -344,10 +423,17 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                             } />
 
 
-
-                            <Route path="/guide/roadmap" element={
+                            {/* Roadmap Route - Renamed from /guide/roadmap to /roadmap */}
+                            <Route path="/roadmap" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
-                                    <YourGuidePage userInfo={userInfo} />
+                                    <YourGuidePage
+                                        userInfo={userInfo}
+                                        setOnboardedStatus={(status) => {
+                                            if (setUserInfo) {
+                                                setUserInfo(prev => ({ ...prev, onboarded: status }));
+                                            }
+                                        }}
+                                    />
                                 </PrivateRoute>
                             } />
 

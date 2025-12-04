@@ -6,7 +6,7 @@ const PrivacyPolicy = () => {
     return (
         <div style={{
             minHeight: '100vh',
-            background: 'linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 100%)',
+            background: 'linear-gradient(135deg, #4A148C 0%, #2a0a55 100%)',
             color: '#fff',
             fontFamily: 'Inter, sans-serif',
             padding: '40px 20px'

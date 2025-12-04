@@ -123,10 +123,10 @@ const MobileRoadmap = ({ steps, onStepComplete, onActionItemComplete }) => {
                                                         const title = item.title || item; // Handle object or string
                                                         return (
                                                             <div key={i} id={`action-item-${step.id}-${i}`} style={{
-                                                                background: 'rgba(255,255,255,0.03)',
+                                                                background: 'rgba(74, 20, 140, 0.2)',
                                                                 padding: '12px',
                                                                 borderRadius: '8px',
-                                                                border: '1px solid rgba(255,255,255,0.05)'
+                                                                border: '1px solid rgba(124, 77, 255, 0.1)'
                                                             }}>
                                                                 <div
                                                                     onClick={() => toggleActionItem(step.id, i)}
@@ -209,7 +209,7 @@ const MobileRoadmap = ({ steps, onStepComplete, onActionItemComplete }) => {
                                                     style={{
                                                         display: "block",
                                                         textAlign: "center",
-                                                        background: "linear-gradient(90deg, #7c3aed, #db2777)",
+                                                        background: "linear-gradient(90deg, #7C4DFF, #CE93D8)",
                                                         color: "white",
                                                         padding: "12px",
                                                         borderRadius: "8px",
@@ -235,7 +235,7 @@ const MobileRoadmap = ({ steps, onStepComplete, onActionItemComplete }) => {
                                                     padding: '12px 20px',
                                                     background: (step.subNodes && step.subNodes.some(sub => !sub.completed))
                                                         ? 'rgba(255,255,255,0.1)'
-                                                        : 'linear-gradient(135deg, #8b5cf6, #a855f7)',
+                                                        : 'linear-gradient(135deg, #7C4DFF, #9C27B0)',
                                                     color: (step.subNodes && step.subNodes.some(sub => !sub.completed))
                                                         ? 'rgba(255,255,255,0.3)'
                                                         : '#fff',
@@ -246,7 +246,7 @@ const MobileRoadmap = ({ steps, onStepComplete, onActionItemComplete }) => {
                                                     cursor: (step.subNodes && step.subNodes.some(sub => !sub.completed)) ? 'not-allowed' : 'pointer',
                                                     boxShadow: (step.subNodes && step.subNodes.some(sub => !sub.completed))
                                                         ? 'none'
-                                                        : '0 4px 12px rgba(139, 92, 246, 0.3)',
+                                                        : '0 4px 12px rgba(124, 77, 255, 0.3)',
                                                     transition: 'all 0.2s'
                                                 }}
                                             >

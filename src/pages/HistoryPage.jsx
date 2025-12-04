@@ -164,9 +164,9 @@ export default function HistoryPage() {
                                 padding: "12px 24px",
                                 borderRadius: "12px",
                                 background: activeTab === tab.id
-                                    ? "linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.15))"
+                                    ? "linear-gradient(135deg, rgba(124, 77, 255, 0.2), rgba(206, 147, 216, 0.15))"
                                     : "transparent",
-                                border: activeTab === tab.id ? "1px solid rgba(168, 85, 247, 0.4)" : "1px solid transparent",
+                                border: activeTab === tab.id ? "1px solid rgba(124, 77, 255, 0.4)" : "1px solid transparent",
                                 cursor: "pointer",
                                 fontWeight: activeTab === tab.id ? "700" : "500",
                                 color: activeTab === tab.id ? "#ffffff" : "#94a3b8",
@@ -201,13 +201,13 @@ export default function HistoryPage() {
                                         position: "absolute",
                                         top: "-14px",
                                         left: "24px",
-                                        background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                                        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                         color: "white",
                                         padding: "6px 16px",
                                         borderRadius: "20px",
                                         fontSize: "0.8rem",
                                         fontWeight: "700",
-                                        boxShadow: "0 4px 10px rgba(139, 92, 246, 0.3)",
+                                        boxShadow: "0 4px 10px rgba(124, 77, 255, 0.3)",
                                         textTransform: "uppercase",
                                         letterSpacing: "1px"
                                     }}>
@@ -230,11 +230,11 @@ export default function HistoryPage() {
                                             marginTop: "24px",
                                             padding: "12px 20px",
                                             borderRadius: "12px",
-                                            background: "rgba(139, 92, 246, 0.1)",
-                                            border: "1px solid rgba(139, 92, 246, 0.3)",
+                                            background: "rgba(124, 77, 255, 0.1)",
+                                            border: "1px solid rgba(124, 77, 255, 0.3)",
                                             cursor: "pointer",
                                             fontWeight: "600",
-                                            color: "#d8b4fe",
+                                            color: "#CE93D8",
                                             width: "100%",
                                             fontSize: "0.95rem",
                                             transition: "all 0.2s",
@@ -275,14 +275,14 @@ export default function HistoryPage() {
                                     marginTop: "32px",
                                     padding: "14px 24px",
                                     borderRadius: "14px",
-                                    background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
+                                    background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                     border: "none",
                                     cursor: "pointer",
                                     fontWeight: "700",
                                     color: "white",
                                     width: "100%",
                                     fontSize: "1rem",
-                                    boxShadow: "0 4px 15px rgba(139, 92, 246, 0.3)",
+                                    boxShadow: "0 4px 15px rgba(124, 77, 255, 0.3)",
                                     transition: "all 0.2s"
                                 }}
                             >
@@ -306,13 +306,13 @@ export default function HistoryPage() {
                                         position: "absolute",
                                         top: "-14px",
                                         left: "24px",
-                                        background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                                        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                         color: "white",
                                         padding: "6px 16px",
                                         borderRadius: "20px",
                                         fontSize: "0.8rem",
                                         fontWeight: "700",
-                                        boxShadow: "0 4px 10px rgba(139, 92, 246, 0.3)",
+                                        boxShadow: "0 4px 10px rgba(124, 77, 255, 0.3)",
                                         textTransform: "uppercase",
                                         letterSpacing: "1px"
                                     }}>
@@ -335,11 +335,11 @@ export default function HistoryPage() {
                                             marginTop: "24px",
                                             padding: "12px 20px",
                                             borderRadius: "12px",
-                                            background: "rgba(139, 92, 246, 0.1)",
-                                            border: "1px solid rgba(139, 92, 246, 0.3)",
+                                            background: "rgba(124, 77, 255, 0.1)",
+                                            border: "1px solid rgba(124, 77, 255, 0.3)",
                                             cursor: "pointer",
                                             fontWeight: "600",
-                                            color: "#d8b4fe",
+                                            color: "#CE93D8",
                                             width: "100%",
                                             fontSize: "0.95rem",
                                             transition: "all 0.2s",
@@ -394,13 +394,13 @@ export default function HistoryPage() {
                             onClick={(e) => handleDownloadImage(content.image, content.prompt, e)}
                             style={{
                                 marginTop: '8px',
-                                background: 'rgba(140, 100, 255, 0.1)',
-                                border: '1px solid rgba(140, 100, 255, 0.3)',
+                                background: 'rgba(124, 77, 255, 0.1)',
+                                border: '1px solid rgba(124, 77, 255, 0.3)',
                                 borderRadius: '6px',
                                 cursor: 'pointer',
                                 padding: '8px 16px',
                                 fontSize: '0.9rem',
-                                color: '#a855f7',
+                                color: '#CE93D8',
                                 fontWeight: '500',
                                 width: '100%'
                             }}
@@ -513,7 +513,7 @@ export default function HistoryPage() {
                         return (
                             <div key={idx} style={{
                                 background: isIdea ? "linear-gradient(145deg, rgba(30, 32, 45, 0.8), rgba(20, 22, 35, 0.9))" : "rgba(255, 255, 255, 0.03)",
-                                border: isIdea ? "1px solid rgba(168, 85, 247, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)",
+                                border: isIdea ? "1px solid rgba(124, 77, 255, 0.2)" : "1px solid rgba(255, 255, 255, 0.05)",
                                 borderRadius: "20px",
                                 padding: "24px",
                                 position: "relative",
@@ -526,7 +526,7 @@ export default function HistoryPage() {
                                             <span style={{ background: "rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: "20px", fontSize: "0.75rem", color: "#cbd5e1", whiteSpace: "nowrap" }}>{item.length}</span>
                                         </div>
                                         <div style={{ marginBottom: "16px" }}>
-                                            <div style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px", color: "#a855f7", marginBottom: "6px", fontWeight: "700" }}>The Concept</div>
+                                            <div style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px", color: "#CE93D8", marginBottom: "6px", fontWeight: "700" }}>The Concept</div>
                                             <p style={{ margin: 0, color: "#e2e8f0", lineHeight: "1.6", fontSize: "1rem" }}>{item.idea}</p>
                                         </div>
                                         <div>
@@ -541,7 +541,7 @@ export default function HistoryPage() {
                                 ) : (
                                     // Simple Text/Caption
                                     <>
-                                        <strong style={{ display: 'block', marginBottom: '8px', color: '#a855f7' }}>Option {idx + 1}</strong>
+                                        <strong style={{ display: 'block', marginBottom: '8px', color: '#CE93D8' }}>Option {idx + 1}</strong>
                                         <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6", color: "var(--text-primary)" }}>
                                             <ReactMarkdown>{textContent}</ReactMarkdown>
                                         </div>

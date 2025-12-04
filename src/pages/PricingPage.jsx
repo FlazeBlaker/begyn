@@ -48,7 +48,7 @@ export default function PricingPage() {
             "Idea Generator",
 
         ],
-        color: pkg.popular ? "from-purple-400 to-purple-600" : "from-blue-400 to-blue-600",
+        color: pkg.popular ? "from-purple-400 to-purple-600" : "from-indigo-400 to-indigo-600",
         popular: pkg.popular
     }));
 
@@ -79,12 +79,12 @@ export default function PricingPage() {
 
                 {/* Current Balance */}
                 <div style={{
-                    background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
+                    background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                     borderRadius: 16,
                     padding: "16px 24px",
                     display: "inline-block",
                     marginBottom: "clamp(30px, 8vw, 60px)",
-                    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.3)"
+                    boxShadow: "0 4px 12px rgba(124, 77, 255, 0.3)"
                 }}>
                     <div style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.9)", marginBottom: 4 }}>Current Balance</div>
                     <div style={{ fontSize: "2rem", fontWeight: 700, color: "white" }}>{credits} Credits</div>
@@ -104,7 +104,7 @@ export default function PricingPage() {
                             backdropFilter: "blur(10px)",
                             borderRadius: 24,
                             padding: "30px",
-                            border: pkg.popular ? "2px solid #a855f7" : "1px solid rgba(255,255,255,0.1)",
+                            border: pkg.popular ? "2px solid #7C4DFF" : "1px solid rgba(255,255,255,0.1)",
                             position: "relative",
                             display: "flex",
                             flexDirection: "column",
@@ -114,7 +114,7 @@ export default function PricingPage() {
                         }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = "translateY(-10px)";
-                                e.currentTarget.style.boxShadow = pkg.popular ? "0 20px 40px rgba(168, 85, 247, 0.2)" : "0 20px 40px rgba(0,0,0,0.3)";
+                                e.currentTarget.style.boxShadow = pkg.popular ? "0 20px 40px rgba(124, 77, 255, 0.2)" : "0 20px 40px rgba(0,0,0,0.3)";
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.transform = "translateY(0)";
@@ -127,13 +127,13 @@ export default function PricingPage() {
                                     top: -12,
                                     left: "50%",
                                     transform: "translateX(-50%)",
-                                    background: "#a855f7",
+                                    background: "#7C4DFF",
                                     color: "white",
                                     padding: "4px 16px",
                                     borderRadius: 20,
                                     fontSize: "0.85rem",
                                     fontWeight: 700,
-                                    boxShadow: "0 4px 10px rgba(168, 85, 247, 0.4)"
+                                    boxShadow: "0 4px 10px rgba(124, 77, 255, 0.4)"
                                 }}>
                                     MOST POPULAR
                                 </div>
@@ -160,7 +160,7 @@ export default function PricingPage() {
                                     padding: "16px",
                                     borderRadius: 16,
                                     border: "none",
-                                    background: pkg.popular ? "linear-gradient(135deg, #a855f7, #ec4899)" : "rgba(255,255,255,0.1)",
+                                    background: pkg.popular ? "linear-gradient(135deg, #7C4DFF, #CE93D8)" : "rgba(255,255,255,0.1)",
                                     color: "white",
                                     fontSize: "1.1rem",
                                     fontWeight: 700,
