@@ -32,6 +32,7 @@ const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const AiSocialMediaGuide = lazy(() => import("./pages/AiSocialMediaGuide"));
 
 // --- HOOK: Detect Screen Width ---
 const useWindowWidth = () => {
@@ -312,7 +313,8 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
         location.pathname === "/terms" ||
         location.pathname === "/privacy" ||
         location.pathname === "/intro" ||
-        location.pathname === "/flow";
+        location.pathname === "/flow" ||
+        location.pathname === "/ai-social-media-guide";
 
     // Sidebar width values used by Sidebar component
     // On mobile, sidebar width doesn't push content, so we can set it to 0 or handle it in CSS
@@ -331,6 +333,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                     {/* Public Pages (Accessible when logged in) */}
                     <Route path="/terms" element={<TermsOfService />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/ai-social-media-guide" element={<AiSocialMediaGuide />} />
 
                     {/* Intro Page - Shown only once */}
                     <Route path="/intro" element={

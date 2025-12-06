@@ -126,7 +126,7 @@ const Hero = ({ user }) => {
                             whiteSpace: 'nowrap',
                             borderWidth: 0
                         }}>
-                            Become a Social Media Influencer with AI Guidance
+                            AI Social Media Guide to Become an Influencer
                         </h1>
 
                         {/* Visual Title */}
@@ -572,23 +572,23 @@ const FAQ = () => {
     const faqs = [
         {
             question: "Is it free to use?",
-            answer: "Yes! You get free credits every day to generate content. You can upgrade for unlimited access and premium features."
+            answer: "Yes! You get 10 free credits when you sign up to try out all the features. After that, you can purchase credit packs as needed."
         },
         {
             question: "Can I use the images commercially?",
-            answer: "Absolutely. All images generated are royalty-free and yours to use for any commercial or personal project."
+            answer: "Absolutely. You have full commercial ownership of all content and images you generate. Use them for your business, clients, or social media without restrictions."
         },
         {
             question: "What AI model do you use?",
-            answer: "We use advanced models like Gemini Pro and GPT-4 to ensure high-quality, human-like content that resonates with your audience."
+            answer: "We use Google's latest Gemini 2.5 Flash and Pro models. These are state-of-the-art models designed for speed and high-quality creative output."
         },
         {
             question: "How do you use my data?",
-            answer: "We only use your data to personalize your AI content. Your inputs are processed securely via Google Gemini API and are not shared with third parties for marketing purposes."
+            answer: "Your data is used solely to generate your requested content. We do not use your inputs or data to train our AI models, ensuring your brand strategy remains private."
         },
         {
-            question: "Can I cancel my subscription?",
-            answer: "Yes, you can cancel anytime from your dashboard. You'll keep access until the end of your billing period."
+            question: "Do my credits expire?",
+            answer: "No, your credits never expire. Begyn operates on a pay-as-you-go model, so there are no monthly subscriptions or hidden fees. You only pay for what you use."
         }
     ];
 
