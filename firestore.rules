@@ -13,8 +13,16 @@ service cloud.firestore {
 
     // Users collection: Users can read/write their own profile
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
       
+      // Allow updates ONLY if credits and creditsUsed are NOT modified
+      allow update: if isOwner(userId) 
+                    && request.resource.data.credits == resource.data.credits
+                    && request.resource.data.creditsUsed == resource.data.creditsUsed;
+
+      // Allow create (initial setup) but backend handles critical data
+      allow create: if isOwner(userId);
+
       // Allow access to subcollections (like history)
       match /{document=**} {
         allow read, write: if isOwner(userId);
