@@ -798,12 +798,25 @@ exports.generateContent = onRequest(
                     const result = await imageModel.generateContent(parts);
                     const response = await result.response;
 
+                    // --- COST TRACKING ---
+                    try {
+                        const usage = response.usageMetadata || { promptTokenCount: 0, candidatesTokenCount: 0 };
+                        await logSystemCost(uid, "gemini-2.5-flash-image", usage.promptTokenCount, usage.candidatesTokenCount, type);
+                    } catch (logErr) {
+                        console.error("Failed to log cost:", logErr);
+                    }
+                    // ---------------------
+
                     if (response.candidates && response.candidates[0]) {
                         const parts = response.candidates[0].content.parts;
                         for (const part of parts) {
                             if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
                                 let finalImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                                res.status(200).json({ result: finalImage });
+                                res.status(200).json({
+                                    result: finalImage,
+                                    creditsDeducted: requiredCredits,
+                                    remainingCredits: currentCredits - requiredCredits
+                                });
                                 return;
                             }
                         }
@@ -908,10 +921,23 @@ Post Topic: "${topic}"
                 const response = await result.response;
                 const text = response.text();
 
+                // --- COST TRACKING ---
+                try {
+                    const usage = response.usageMetadata || { promptTokenCount: 0, candidatesTokenCount: 0 };
+                    await logSystemCost(uid, modelName, usage.promptTokenCount, usage.candidatesTokenCount, type);
+                } catch (logErr) {
+                    console.error("Failed to log cost:", logErr);
+                }
+                // ---------------------
+
                 // Clean up markdown formatting (```json, ```) from ALL responses
                 const cleanText = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-                res.status(200).json({ result: cleanText });
+                res.status(200).json({
+                    result: cleanText,
+                    creditsDeducted: requiredCredits,
+                    remainingCredits: currentCredits - requiredCredits
+                });
                 return;
 
             } catch (e) {
@@ -1292,3 +1318,39 @@ exports.cleanupOldImages = onSchedule("every 24 hours", async (event) => {
         throw error;
     }
 });
+
+// --- HELPER: Cost Calculation & Logging ---
+async function logSystemCost(userId, model, inputTokens, outputTokens, featureType) {
+    // Pricing (Estimated per 1M tokens)
+    // Gemini 1.5 Flash: $0.075 Input / $0.30 Output
+    // Gemini 1.5 Pro: $3.50 Input / $10.50 Output
+    // Gemini 2.5 Flash: Assuming similar to 1.5 Flash for now (safe estimate)
+
+    const pricing = {
+        "gemini-1.5-flash": { input: 0.075, output: 0.30 },
+        "gemini-2.5-flash": { input: 0.075, output: 0.30 }, // Placeholder
+        "gemini-2.5-flash-image": { input: 0.075, output: 0.30 }, // Placeholder
+        "gemini-1.5-pro": { input: 3.50, output: 10.50 },
+        "gemini-2.5-pro": { input: 3.50, output: 10.50 } // Placeholder
+    };
+
+    const rates = pricing[model] || pricing["gemini-1.5-flash"]; // Default to Flash
+
+    const inputCost = (inputTokens / 1000000) * rates.input;
+    const outputCost = (outputTokens / 1000000) * rates.output;
+    const totalCost = inputCost + outputCost;
+
+    await db.collection("system_logs").add({
+        userId: userId,
+        timestamp: FieldValue.serverTimestamp(),
+        type: "api_cost",
+        featureType: featureType,
+        model: model,
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        costUSD: totalCost,
+        details: `Input: ${inputTokens} ($${inputCost.toFixed(6)}) | Output: ${outputTokens} ($${outputCost.toFixed(6)})`
+    });
+
+    console.log(`[COST] User: ${userId} | Model: ${model} | Cost: $${totalCost.toFixed(6)}`);
+}

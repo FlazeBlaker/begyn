@@ -11,40 +11,47 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Users collection: Users can read/write their own profile
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == 'jaypawar1205@gmail.com';
+    }
+
+    // Users collection: Users can read/write their own profile, Admin can read all
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
       
       // Allow updates ONLY if credits and creditsUsed are NOT modified
-      allow update: if isOwner(userId) 
+      // Admin can update anything
+      allow update: if isAdmin() || (isOwner(userId) 
                     && request.resource.data.credits == resource.data.credits
-                    && request.resource.data.creditsUsed == resource.data.creditsUsed;
+                    && request.resource.data.creditsUsed == resource.data.creditsUsed);
 
       // Allow create (initial setup) but backend handles critical data
       allow create: if isOwner(userId);
 
       // Allow access to subcollections (like history)
       match /{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 
-    // Brands collection: Users can read/write their own brand data
+    // Brands collection: Users can read/write their own brand data, Admin can read/write all
     match /brands/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
       
       // Allow updates ONLY if credits and creditsUsed are NOT modified
       // This prevents users from hacking their own credits via the console
-      allow update: if isOwner(userId) 
+      // Admin can update anything (including credits)
+      allow update: if isAdmin() || (isOwner(userId) 
                     && request.resource.data.credits == resource.data.credits
-                    && request.resource.data.creditsUsed == resource.data.creditsUsed;
+                    && request.resource.data.creditsUsed == resource.data.creditsUsed);
       
       // Deny create/delete (managed by backend)
       allow create, delete: if false;
       
       // Allow access to subcollections (like payments) - Read Only for client
       match /{document=**} {
-        allow read: if isOwner(userId);
+        allow read: if isOwner(userId) || isAdmin();
         allow write: if false;
       }
     }
@@ -53,6 +60,20 @@ service cloud.firestore {
     match /chats/{chatId} {
       allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
       allow read, update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // Transactions collection: Admin can read all, Users can read their own
+    match /transactions/{transactionId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      // Only allow creation if authenticated (for client-side logging) or admin
+      allow create: if isAuthenticated(); 
+      allow update, delete: if isAdmin();
+    }
+
+    // System Logs: Admin only
+    match /system_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only backend writes
     }
   }
 }

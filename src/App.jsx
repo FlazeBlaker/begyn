@@ -33,6 +33,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const AiSocialMediaGuide = lazy(() => import("./pages/AiSocialMediaGuide"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 // --- HOOK: Detect Screen Width ---
 const useWindowWidth = () => {
@@ -216,6 +217,8 @@ function AppContent() {
 
                         if (mounted) {
                             setUserInfo({
+                                uid: currentUser.uid,
+                                email: currentUser.email,
                                 ...userData,
                                 ...brandData, // Merge brand data (credits)
                                 onboarded: !!brandData.onboarded,
@@ -314,7 +317,8 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
         location.pathname === "/privacy" ||
         location.pathname === "/intro" ||
         location.pathname === "/flow" ||
-        location.pathname === "/ai-social-media-guide";
+        location.pathname === "/ai-social-media-guide" ||
+        location.pathname === "/admin";
 
     // Sidebar width values used by Sidebar component
     // On mobile, sidebar width doesn't push content, so we can set it to 0 or handle it in CSS
@@ -346,7 +350,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                         </GuideRoute>
                     } />
 
-                    {/* Guide Flow Route - Renamed from /guide/flow to /flow */}
+                    {/* Guide Flow Route */}
                     <Route path="/flow" element={
                         <GuideRoute user={user}>
                             {onboarded ? (
@@ -360,6 +364,14 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                             )}
                         </GuideRoute>
                     } />
+
+                    {/* Admin Dashboard - Full Screen */}
+                    <Route path="/admin" element={
+                        <PrivateRoute user={user} onboarded={onboarded}>
+                            <AdminDashboard userInfo={userInfo} />
+                        </PrivateRoute>
+                    } />
+
                     <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
                 </Routes>
             </Suspense >
@@ -409,8 +421,6 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                                 </PrivateRoute>
                             } />
 
-
-
                             <Route path="/history" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
                                     <HistoryPage />
@@ -429,8 +439,7 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
                                 </PrivateRoute>
                             } />
 
-
-                            {/* Roadmap Route - Renamed from /guide/roadmap to /roadmap */}
+                            {/* Roadmap Route */}
                             <Route path="/roadmap" element={
                                 <PrivateRoute user={user} onboarded={onboarded}>
                                     <YourGuidePage
