@@ -572,7 +572,7 @@ const FAQ = () => {
     const faqs = [
         {
             question: "Is it free to use?",
-            answer: "Yes! You get 10 free credits when you sign up to try out all the features. After that, you can purchase credit packs as needed."
+            answer: "Yes! You get 5 free credits when you sign up to try out all the features. After that, you can purchase credit packs as needed."
         },
         {
             question: "Can I use the images commercially?",

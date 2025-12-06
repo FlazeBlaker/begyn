@@ -336,14 +336,14 @@ exports.generateContent = onRequest(
                                 uid: uid,
                                 email: authTokenDecoded?.email || "",
                                 brandName: authTokenDecoded?.name || "New Creator",
-                                credits: 10,
+                                credits: 5,
                                 creditsUsed: 0,
                                 plan: "free",
                                 onboarded: false,
                                 createdAt: FieldValue.serverTimestamp()
                             };
                             transaction.set(brandRef, initialData);
-                            currentCredits = 10;
+                            currentCredits = 5;
                         } else {
                             const brandData = brandSnap.data();
                             currentCredits = brandData.credits || 0;
