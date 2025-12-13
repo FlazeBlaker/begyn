@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth, db, doc, getDoc, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
+import {
+    auth, db, doc, getDoc, GoogleAuthProvider, signInWithPopup,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    sendSignInLinkToEmail, sendPasswordResetEmail, isSignInWithEmailLink, signInWithEmailLink
+} from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Sparkles, ArrowRight, CheckCircle, Shield, Cpu } from 'lucide-react';
 
@@ -23,28 +27,101 @@ export default function Login() {
         return () => unsubscribe();
     }, [navigate]);
 
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'magic'
+    const [message, setMessage] = useState(null);
+
+    // Initial Magic Link Check
+    useEffect(() => {
+        if (isSignInWithEmailLink(auth, window.location.href)) {
+            let emailForLink = window.localStorage.getItem('emailForSignIn');
+            if (!emailForLink) {
+                emailForLink = window.prompt('Please provide your email for confirmation');
+            }
+            signInWithEmailLink(auth, emailForLink, window.location.href)
+                .then((result) => {
+                    window.localStorage.removeItem('emailForSignIn');
+                    navigate('/dashboard', { replace: true });
+                })
+                .catch((error) => {
+                    setError("Error signing in with link: " + error.message);
+                });
+        }
+    }, [navigate]);
+
     const handleGoogleLogin = async () => {
         setLoading(true);
         setError(null);
         try {
             const result = await signInWithPopup(auth, new GoogleAuthProvider());
-            const userRef = doc(db, "brands", result.user.uid);
-            const snap = await getDoc(userRef);
-
-            const introSeen = snap.exists() && snap.data()?.introSeen;
-            const onboarded = snap.exists() && snap.data()?.onboarded;
-
-            if (!introSeen) {
-                navigate('/intro', { replace: true });
-            } else {
-                navigate(onboarded ? '/dashboard' : '/flow', { replace: true });
-            }
+            await checkUserOnboardStatus(result.user);
         } catch (err) {
             console.error("Login failed:", err);
             if (err.code !== 'auth/popup-closed-by-user') {
                 setError(`Login failed: ${err.message || "Unknown error"}`);
             }
             setLoading(false);
+        }
+    };
+
+    const handleEmailAuth = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        setMessage(null);
+
+        try {
+            let userCredential;
+            if (authMode === 'signup') {
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await checkUserOnboardStatus(userCredential.user);
+            } else if (authMode === 'login') {
+                userCredential = await signInWithEmailAndPassword(auth, email, password);
+                // Auth state listener will handle redirect, but we can check onboard status too
+                await checkUserOnboardStatus(userCredential.user);
+            } else if (authMode === 'magic') {
+                const actionCodeSettings = {
+                    url: window.location.href, // Redirect back to here
+                    handleCodeInApp: true,
+                };
+                await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+                window.localStorage.setItem('emailForSignIn', email);
+                setMessage('Magic link sent to your email! Click it to login.');
+                setLoading(false);
+                return; // Don't proceed to onboard check yet
+            }
+        } catch (err) {
+            console.error("Auth error:", err);
+            setError(err.message);
+            setLoading(false);
+        }
+    };
+
+    const handlePasswordReset = async () => {
+        if (!email) {
+            setError("Please enter your email first.");
+            return;
+        }
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setMessage("Password reset email sent!");
+            setError(null);
+        } catch (err) {
+            setError("Error sending reset email: " + err.message);
+        }
+    };
+
+    const checkUserOnboardStatus = async (user) => {
+        const userRef = doc(db, "brands", user.uid);
+        const snap = await getDoc(userRef);
+        const introSeen = snap.exists() && snap.data()?.introSeen;
+        const onboarded = snap.exists() && snap.data()?.onboarded;
+
+        if (!introSeen) {
+            navigate('/intro', { replace: true });
+        } else {
+            navigate(onboarded ? '/dashboard' : '/flow', { replace: true });
         }
     };
 
@@ -148,29 +225,124 @@ export default function Login() {
                         </div>
                     )}
 
+                    {/* Auth Mode Tabs */}
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px' }}>
+                        <button
+                            onClick={() => { setAuthMode('login'); setError(null); setMessage(null); }}
+                            style={{
+                                flex: 1,
+                                background: authMode === 'login' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem'
+                            }}>
+                            Login
+                        </button>
+                        <button
+                            onClick={() => { setAuthMode('signup'); setError(null); setMessage(null); }}
+                            style={{
+                                flex: 1,
+                                background: authMode === 'signup' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem'
+                            }}>
+                            Sign Up
+                        </button>
+                        <button
+                            onClick={() => { setAuthMode('magic'); setError(null); setMessage(null); }}
+                            style={{
+                                flex: 1,
+                                background: authMode === 'magic' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem'
+                            }}>
+                            Magic Link
+                        </button>
+                    </div>
+
+                    {message && (
+                        <div style={{
+                            background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)',
+                            color: '#4ade80', padding: '12px', borderRadius: '12px', marginBottom: '24px', fontSize: '0.9rem'
+                        }}>
+                            {message}
+                        </div>
+                    )}
+
                     <button
                         onClick={handleGoogleLogin}
                         disabled={loading}
-                        className="cyber-button"
+                        className="hover-lift-glow"
                         style={{
-                            width: '100%', padding: '16px', borderRadius: '12px', fontSize: '1rem',
+                            width: '100%', padding: '12px', borderRadius: '12px', fontSize: '1rem',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                            background: '#fff', color: '#000', border: 'none',
                             cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.8 : 1,
-                            position: 'relative', zIndex: 50,
-                            marginBottom: '32px'
+                            marginBottom: '24px'
                         }}
                     >
-                        {loading ? (
-                            <span>Initializing...</span>
-                        ) : (
-                            <>
-                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style={{ width: '20px' }} />
-                                Continue with Google
-                            </>
-                        )}
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style={{ width: '20px' }} />
+                        Continue with Google
                     </button>
 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                        <span style={{ color: '#a0a0b0', fontSize: '0.8rem' }}>OR</span>
+                        <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                    </div>
 
+                    <form onSubmit={handleEmailAuth}>
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', color: '#a0a0b0', fontSize: '0.9rem', marginBottom: '8px' }}>Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="name@company.com"
+                                required
+                                style={{ width: '100%', background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.1)' }}
+                            />
+                        </div>
+
+                        {authMode !== 'magic' && (
+                            <div style={{ marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <label style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Password</label>
+                                    {authMode === 'login' && (
+                                        <button
+                                            type="button"
+                                            onClick={handlePasswordReset}
+                                            style={{ background: 'none', border: 'none', color: '#7C4DFF', fontSize: '0.8rem', padding: 0 }}
+                                        >
+                                            Forgot?
+                                        </button>
+                                    )}
+                                </div>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    style={{ width: '100%', background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.1)' }}
+                                />
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="cyber-button"
+                            style={{
+                                width: '100%', padding: '16px', borderRadius: '12px', fontSize: '1rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                                cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.8 : 1,
+                            }}
+                        >
+                            {loading ? 'Processing...' : (
+                                authMode === 'login' ? 'Sign In' : (authMode === 'signup' ? 'Create Account' : 'Send Magic Link')
+                            )}
+                        </button>
+                    </form>
 
                     <div style={{ textAlign: 'center', marginTop: '32px' }}>
                         <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>

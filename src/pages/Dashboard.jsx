@@ -288,12 +288,27 @@ export default function Dashboard() {
 
             setUser(u);
             if (u) {
-                // 1. Fetch User Stats (Credits, Streak)
-                unsubBrand = onSnapshot(doc(db, "brands", u.uid), (doc) => {
-                    if (doc.exists()) {
-                        const data = doc.data();
+                // 1. Fetch User Stats (Credits, Streak) & Check Onboarding
+                unsubBrand = onSnapshot(doc(db, "brands", u.uid), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const data = docSnapshot.data();
+
+                        // Safety Check: Redirect if not onboarded
+                        // This handles the race condition where Login might redirect to Dashboard too early
+                        if (!data.introSeen) {
+                            navigate('/intro', { replace: true });
+                            return;
+                        }
+                        if (!data.onboarded) {
+                            navigate('/flow', { replace: true });
+                            return;
+                        }
+
                         setCredits(data.credits || 0);
                         setStreak(data.streak || 1);
+                    } else {
+                        // User exists in Auth but no DB doc -> New User -> Go to Intro
+                        navigate('/intro', { replace: true });
                     }
                 }, (error) => {
                     if (error.code !== 'permission-denied') console.error("Brand snapshot error:", error);

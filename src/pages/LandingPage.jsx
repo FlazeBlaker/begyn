@@ -222,29 +222,22 @@ const HowItWorks = ({ user }) => {
                     gap: '40px',
                     position: 'relative'
                 }}>
-                    {/* Connecting Line (Desktop) */}
-                    <div className="desktop-only" style={{
-                        position: 'absolute',
-                        top: '40px',
-                        left: '10%',
-                        right: '10%',
-                        height: '2px',
-                        background: 'linear-gradient(90deg, rgba(124, 77, 255, 0.1) 0%, rgba(124, 77, 255, 0.5) 50%, rgba(124, 77, 255, 0.1) 100%)',
-                        zIndex: 0
-                    }} />
+
 
                     {steps.map((step, index) => (
-                        <div key={index} className="hover-lift-glow" style={{
+                        <div key={index} className="glass-premium hover-lift-glow" style={{
                             position: 'relative',
                             zIndex: 1,
-                            background: '#050507', // Match bg to hide line behind card
-                            border: '1px solid rgba(255,255,255,0.05)',
+                            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(124, 77, 255, 0.05) 100%)',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '24px',
                             padding: '32px',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
-                            textAlign: 'center'
+                            textAlign: 'center',
+                            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)'
                         }}>
                             <div style={{
                                 width: '80px', height: '80px',
