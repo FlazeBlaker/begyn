@@ -161,6 +161,139 @@ const Hero = ({ user }) => {
     );
 };
 
+const HowItWorks = ({ user }) => {
+    const navigate = useNavigate();
+
+    const handleCtaClick = () => {
+        if (user) {
+            navigate('/dashboard');
+        } else {
+            navigate('/login');
+        }
+    };
+
+    const steps = [
+        {
+            num: "01",
+            title: "Connect Your Brand",
+            desc: "Tell us about your niche and audience. We build a unique AI profile that speaks exactly like you.",
+            icon: "🧬"
+        },
+        {
+            num: "02",
+            title: "Generate Magic",
+            desc: "Use our 'Mission Control' to get daily viral ideas, scripts, and captions in one click.",
+            icon: "✨"
+        },
+        {
+            num: "03",
+            title: "Watch It Grow",
+            desc: "Post consistently with our roadmap and watch your engagement skyrocket.",
+            icon: "🚀"
+        }
+    ];
+
+    return (
+        <section style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="glass-premium" style={{
+                borderRadius: '32px',
+                padding: '60px 40px',
+                position: 'relative',
+                overflow: 'hidden'
+            }}>
+                {/* Background Decoration */}
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                    background: 'linear-gradient(90deg, transparent, rgba(124, 77, 255, 0.5), transparent)'
+                }} />
+
+                <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '16px', color: '#fff' }}>
+                        How It Works
+                    </h2>
+                    <p style={{ color: '#a0a0b0', fontSize: '1.1rem' }}>
+                        Go from zero to influencer in 3 simple steps.
+                    </p>
+                </div>
+
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: '40px',
+                    position: 'relative'
+                }}>
+                    {/* Connecting Line (Desktop) */}
+                    <div className="desktop-only" style={{
+                        position: 'absolute',
+                        top: '40px',
+                        left: '10%',
+                        right: '10%',
+                        height: '2px',
+                        background: 'linear-gradient(90deg, rgba(124, 77, 255, 0.1) 0%, rgba(124, 77, 255, 0.5) 50%, rgba(124, 77, 255, 0.1) 100%)',
+                        zIndex: 0
+                    }} />
+
+                    {steps.map((step, index) => (
+                        <div key={index} className="hover-lift-glow" style={{
+                            position: 'relative',
+                            zIndex: 1,
+                            background: '#050507', // Match bg to hide line behind card
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            borderRadius: '24px',
+                            padding: '32px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                width: '80px', height: '80px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.1), rgba(206, 147, 216, 0.1))',
+                                border: '1px solid rgba(124, 77, 255, 0.2)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '2rem',
+                                marginBottom: '24px',
+                                boxShadow: '0 0 30px rgba(124, 77, 255, 0.1)'
+                            }}>
+                                {step.icon}
+                            </div>
+                            <div style={{
+                                position: 'absolute',
+                                top: '20px',
+                                right: '20px',
+                                fontSize: '3rem',
+                                fontWeight: '900',
+                                color: 'rgba(255,255,255,0.03)',
+                                lineHeight: 1
+                            }}>
+                                {step.num}
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '12px', color: '#fff' }}>
+                                {step.title}
+                            </h3>
+                            <p style={{ color: '#a0a0b0', lineHeight: '1.6' }}>
+                                {step.desc}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+
+                <div style={{ textAlign: 'center', marginTop: '50px' }}>
+                    <button onClick={handleCtaClick} className="cyber-button" style={{
+                        padding: '14px 32px',
+                        fontSize: '1rem',
+                        borderRadius: '99px',
+                        cursor: 'pointer'
+                    }}>
+                        {user ? "Go to Dashboard" : "Get Started Free"}
+                    </button>
+                </div>
+            </div>
+        </section>
+    );
+};
+
 const FeatureCard = ({ icon: Icon, title, desc }) => (
     <div className="glass-premium hover-lift-glow tech-corners" style={{ padding: '32px', borderRadius: '16px' }}>
         <div style={{
@@ -634,6 +767,7 @@ export default function LandingPage() {
         <div style={{ minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
             <Navbar user={user} />
             <Hero user={user} />
+            <HowItWorks user={user} />
             <Features />
 
             <DeepDive />
