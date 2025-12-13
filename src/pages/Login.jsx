@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth, db, doc, getDoc, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { Sparkles, ArrowRight, CheckCircle, Shield, Cpu } from 'lucide-react';
 
 export default function Login() {
@@ -9,8 +9,7 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [authChecking, setAuthChecking] = useState(true);
     const [error, setError] = useState(null);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+
 
     // Robust Auth Check
     useEffect(() => {
@@ -49,32 +48,7 @@ export default function Login() {
         }
     };
 
-    const handleEmailLogin = async () => {
-        if (!email || !password) {
-            setError("Please enter both email and password.");
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        try {
-            const result = await signInWithEmailAndPassword(auth, email, password);
-            const userRef = doc(db, "brands", result.user.uid);
-            const snap = await getDoc(userRef);
 
-            const introSeen = snap.exists() && snap.data()?.introSeen;
-            const onboarded = snap.exists() && snap.data()?.onboarded;
-
-            if (!introSeen) {
-                navigate('/intro', { replace: true });
-            } else {
-                navigate(onboarded ? '/dashboard' : '/flow', { replace: true });
-            }
-        } catch (err) {
-            console.error("Email login failed:", err);
-            setError(`Login failed: ${err.message}`);
-            setLoading(false);
-        }
-    };
 
     if (authChecking) return null;
 
@@ -196,46 +170,7 @@ export default function Login() {
                         )}
                     </button>
 
-                    <div className="neon-separator"></div>
 
-                    {/* Temporary Developer Login */}
-                    <div style={{ marginTop: '24px' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '12px', textAlign: 'center' }}>Developer Login (Razorpay Test)</p>
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            style={{
-                                width: '100%', padding: '12px', marginBottom: '12px', borderRadius: '8px',
-                                background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: '#ffffff'
-                            }}
-                        />
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            style={{
-                                width: '100%', padding: '12px', marginBottom: '12px', borderRadius: '8px',
-                                background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: '#ffffff'
-                            }}
-                        />
-                        <button
-                            onClick={handleEmailLogin}
-                            disabled={loading}
-                            style={{
-                                width: '100%', padding: '12px', borderRadius: '8px',
-                                background: 'rgba(124, 77, 255, 0.1)', border: '1px solid rgba(124, 77, 255, 0.2)',
-                                color: 'var(--neon-pink)', cursor: 'pointer', fontWeight: '600',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(124, 77, 255, 0.2)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(124, 77, 255, 0.1)'}
-                        >
-                            Login with Email
-                        </button>
-                    </div>
 
                     <div style={{ textAlign: 'center', marginTop: '32px' }}>
                         <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>

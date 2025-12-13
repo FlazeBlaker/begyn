@@ -264,6 +264,7 @@ const Generators = () => {
                 const textResult = await generateContent({
                     type: currentType, // Use actual type (post, tweet, etc.)
                     payload: {
+                        useBrandData: advancedOptions.useBrandData, // CRITICAL: Tell backend if brand data should be used
                         topic: topic.trim() || (selectedImage ? `Analyze this image and create engaging ${currentType === 'tweet' ? 'tweet ideas' : currentType === 'caption' ? 'caption ideas' : 'content'} based on what you see. Be creative and relevant.` : ""),
                         platform: advancedOptions.platform,
                         // Conditionally include brand data or defaults
@@ -364,75 +365,57 @@ const Generators = () => {
                 {/* Tab Content */}
                 <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px" }} className="custom-scrollbar">
                     {activeTab === 'intro' && data.intro && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                            {data.intro.map((option, idx) => (
-                                <div key={idx} style={{
-                                    background: "rgba(30, 32, 45, 0.6)",
-                                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                                    borderRadius: "20px",
-                                    padding: "28px",
-                                    position: "relative",
-                                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
-                                }}>
-                                    <div style={{
-                                        position: "absolute",
-                                        top: "-14px",
-                                        left: "24px",
-                                        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
-                                        color: "white",
-                                        padding: "6px 16px",
-                                        borderRadius: "20px",
-                                        fontSize: "0.8rem",
-                                        fontWeight: "700",
-                                        boxShadow: "0 4px 10px rgba(124, 77, 255, 0.3)",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "1px"
-                                    }}>
-                                        Option {idx + 1}
-                                    </div>
-                                    <div style={{
-                                        whiteSpace: "pre-wrap",
+                        <div style={{
+                            background: "rgba(30, 32, 45, 0.6)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            borderRadius: "20px",
+                            padding: "32px",
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                        }}>
+                            <ol style={{
+                                margin: 0,
+                                padding: 0,
+                                paddingLeft: "20px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "16px"
+                            }}>
+                                {data.intro.map((line, idx) => (
+                                    <li key={idx} style={{
                                         lineHeight: "1.8",
                                         fontSize: "1.1rem",
                                         color: "#e2e8f0",
-                                        marginTop: "12px",
                                         fontFamily: "'Inter', sans-serif",
                                         letterSpacing: "0.01em"
                                     }}>
-                                        {formatText(option.text)}
-                                    </div>
-                                    <button
-                                        onClick={() => navigator.clipboard.writeText(option.text)}
-                                        style={{
-                                            marginTop: "24px",
-                                            padding: "12px 20px",
-                                            borderRadius: "12px",
-                                            background: "rgba(124, 77, 255, 0.1)",
-                                            border: "1px solid rgba(124, 77, 255, 0.3)",
-                                            cursor: "pointer",
-                                            fontWeight: "600",
-                                            color: "#CE93D8",
-                                            width: "100%",
-                                            fontSize: "0.95rem",
-                                            transition: "all 0.2s",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            gap: "8px"
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.target.style.background = "rgba(139, 92, 246, 0.2)";
-                                            e.target.style.color = "#fff";
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.target.style.background = "rgba(124, 77, 255, 0.1)";
-                                            e.target.style.color = "#CE93D8";
-                                        }}
-                                    >
-                                        📋 Copy Intro {idx + 1}
-                                    </button>
-                                </div>
-                            ))}
+                                        {formatText(typeof line === 'string' ? line : line.text)}
+                                    </li>
+                                ))}
+                            </ol>
+                            <button
+                                onClick={() => navigator.clipboard.writeText(data.intro.map((l, i) => `${i + 1}. ${typeof l === 'string' ? l : l.text}`).join('\n'))}
+                                style={{
+                                    marginTop: "32px",
+                                    padding: "14px 24px",
+                                    borderRadius: "14px",
+                                    background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontWeight: "700",
+                                    color: "white",
+                                    width: "100%",
+                                    fontSize: "1rem",
+                                    transition: "all 0.2s",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "10px"
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
+                                onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
+                            >
+                                📋 Copy Intro
+                            </button>
                         </div>
                     )}
 
@@ -444,18 +427,45 @@ const Generators = () => {
                             padding: "32px",
                             boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
                         }}>
-                            <div style={{
-                                whiteSpace: "pre-wrap",
-                                lineHeight: "1.9",
-                                fontSize: "1.15rem",
-                                color: "#e2e8f0",
-                                fontFamily: "'Inter', sans-serif",
-                                letterSpacing: "0.01em"
-                            }}>
-                                {formatText(data.mainContent)}
-                            </div>
+                            {Array.isArray(data.mainContent) ? (
+                                <ol style={{
+                                    margin: 0,
+                                    padding: 0,
+                                    paddingLeft: "20px",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "16px"
+                                }}>
+                                    {data.mainContent.map((line, idx) => (
+                                        <li key={idx} style={{
+                                            lineHeight: "1.9",
+                                            fontSize: "1.15rem",
+                                            color: "#e2e8f0",
+                                            fontFamily: "'Inter', sans-serif",
+                                            letterSpacing: "0.01em"
+                                        }}>
+                                            {formatText(line)}
+                                        </li>
+                                    ))}
+                                </ol>
+                            ) : (
+                                <div style={{
+                                    whiteSpace: "pre-wrap",
+                                    lineHeight: "1.9",
+                                    fontSize: "1.15rem",
+                                    color: "#e2e8f0",
+                                    fontFamily: "'Inter', sans-serif",
+                                    letterSpacing: "0.01em"
+                                }}>
+                                    {formatText(data.mainContent)}
+                                </div>
+                            )}
                             <button
-                                onClick={() => navigator.clipboard.writeText(data.mainContent)}
+                                onClick={() => navigator.clipboard.writeText(
+                                    Array.isArray(data.mainContent)
+                                        ? data.mainContent.map((l, i) => `${i + 1}. ${l}`).join('\n')
+                                        : data.mainContent
+                                )}
                                 style={{
                                     marginTop: "32px",
                                     padding: "14px 24px",
@@ -478,76 +488,59 @@ const Generators = () => {
                         </div>
                     )}
 
+
                     {activeTab === 'outro' && data.outro && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                            {data.outro.map((option, idx) => (
-                                <div key={idx} style={{
-                                    background: "rgba(30, 32, 45, 0.6)",
-                                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                                    borderRadius: "20px",
-                                    padding: "28px",
-                                    position: "relative",
-                                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
-                                }}>
-                                    <div style={{
-                                        position: "absolute",
-                                        top: "-14px",
-                                        left: "24px",
-                                        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
-                                        color: "white",
-                                        padding: "6px 16px",
-                                        borderRadius: "20px",
-                                        fontSize: "0.8rem",
-                                        fontWeight: "700",
-                                        boxShadow: "0 4px 10px rgba(124, 77, 255, 0.3)",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "1px"
-                                    }}>
-                                        Option {idx + 1}
-                                    </div>
-                                    <div style={{
-                                        whiteSpace: "pre-wrap",
+                        <div style={{
+                            background: "rgba(30, 32, 45, 0.6)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            borderRadius: "20px",
+                            padding: "32px",
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                        }}>
+                            <ol style={{
+                                margin: 0,
+                                padding: 0,
+                                paddingLeft: "20px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "16px"
+                            }}>
+                                {data.outro.map((line, idx) => (
+                                    <li key={idx} style={{
                                         lineHeight: "1.8",
                                         fontSize: "1.1rem",
                                         color: "#e2e8f0",
-                                        marginTop: "12px",
                                         fontFamily: "'Inter', sans-serif",
                                         letterSpacing: "0.01em"
                                     }}>
-                                        {formatText(option.text)}
-                                    </div>
-                                    <button
-                                        onClick={() => navigator.clipboard.writeText(option.text)}
-                                        style={{
-                                            marginTop: "24px",
-                                            padding: "12px 20px",
-                                            borderRadius: "12px",
-                                            background: "rgba(124, 77, 255, 0.1)",
-                                            border: "1px solid rgba(124, 77, 255, 0.3)",
-                                            cursor: "pointer",
-                                            fontWeight: "600",
-                                            color: "#CE93D8",
-                                            width: "100%",
-                                            fontSize: "0.95rem",
-                                            transition: "all 0.2s",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            gap: "8px"
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.target.style.background = "rgba(139, 92, 246, 0.2)";
-                                            e.target.style.color = "#fff";
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.target.style.background = "rgba(124, 77, 255, 0.1)";
-                                            e.target.style.color = "#CE93D8";
-                                        }}
-                                    >
-                                        📋 Copy Outro {idx + 1}
-                                    </button>
-                                </div>
-                            ))}
+                                        {formatText(typeof line === 'string' ? line : line.text)}
+                                    </li>
+                                ))}
+                            </ol>
+                            <button
+                                onClick={() => navigator.clipboard.writeText(data.outro.map((l, i) => `${i + 1}. ${typeof l === 'string' ? l : l.text}`).join('\n'))}
+                                style={{
+                                    marginTop: "32px",
+                                    padding: "14px 24px",
+                                    borderRadius: "14px",
+                                    background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontWeight: "700",
+                                    color: "white",
+                                    width: "100%",
+                                    fontSize: "1rem",
+                                    transition: "all 0.2s",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "10px"
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
+                                onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
+                            >
+                                📋 Copy Outro
+                            </button>
                         </div>
                     )}
                 </div>
@@ -625,8 +618,11 @@ const Generators = () => {
                                 let parsed = content.text;
                                 if (typeof content.text === 'string') {
                                     try {
-                                        // Attempt to strip markdown code blocks if present
-                                        const cleanText = content.text.replace(/```json\n?|\n?```/g, "").trim();
+                                        // Attempt to strip markdown code blocks if present (multiple formats)
+                                        let cleanText = content.text
+                                            .replace(/```json\s*/gi, "")  // Remove ```json
+                                            .replace(/```\s*/g, "")        // Remove remaining ```
+                                            .trim();
                                         parsed = JSON.parse(cleanText);
                                     } catch (e) {
                                         // JSON Parse Failed. Try Heuristic Parsing for "Idea" lists.
@@ -667,6 +663,22 @@ const Generators = () => {
                                             }
                                         }
                                     }
+                                }
+
+
+
+                                // Handle contentIdeas wrapper (backend JSON - handle case variations)
+                                const ideasArray = parsed.contentIdeas || parsed.contentideas;
+                                if (ideasArray && Array.isArray(ideasArray)) {
+                                    parsed = ideasArray.map(item => {
+                                        // Prioritize lowercase (new format)
+                                        const title = item.title || item["Video Title"] || item["video title"] || item.Title || "Untitled";
+                                        const length = item.length || item.Length || "Unknown";
+                                        const idea = item.idea || item.Idea || "No description";
+                                        const explanation = item.explanation || item.Explanation || [];
+
+                                        return { title, length, idea, explanation };
+                                    });
                                 }
 
                                 // 1. Handle Video Script (JSON with tabs)

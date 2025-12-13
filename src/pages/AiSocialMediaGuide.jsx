@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ArrowRight, CheckCircle, Star, Zap, Layout, Globe, Shield } from 'lucide-react';
-import AdUnit from '../components/AdUnit';
 
 // Reusing Navbar from LandingPage (simplified for this page)
 const Navbar = ({ user }) => {
@@ -169,7 +168,6 @@ export default function AiSocialMediaGuide() {
 
             </main>
 
-            <AdUnit slotId="9876543210" />
             <Footer />
         </div>
     );

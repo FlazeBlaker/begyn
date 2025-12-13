@@ -163,44 +163,7 @@ export default function SettingsPage() {
         setLoading(false);
     };
 
-    const handleDeleteAccount = async () => {
-        if (!user) return;
 
-        const confirmText = "Are you sure you want to delete your account? Type 'DELETE' to confirm.";
-        const userInput = window.prompt(confirmText);
-
-        if (userInput !== "DELETE") return;
-
-        setLoading(true);
-        setMessage({ type: "", text: "" });
-
-        try {
-            const userDocRef = doc(db, "users", user.uid);
-            const brandDocRef = doc(db, "brands", user.uid);
-
-            // Archive data logic here (omitted for brevity, same as before)
-
-            try {
-                await deleteDoc(userDocRef);
-                await deleteDoc(brandDocRef);
-                await deleteUser(user);
-            } catch (error) {
-                if (error.code === 'auth/requires-recent-login') {
-                    const provider = new GoogleAuthProvider();
-                    await reauthenticateWithPopup(user, provider);
-                    await deleteDoc(userDocRef);
-                    await deleteDoc(brandDocRef);
-                    await deleteUser(user);
-                } else {
-                    throw error;
-                }
-            }
-        } catch (error) {
-            console.error("Error deleting account:", error);
-            setMessage({ type: "error", text: `Failed to delete account: ${error.message}` });
-            setLoading(false);
-        }
-    };
 
     return (
         <div style={{ padding: "clamp(16px, 5vw, 40px)", maxWidth: "800px", margin: "0 auto", color: "#fff" }}>
@@ -269,27 +232,7 @@ export default function SettingsPage() {
                 <Toggle label="Auto-save Generated Content" checked={autoSave} onChange={handleAutoSaveChange} disabled={prefsLoading} />
             </Section>
 
-            <Section title="Account Actions">
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    <div>
-                        <h4 style={{ margin: "0 0 4px 0", color: "#f87171", fontSize: "1rem" }}>Delete Account</h4>
-                        <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>Permanently remove your account and all data.</p>
-                    </div>
-                    <button onClick={handleDeleteAccount} disabled={loading} style={{
-                        background: "rgba(239, 68, 68, 0.1)",
-                        color: "#f87171",
-                        border: "1px solid rgba(239, 68, 68, 0.2)",
-                        padding: "12px 16px",
-                        borderRadius: "8px",
-                        cursor: loading ? "wait" : "pointer",
-                        fontWeight: "600",
-                        width: "100%",
-                        minHeight: "44px"
-                    }}>
-                        {loading ? "Processing..." : "Delete Account"}
-                    </button>
-                </div>
-            </Section>
+
         </div>
     );
 }

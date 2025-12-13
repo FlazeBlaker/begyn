@@ -1,4 +1,4 @@
-// functions/index.js
+﻿// functions/index.js
 const { onRequest } = require("firebase-functions/v2/https");
 require("dotenv").config();
 const admin = require("firebase-admin");
@@ -30,6 +30,83 @@ const sharp = require("sharp");
 // Initialize Gemini with the provided API Key (env var)
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.VITE_GOOGLE_AI_API_KEY);
 
+// --- GROQ SETUP ---
+const Groq = require("groq-sdk");
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+const GROQ_TEXT_MODEL = "groq/llama-3.3-70b-versatile"; // Or just "llama-3.3-70b-versatile" if using standard Groq ID, assume user provided ID is valid or mapped
+// Note: Groq SDK uses "llama-3.3-70b-versatile" usually. The user provided "groq/llama-3.3-70b-versatile" which might be OpenRouter style, but we'll try to strip or use as is. 
+// If using official Groq Cloud, IDs are usually sans "groq/".
+// Let's use a helper to clean it if needed or try both.
+const GROQ_VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"; // As requested
+
+async function callGroqText(prompt, systemInstruction = "You are a helpful assistant.") {
+    try {
+        const completion = await groq.chat.completions.create({
+            messages: [
+                { role: "system", content: systemInstruction },
+                { role: "user", content: prompt }
+            ],
+            model: "llama-3.3-70b-versatile", // Hardcoding the known working ID from test
+            temperature: 0.7,
+            max_tokens: 4096,
+        });
+        return completion.choices[0]?.message?.content || "";
+    } catch (e) {
+        console.error("Groq Text API Error:", e);
+        throw e;
+    }
+}
+
+async function callGroqVision(prompt, base64Image) {
+    try {
+        const completion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: prompt },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${base64Image}`,
+                            },
+                        },
+                    ],
+                },
+            ],
+            model: GROQ_VISION_MODEL,
+        });
+        return completion.choices[0]?.message?.content || "";
+    } catch (e) {
+        // Fallback to standard vision model if custom one fails
+        console.warn(`Groq Vision (${GROQ_VISION_MODEL}) failed, trying fallback...`);
+        try {
+            const completion = await groq.chat.completions.create({
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64Image}`,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                model: "llama-3.2-90b-vision-preview",
+            });
+            return completion.choices[0]?.message?.content || "";
+        } catch (e2) {
+            console.error("Groq Vision Fallback Error:", e2);
+            throw e;
+        }
+    }
+}
+
 const STRATEGIST_SYSTEM_PROMPT = `You are an elite, MrBeast-level, top-0.1% thumbnail strategist and visual director.
 
 Your job is to generate HIGHLY CLICKABLE thumbnails for:
@@ -37,9 +114,9 @@ YouTube, Instagram, Twitter/X, Facebook, and LinkedIn.
 
 This system must work for ANY topic, including topics never seen before.
 
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 CORE RESPONSIBILITIES
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 1. Automatically analyze the given topic/title and infer:
    - Content type
@@ -56,9 +133,9 @@ CORE RESPONSIBILITIES
 Thumbnail archetypes are NOT limited.
 You may invent new archetypes dynamically when needed.
 
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 ARCHETYPE LEARNING RULE (CRITICAL)
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 Reference images provided by the user define CANONICAL visual archetypes.
 
@@ -68,7 +145,7 @@ When a new topic resembles:
 - emotion
 - or visual logic of any reference image
 
-→ You MUST adapt that visual language EVEN FOR NEW TOPICS.
+ΓåÆ You MUST adapt that visual language EVEN FOR NEW TOPICS.
 
 Do NOT copy visuals.
 Do NOT reuse faces.
@@ -82,23 +159,23 @@ DO replicate:
 
 If no reference matches, create a NEW archetype using proven high-CTR YouTube logic.
 
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 THUMBNAIL CREATION RULES
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-• Thumbnails must be understandable in < 0.3 seconds
-• One clear idea only
-• Extreme clarity with minimal clutter
-• Emotion MUST be visible
-• Composition must guide the eye instantly
-• If numbers are used, they must feel LARGE-SCALE or HIGH-STAKES
+ΓÇó Thumbnails must be understandable in < 0.3 seconds
+ΓÇó One clear idea only
+ΓÇó Extreme clarity with minimal clutter
+ΓÇó Emotion MUST be visible
+ΓÇó Composition must guide the eye instantly
+ΓÇó If numbers are used, they must feel LARGE-SCALE or HIGH-STAKES
 
-Never design a “pretty” thumbnail.
+Never design a ΓÇ£prettyΓÇ¥ thumbnail.
 Design a CURIOSITY WEAPON.
 
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 TEXT RENDERING RULES (CRITICAL)
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 If text is absolutely necessary (e.g., for a sign, UI element, or title):
 - Keep it UNDER 5 WORDS.
@@ -107,9 +184,9 @@ If text is absolutely necessary (e.g., for a sign, UI element, or title):
 - If the concept works without text, prefer NO TEXT.
 - Do NOT include "gibberish" or small unreadable text.
 
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 PLATFORM ADAPTATION (IMPORTANT)
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 For EVERY topic, generate thumbnails adapted for:
 
@@ -140,9 +217,9 @@ LinkedIn:
 The ARCHETYPE stays the same.
 Only framing, polish, and text aggressiveness change.
 
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 OUTPUT FORMAT (MANDATORY)
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 For each request, output a JSON object with these keys:
 
@@ -165,9 +242,9 @@ For each request, output a JSON object with these keys:
 
 Each platform prompt must be ready to use directly with an image generation model.
 
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 QUALITY BAR
-────────────────────────────
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 Assume thumbnails will compete against:
 - MrBeast
@@ -182,6 +259,27 @@ ITERATE internally until it does.
 No safe answers.
 No generic designs.
 Only viral-grade output.`;
+
+const VERIFIED_TOOLS = [
+    { name: "Canva", url: "https://www.canva.com" },
+    { name: "CapCut", url: "https://www.capcut.com" },
+    { name: "ChatGPT", url: "https://chat.openai.com" },
+    { name: "Buffer", url: "https://buffer.com" },
+    { name: "Notion", url: "https://www.notion.so" },
+    { name: "Trello", url: "https://trello.com" },
+    { name: "Google Sheets", url: "https://sheets.google.com" },
+    { name: "Google Docs", url: "https://docs.google.com" },
+    { name: "Meta Business Suite", url: "https://business.facebook.com" },
+    { name: "YouTube Studio", url: "https://studio.youtube.com" },
+    { name: "OBS Studio", url: "https://obsproject.com" },
+    { name: "Audacity", url: "https://www.audacityteam.org" },
+    { name: "DaVinci Resolve", url: "https://www.blackmagicdesign.com/products/davinciresolve" },
+    { name: "AnswerThePublic", url: "https://answerthepublic.com" },
+    { name: "Google Trends", url: "https://trends.google.com" },
+    { name: "Hootsuite", url: "https://hootsuite.com" },
+    { name: "Later", url: "https://later.com" },
+    { name: "Linktree", url: "https://linktr.ee" }
+];
 
 // --- MAIN FUNCTION (HTTP) ---
 // Converted to HTTP onRequest for Cloud Run / Firebase HTTP functions + CORS + long timeout
@@ -286,6 +384,7 @@ exports.generateContent = onRequest(
 
             // --- 1. CREDIT CALCULATION & DEDUCTION ---
             let requiredCredits = 0;
+            let currentCredits = 0; // Fix: Declare currentCredits in outer scope
             const baseCosts = {
                 caption: 1,
                 idea: 1,
@@ -328,7 +427,7 @@ exports.generateContent = onRequest(
                     await db.runTransaction(async (transaction) => {
                         const brandSnap = await transaction.get(brandRef);
 
-                        let currentCredits = 0;
+                        // Use outer scope currentCredits
 
                         if (!brandSnap.exists) {
                             console.log(`Brand profile missing for ${uid}, creating default...`);
@@ -405,7 +504,10 @@ exports.generateContent = onRequest(
             }
 
             // --- HELPER: Construct Prompts ---
-            const toneInstruction = createToneInstruction(payload.tone || payload.tones);
+            // CRITICAL: If useBrandData is false, ignore any tone/brand info from payload
+            const toneInstruction = useBrandData
+                ? createToneInstruction(payload.tone || payload.tones)
+                : "Use a neutral, engaging, and professional tone.";
             const captionAdvancedInstruction = createCaptionAdvancedInstructions(options || {});
             const ideaAdvancedInstruction = createIdeaAdvancedInstructions(options || {});
             const jsonOutputFormat = getJsonFormat(options || {});
@@ -414,7 +516,7 @@ exports.generateContent = onRequest(
             const prompts = {
                 caption: `
           You are an expert social media strategist. Generate ${options?.numOutputs || 3} unique, high-energy Instagram captions.
-          **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}
+          ${useBrandData ? `**Brand Details:** ${brand.brandName || 'Unknown'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}` : ''}
           **Post Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
@@ -430,28 +532,52 @@ exports.generateContent = onRequest(
         `,
                 idea: `
           You are an expert social media strategist. Give ${options?.numOutputs || options?.numIdeas || 10} unique, "viral-style" content ideas.
-          **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}
+          ${useBrandData ? `**Brand Details:** ${brand.brandName || 'Unknown'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}` : ''}
           **Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
           **Advanced Instructions:** ${ideaAdvancedInstruction}
           - Language: ${options?.language || "English"}
           
-          **Instructions:**
-          - Format each idea EXACTLY as follows:
-            Video Title: [Catchy Title]
-            Length: [Approximate time, e.g., 30-60 seconds]
-            Idea: [One sentence summary]
-            Explanation:
-            - [Point 1]
-            - [Point 2]
-            - [Point 3]
-          - Separate each idea with a blank line.
-          - DO NOT include any introductory text.
+          **CRITICAL DIVERSITY REQUIREMENTS:**
+          - Each idea MUST use a DIFFERENT content format/approach
+          - FORBIDDEN: Repeating similar patterns (e.g., multiple "showcase X" ideas)
+          - REQUIRED: Use varied formats such as:
+            * Tutorial/How-To
+            * Showcase/Demo
+            * Challenge
+            * Top Tips/List
+            * Behind-the-Scenes
+            * Q&A/FAQ
+            * Transformation/Before-After
+            * Story/Narrative
+            * Comparison/Review
+            * Myth-Busting/Facts
+          - Each idea should have a DISTINCT angle, hook, and structure
+          - Avoid repetitive language patterns across ideas
+          
+          **OUTPUT FORMAT - MANDATORY JSON:**
+          Return ONLY a valid JSON object with this EXACT structure:
+          {
+            "contentIdeas": [
+              {
+                "title": "Catchy, Unique Video Title",
+                "length": "30-60 seconds",
+                "idea": "One sentence summary",
+                "explanation": ["Point 1", "Point 2", "Point 3"]
+              }
+            ]
+          }
+          
+          **CRITICAL:**
+          - Return ONLY the JSON object, NO markdown, NO explanations
+          - Use lowercase field names: "title", "length", "idea", "explanation"
+          - Ensure each idea has ALL four fields
+          - explanation must be an array of strings
         `,
                 post: `
           You are an expert social media copywriter. Write a full, engaging social media post.
-          **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}
+          ${useBrandData ? `**Brand Details:** ${brand.brandName || 'Unknown'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}` : ''}
           **Post Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
@@ -466,7 +592,7 @@ exports.generateContent = onRequest(
                 videoScript: `
           You are a professional YouTube and TikTok scriptwriter. Write a script for a video.
           **Target Length:** ${options?.videoLength || videoLength || 'Medium'} (${(options?.videoLength || videoLength) === 'Short' ? '30s-1min' : (options?.videoLength || videoLength) === 'Long' ? '10-15min' : '2-5min'})
-          **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}
+          ${useBrandData ? `**Brand Details:** ${brand.brandName || 'Unknown'}, ${brand.industry || 'General'}, ${brand.tone || 'Professional'}, ${brand.audience || 'Everyone'}` : ''}
           **Video Topic:** ${topic || "See attached image"}
           ${imageInstruction}
           **Tone Instructions:** ${toneInstruction}
@@ -475,46 +601,103 @@ exports.generateContent = onRequest(
           **IMPORTANT: Return ONLY a valid JSON object with this exact structure:**
           {
             "intro": [
-              { "text": "Option 1: Hook and intro..." },
-              { "text": "Option 2: Alternative hook and intro..." }
+              "Hook line 1: Attention-grabbing opening...",
+              "Setup line 2: Introduce the topic...",
+              "Promise line 3: What viewers will learn..."
             ],
-            "mainContent": "The main body of the script...",
+            "mainContent": [
+              "Point 1: First key topic or scene...",
+              "Point 2: Second key topic or scene...",
+              "Point 3: Third key topic or scene...",
+              "Point 4: Fourth key topic (if needed)...",
+              "Point 5: Fifth key topic (if needed)..."
+            ],
             "outro": [
-              { "text": "Option 1: Call to action..." },
-              { "text": "Option 2: Alternative call to action..." }
+              "Recap line 1: Summarize key takeaways...",
+              "CTA line 2: Call to action (like, subscribe, comment)...",
+              "Closing line 3: Final thought or teaser for next video..."
             ]
           }
           
           **Instructions:**
-          - Provide 2 distinct options for the Intro (Hook).
-          - Provide 2 distinct options for the Outro (CTA).
-          - Provide 1 solid Main Content section that fits the target length.
-          - Natural, spoken-word style.
+          - **intro**: 2-4 dialogue points for the hook and setup
+          - **mainContent**: 3-7 dialogue points, each a clear talking point or scene
+          - **outro**: 2-4 dialogue points for closing and CTA
+          - Each point should be 1-2 sentences max
+          - Write in natural, spoken-word style
+          - Points should flow logically
           - NO markdown formatting outside the JSON.
         `,
                 tweet: `
-          You are a witty and viral-style Twitter/X copywriter. Generate ${options?.numOutputs || 3} short, punchy tweets.
-          **Brand Details:** ${brand.brandName || 'Generic Brand'}, ${brand.tone || 'Professional'}
+          You are an expert Twitter/X copywriter. Generate ${options?.numOutputs || 3} tweets that EXACTLY match the specified word count.
+          
+          **MANDATORY WORD COUNT: ${options?.outputSize || 40} WORDS PER TWEET**
+          
+          **THIS IS A STRICT REQUIREMENT. YOU MUST:**
+          - Generate tweets with EXACTLY ${options?.outputSize || 40} words (±3 words tolerance)
+          - Acceptable range: ${Math.max(7, (options?.outputSize || 40) - 3)} to ${(options?.outputSize || 40) + 3} words
+          - Count every single word including hashtags and emojis as separate words
+          - NEVER generate tweets shorter than ${Math.max(7, (options?.outputSize || 40) - 3)} words
+          
+          ${useBrandData ? `**Brand Context:**
+          - Brand: ${brand.brandName || 'Unknown'}
+          - Tone: ${brand.tone || 'Professional'}
+          - Industry: ${brand.industry || 'General'}
+          - Audience: ${brand.audience || 'General'}
+          ` : ''}
           **Topic:** ${topic || "See attached image"}
           ${imageInstruction}
+          
           **Tone Instructions:** ${toneInstruction}
           - Language: ${options?.language || "English"}
-          ${options?.includeHashtags ? "- Include 1-2 hashtags." : "- DO NOT include hashtags."}
-          ${options?.includeEmojis ? "- Use emojis." : "- DO NOT use emojis."}
-          - Max Length: ${options?.outputSize || 280} characters per tweet.
+          ${options?.includeHashtags ? "- Include 1-2 hashtags (count as words)." : "- DO NOT include hashtags."}
+          ${options?.includeEmojis ? "- **MANDATORY: Include 2-4 emojis** naturally integrated throughout the tweet (count each emoji as 1 word). DO NOT just add emojis at the end - weave them into the message." : "- **STRICTLY FORBIDDEN: DO NOT use any emojis.**"}
           
-          **IMPORTANT: Return ONLY a valid JSON object with this exact structure:**
+          **EXAMPLES OF CORRECT LENGTH:**
+          
+          ${options?.outputSize === 10 ? `
+          [10-WORD EXAMPLE${options?.includeEmojis ? " WITH EMOJIS" : ""}]:
+          ${options?.includeEmojis
+                            ? '"Master 📱 social media in just 10 minutes daily using this 🚀"'
+                            : '"Master social media in just 10 minutes daily using this."'}
+          (Word count: 10 ✓${options?.includeEmojis ? ' | Emojis: 2 ✓' : ''})
+          ` : options?.outputSize === 20 ? `
+          [20-WORD EXAMPLE${options?.includeEmojis ? " WITH EMOJIS" : ""}]:
+          ${options?.includeEmojis
+                            ? '"Stop ✋ overthinking your content strategy. The secret 🔑 to viral posts isn\'t perfection, it\'s consistency. Post daily 📆, analyze weekly, improve monthly. That\'s it. 💯"'
+                            : '"Stop overthinking your content strategy. The secret to viral posts isn\'t perfection, it\'s consistency. Post daily, analyze weekly, improve monthly. That\'s it."'}
+          (Word count: 20 ✓${options?.includeEmojis ? ' | Emojis: 4 ✓' : ''})
+          ` : `
+          [40-WORD EXAMPLE${options?.includeEmojis ? " WITH EMOJIS" : ""}]:
+          ${options?.includeEmojis
+                        ? '"Just hit 10K followers 🎉 using a simple 3-step system: 1) Post daily at 8am ⏰ when your audience is most active 2) Use storytelling 📖 instead of selling in every post 3) Engage with 10 comments 💬 before posting your own content. Took me 90 days. You can do it faster. 🚀"'
+                        : '"Just hit 10K followers using a simple 3-step system: 1) Post daily at 8am when your audience is most active 2) Use storytelling instead of selling in every post 3) Engage with 10 comments before posting your own content. Took me 90 days. You can do it faster."'}
+          (Word count: 40 ✓${options?.includeEmojis ? ' | Emojis: 4 ✓' : ''})
+          `}
+          
+          **UNACCEPTABLE - TOO SHORT (REJECT THESE):**
+          ❌ "Great content here" (3 words - TOO SHORT)
+          ❌ "Love this post" (3 words - TOO SHORT)
+          ❌ "Amazing tips for growth" (4 words - TOO SHORT)
+          
+          **JSON OUTPUT FORMAT (MANDATORY):**
           {
             "tweets": [
-              { "text": "Tweet option 1..." },
-              { "text": "Tweet option 2..." },
-              { "text": "Tweet option 3..." }
+              { "text": "Your ${options?.outputSize || 40}-word tweet here..." },
+              { "text": "Another ${options?.outputSize || 40}-word tweet..." },
+              { "text": "Third ${options?.outputSize || 40}-word tweet..." }
             ]
           }
-
-          **Instructions:**
-          - DO NOT include any introductory text.
-          - Return ONLY the JSON object.
+          
+          **CRITICAL VALIDATION BEFORE RETURNING:**
+          - Count the words in EACH tweet
+          - Verify EACH tweet has ${Math.max(7, (options?.outputSize || 40) - 3)}-${(options?.outputSize || 40) + 3} words
+          ${options?.includeEmojis ? "- Verify EACH tweet has 2-4 emojis naturally integrated (NOT just at the end)" : "- Verify EACH tweet has ZERO emojis"}
+          - If any tweet is too short, REWRITE it to meet the word count
+          - ONLY return tweets that meet ALL requirements
+          
+          **FINAL INSTRUCTION:**
+          Return ONLY the JSON object. NO explanations, NO markdown formatting, NO extra text.
         `,
                 dynamicGuide: `
           You are an expert brand strategist. Create a dynamic onboarding flow for a new creator.
@@ -558,6 +741,7 @@ exports.generateContent = onRequest(
           You are an expert social media manager. Create a "Zero to Hero" roadmap timeline.
           **Core Data:** ${JSON.stringify(payload?.formData || {})}
           **Dynamic Answers:** ${JSON.stringify(payload?.dynamicAnswers || [])}
+          **Verified Tools List:** ${JSON.stringify(VERIFIED_TOOLS)}
           
           **Instructions:**
           - Generate **30-50 high-impact steps** from "Day 1" to "Day 30+".
@@ -578,6 +762,10 @@ exports.generateContent = onRequest(
                 "generatorLink": "/video-script-generator" | "/post-generator" | "/idea-generator" | null
               }
             ]
+          - **CRITICAL TOOL RULE:** For the "resources" field, YOU MUST ONLY SELECT TOOLS FROM THE PROVIDED "Verified Tools List". 
+          - Do NOT invent tools. Do NOT use tools like "Gaming Forms".
+          - If a relevant tool exists in the Verified List, include it.
+          - If NO relevant tool exists in the Verified List, return an empty array [] for "resources".
           - Return ONLY the JSON object.
         `,
                 generateChecklist: `
@@ -606,6 +794,7 @@ exports.generateContent = onRequest(
           **Dynamic Answers:** ${JSON.stringify(payload?.dynamicAnswers || [])}
           **Previous Steps Context:** ${JSON.stringify(payload?.previousSteps || [])}. Ensure new steps logically follow these.
           **Batch Context:** Generating steps ${payload?.startStep} to ${payload?.endStep} (Total ${payload?.numSteps} steps in this batch).
+          **Verified Tools List:** ${JSON.stringify(VERIFIED_TOOLS)}
           
           **Instructions:**
           - Generate exactly ${payload?.numSteps} high-impact, **extremely granular** steps.
@@ -630,12 +819,17 @@ exports.generateContent = onRequest(
                 "generatorLink": "/video-script-generator" | "/post-generator" | "/idea-generator" | null
               }
             ]
+          - **CRITICAL TOOL RULE:** For the "resources" field, YOU MUST ONLY SELECT TOOLS FROM THE PROVIDED "Verified Tools List". 
+          - Do NOT invent tools. Do NOT use tools like "Gaming Forms".
+          - If a relevant tool exists in the Verified List, include it.
+          - If NO relevant tool exists in the Verified List, return an empty array [] for "resources".
           - Return ONLY the JSON object.
         `,
                 finalGuide: `
           You are an expert social media manager. Create a comprehensive "Zero to Hero" action plan.
           **Core Data:** ${JSON.stringify(payload?.formData || {})}
           **Dynamic Answers:** ${JSON.stringify(payload?.dynamicAnswers || [])}
+          **Verified Tools List:** ${JSON.stringify(VERIFIED_TOOLS)}
           
           **Instructions:**
           - Analyze the user's goal and generate **60+ high-impact, extremely granular steps**. Focus on quality and detail.
@@ -657,13 +851,15 @@ exports.generateContent = onRequest(
             - "timeEstimate": ACCURATE and PRECISE time estimate (e.g., "15 mins", "2 hours", "45 mins"). Do NOT use ranges like "1-2 days". Be specific.
             - "suggestions": An array of **3-5 specific suggestions** (e.g., video ideas, hook examples, tools to try) where applicable.
             - "resources": An array of objects { "name": "Tool Name", "url": "https://..." } for relevant tools/software.
+            - **CRITICAL:** For "resources", ONLY use tools from the Verified Tools List: ${JSON.stringify(VERIFIED_TOOLS.map(t => t.name))}.
+            - If no verified tool is relevant, use an empty array [].
             - "generatorLink": IF the step can be done by our AI tools, return one of: ["/video-script-generator", "/post-generator", "/idea-generator", "/caption-generator", "/tweet-generator", "/image-generator"].Otherwise null.
           - Return ONLY the JSON object.No markdown formatting.
         `
             };
 
             // --- HELPER: Composite Face on Thumbnail (YouTube Style) ---
-            async function compositeFaceOnThumbnail(baseImageBase64, faceImageBase64, position = "bottom-left") {
+            async function compositeFaceOnThumbnail(baseImageBase64, faceImageBase64, position = "bottom-right") {
                 try {
                     // Remove base64 prefix if present
                     const baseData = baseImageBase64.replace(/^data:image\/\w+;base64,/, "");
@@ -689,7 +885,7 @@ exports.generateContent = onRequest(
                             {
                                 input: Buffer.from(
                                     `<svg width="${faceSize}" height="${faceSize}">
-                                        <circle cx="${faceSize / 2}" cy="${faceSize / 2}" r="${faceSize / 2}" fill="white"/>
+        <circle cx="${faceSize / 2}" cy="${faceSize / 2}" r="${faceSize / 2}" fill="white" />
                                     </svg>`
                                 ),
                                 blend: 'dest-in'
@@ -781,7 +977,7 @@ exports.generateContent = onRequest(
                     else if (finalAspectRatio === "1.91:1") { pixelDims = "1200x628"; ratioKeywords = "Wide Link"; }
 
                     // PREPEND to make it the first thing the model sees
-                    finalPrompt = `${ratioKeywords} image (${finalAspectRatio}, ${pixelDims}). ${finalPrompt} \n\nEnsure the image is ${ratioKeywords} with aspect ratio ${finalAspectRatio}.`;
+                    finalPrompt = `${ratioKeywords} image (${finalAspectRatio}, ${pixelDims}). ${finalPrompt}\n\nEnsure the image is ${ratioKeywords} with aspect ratio ${finalAspectRatio}.`;
 
                     // TEXT ACCURACY INSTRUCTION
                     finalPrompt += `\n\nCRITICAL TEXT RULE: If any text appears in the image, the spelling MUST BE PERFECT. No typos, no gibberish. If you cannot render the text perfectly, do not include it.`;
@@ -836,21 +1032,21 @@ exports.generateContent = onRequest(
                         model: "gemini-2.5-flash-image"
                     });
 
-                    const imagePrompt = `Create a high - quality, professional social media image.
+                    const imagePrompt = `Create a high-quality, professional social media image.
 
 Brand Context:
-        - Industry: ${brand.industry || "general business"}
-        - Brand Name: ${brand.brandName || ""}
-        - Tone: ${brand.tone || "modern and professional"}
-        - Target Audience: ${brand.audience || "general audience"}
+- Industry: ${brand.industry || "general business"}
+- Brand Name: ${brand.brandName || ""}
+- Tone: ${brand.tone || "modern and professional"}
+- Target Audience: ${brand.audience || "general audience"}
 
 Post Topic: "${topic}"
 
-        Requirements:
-        - Professional, eye - catching design suitable for social media
-            - High quality, vibrant colors
-                - Modern aesthetic
-                    - 1024x1024 resolution`;
+Requirements:
+- Professional, eye-catching design suitable for social media
+    - High quality, vibrant colors
+        - Modern aesthetic
+            - 1024x1024 resolution`;
 
                     const result = await imageModel.generateContent(imagePrompt);
                     const response = await result.response;
@@ -867,7 +1063,7 @@ Post Topic: "${topic}"
                                 const imageData = part.inlineData.data;
                                 const mimeType = part.inlineData.mimeType;
 
-                                res.status(200).json({ result: `data:${mimeType}; base64, ${imageData} ` });
+                                res.status(200).json({ result: `data:${mimeType};base64,${imageData}` });
                                 return;
                             }
                         }
@@ -888,50 +1084,45 @@ Post Topic: "${topic}"
             const selectedPrompt = prompts[type];
             if (!selectedPrompt) return res.status(404).json({ error: `Invalid prompt type: ${type}` });
 
-            // Define "Guide Flow" types that use the faster Flash model
-            const GUIDE_FLOW_TYPES = [
-                "dynamicGuide",
-                "dynamicGuideIterative",
-                "generateRoadmapSteps",
-                "generateChecklist",
-                "generatePillars",
-                "generateRoadmapBatch",
-                "finalGuide"
-            ];
-
-            const modelName = GUIDE_FLOW_TYPES.includes(type) ? "gemini-2.5-flash" : "gemini-2.5-pro";
-
             try {
-                const model = genAI.getGenerativeModel({
-                    model: modelName,
-                    systemInstruction: "You are an expert social media strategist who ONLY responds in the requested format."
-                });
+                let generatedText = "";
+                let usage = { promptTokenCount: 0, candidatesTokenCount: 0 }; // Approx for now
 
-                let parts = [{ text: selectedPrompt }];
-
+                // BRANCH 1: IMAGE + TEXT (Vision -> Text Pipeline)
                 if (image) {
+                    // Step 1: Llama 4 Maverick (Maverick part)
                     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-                    parts = [
-                        { inlineData: { data: base64Data, mimeType: "image/jpeg" } },
-                        { text: selectedPrompt }
-                    ];
+
+                    console.log("Analyzing image with Llama 4 Maverick...");
+                    const visionPrompt = `Analyze this image in extreme detail. 
+                    Describe the subject, mood, colors, composition, text(if any), and potential viral angles. 
+                    Write a "Creative Brief" that a content writer can use to generate: ${type} related to topic '${topic || 'General'}'.`;
+
+                    const creativeBrief = await callGroqVision(visionPrompt, base64Data);
+
+                    // Step 2: Llama 3.3 70B (Creative Writing part)
+                    console.log("Generating final creative content with Llama 3.3 70B...");
+                    const finalSystemPrompt = "You are an elite, MrBeast-level social media strategist. Use the provided CREATIVE BRIEF to write the final content.";
+                    const finalUserPrompt = `${selectedPrompt}\n\n[CONTEXT FROM IMAGE ANALYSIS]:\n${creativeBrief}`;
+
+                    generatedText = await callGroqText(finalUserPrompt, finalSystemPrompt);
+
+                }
+                // BRANCH 2: TEXT ONLY (Standard Llama 3.3 70B Flow)
+                else {
+                    console.log("Generating content with Llama 3.3 70B...");
+                    generatedText = await callGroqText(selectedPrompt, "You are an expert social media strategist who ONLY responds in the requested detailed JSON format.");
                 }
 
-                const result = await model.generateContent(parts);
-                const response = await result.response;
-                const text = response.text();
+                // --- COST TRACKING (Approximate) ---
+                // Groq usage metadata might differ, ensuring safe access
+                // await logSystemCost(uid, "llama-groq", 0, 0, type); // TODO: Parse real usage if needed
 
-                // --- COST TRACKING ---
-                try {
-                    const usage = response.usageMetadata || { promptTokenCount: 0, candidatesTokenCount: 0 };
-                    await logSystemCost(uid, modelName, usage.promptTokenCount, usage.candidatesTokenCount, type);
-                } catch (logErr) {
-                    console.error("Failed to log cost:", logErr);
-                }
-                // ---------------------
+                // Clean up markdown formatting (```json, ```)
+                const cleanText = generatedText.replace(/```json/g, "").replace(/```/g, "").trim();
 
-                // Clean up markdown formatting (```json, ```) from ALL responses
-                const cleanText = text.replace(/```json/g, "").replace(/```/g, "").trim();
+                // Attempt to parse JSON to ensure validity before returning, if applicable
+                // (Optional but good practice since Llama can be chatty)
 
                 res.status(200).json({
                     result: cleanText,
@@ -941,8 +1132,10 @@ Post Topic: "${topic}"
                 return;
 
             } catch (e) {
-                console.error("Gemini Generation Error:", e);
-                return res.status(500).json({ error: `Gemini Generation Failed: ${e && e.message ? e.message : "Unknown error"}` });
+                console.error("Groq Generation Error:", e);
+                // Fallback to Gemini if Groq fails entirely? 
+                // For now, return error as requested to switch TO Groq.
+                return res.status(500).json({ error: `Generation Failed: ${e && e.message ? e.message : "Unknown error"}` });
             }
 
         } catch (e) {
@@ -1084,6 +1277,20 @@ exports.verifyRazorpayPayment = onCall(
 
             const brandsRef = db.collection("brands").doc(uid);
 
+            // CRITICAL: Check if payment already processed (idempotency)
+            const paymentRef = brandsRef.collection("payments").doc(razorpay_payment_id);
+            const existingPayment = await paymentRef.get();
+
+            if (existingPayment.exists) {
+                console.log(`Payment ${razorpay_payment_id} already processed for user ${uid}. Skipping duplicate.`);
+                return {
+                    success: true,
+                    message: `Payment already processed. Credits were previously added.`,
+                    paymentId: razorpay_payment_id,
+                    duplicate: true
+                };
+            }
+
             await db.runTransaction(async (t) => {
                 const brandDoc = await t.get(brandsRef);
 
@@ -1099,7 +1306,7 @@ exports.verifyRazorpayPayment = onCall(
                     t.update(brandsRef, { credits: newCredits });
                 }
 
-                const paymentRef = brandsRef.collection("payments").doc(razorpay_payment_id);
+                // Store payment record to prevent future duplicates
                 t.set(paymentRef, {
                     orderId: razorpay_order_id,
                     paymentId: razorpay_payment_id,

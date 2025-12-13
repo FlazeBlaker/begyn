@@ -572,15 +572,12 @@ const FAQ = () => {
     const faqs = [
         {
             question: "Is it free to use?",
-            answer: "Yes! You get 5 free credits when you sign up to try out all the features. After that, you can purchase credit packs as needed."
+            answer: "Yes! You get 10 free credits when you sign up to try out all the features. After that, you can purchase credit packs as needed."
         },
-        {
-            question: "Can I use the images commercially?",
-            answer: "Absolutely. You have full commercial ownership of all content and images you generate. Use them for your business, clients, or social media without restrictions."
-        },
+
         {
             question: "What AI model do you use?",
-            answer: "We use Google's latest Gemini 2.5 Flash and Pro models. These are state-of-the-art models designed for speed and high-quality creative output."
+            answer: "We use the latest Meta's top models. These are state-of-the-art models designed for speed and high-quality creative output."
         },
         {
             question: "How do you use my data?",

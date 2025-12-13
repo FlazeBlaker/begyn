@@ -48,16 +48,11 @@ export default function PaymentModal({ isOpen, onClose, onSuccess }) {
                     }
 
                     if (onSuccess) {
-                        onSuccess(newCredits);
+                        onSuccess(newCredits, packageInfo.credits);
                     }
 
-                    // Show success toast
-                    showToast(`🎉 Payment successful! ${packageInfo.credits} credits added to your account.`, 'success');
-
-                    // Close modal after a short delay
-                    setTimeout(() => {
-                        onClose();
-                    }, 2000);
+                    // Close modal immediately - parent will show success notification
+                    onClose();
                 },
                 async (error) => {
                     // Payment failed

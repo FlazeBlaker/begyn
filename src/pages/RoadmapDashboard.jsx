@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { auth, db, doc, getDoc, updateDoc } from "../services/firebase";
 import "../styles/GuideFlowStyles.css";
-import AdUnit from "../components/AdUnit";
 
 // Editable roadmap task component
 const RoadmapTask = ({ item, category, index, onUpdate }) => {
@@ -108,7 +107,6 @@ export default function RoadmapDashboard() {
                     </div>
                 </div>
             </div>
-            <AdUnit slotId="1234567890" />
         </div>
     );
 }

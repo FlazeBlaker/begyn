@@ -102,12 +102,12 @@ export default function Roadmap({ steps = [] }) {
             }, {});
             try {
                 await updateDoc(doc(db, "brands", uid), { roadmapProgress: progress });
-            } catch (err) {
+            } catch {
                 // fallback: create doc if doesn't exist
                 try {
                     await setDoc(doc(db, "brands", uid), { roadmapProgress: progress }, { merge: true });
-                } catch (err2) {
-                    console.error("Failed to save progress:", err2);
+                } catch {
+                    // console.error("Failed to save progress:", err2);
                 }
             }
         },
@@ -123,8 +123,8 @@ export default function Roadmap({ steps = [] }) {
             } catch (err) {
                 try {
                     await setDoc(doc(db, "brands", uid), { roadmapNotes: notesObj }, { merge: true });
-                } catch (err2) {
-                    console.error("Failed to save notes:", err2);
+                } catch {
+                    // console.error("Failed to save notes:", err2);
                 }
             }
         },
@@ -140,8 +140,8 @@ export default function Roadmap({ steps = [] }) {
             } catch (err) {
                 try {
                     await setDoc(doc(db, "brands", uid), { roadmapSettings: settingsObj }, { merge: true });
-                } catch (err2) {
-                    console.error("Failed to save settings:", err2);
+                } catch {
+                    // console.error("Failed to save settings:", err2);
                 }
             }
         },
@@ -611,39 +611,41 @@ export default function Roadmap({ steps = [] }) {
                                 onClick={handlePrev}
                                 disabled={nodes.findIndex(n => n.id === selectedStep.id) === 0}
                                 style={{
-                                    background: "rgba(255, 255, 255, 0.05)",
-                                    border: "none",
-                                    color: nodes.findIndex(n => n.id === selectedStep.id) === 0 ? "rgba(255,255,255,0.1)" : "#a0a0b0",
+                                    background: "rgba(255, 255, 255, 0.15)",
+                                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                                    color: nodes.findIndex(n => n.id === selectedStep.id) === 0 ? "rgba(255,255,255,0.3)" : "white",
                                     cursor: nodes.findIndex(n => n.id === selectedStep.id) === 0 ? "not-allowed" : "pointer",
                                     borderRadius: "50%",
-                                    width: 36,
-                                    height: 36,
+                                    width: 40,
+                                    height: 40,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    transition: "all 0.2s"
+                                    transition: "all 0.2s",
+                                    boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
                                 }}
                             >
-                                <ChevronLeft size={20} />
+                                <ChevronLeft size={24} />
                             </button>
                             <button
                                 onClick={handleNext}
                                 disabled={nodes.findIndex(n => n.id === selectedStep.id) === nodes.length - 1}
                                 style={{
-                                    background: "rgba(255, 255, 255, 0.05)",
-                                    border: "none",
-                                    color: nodes.findIndex(n => n.id === selectedStep.id) === nodes.length - 1 ? "rgba(255,255,255,0.1)" : "#a0a0b0",
+                                    background: "rgba(255, 255, 255, 0.15)",
+                                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                                    color: nodes.findIndex(n => n.id === selectedStep.id) === nodes.length - 1 ? "rgba(255,255,255,0.3)" : "white",
                                     cursor: nodes.findIndex(n => n.id === selectedStep.id) === nodes.length - 1 ? "not-allowed" : "pointer",
                                     borderRadius: "50%",
-                                    width: 36,
-                                    height: 36,
+                                    width: 40,
+                                    height: 40,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    transition: "all 0.2s"
+                                    transition: "all 0.2s",
+                                    boxShadow: "0 2px 5px rgba(0,0,0,0.2)"
                                 }}
                             >
-                                <ChevronRight size={20} />
+                                <ChevronRight size={24} />
                             </button>
                             <button
                                 aria-label="Close details"

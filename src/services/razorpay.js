@@ -28,7 +28,7 @@ export const CREDIT_PACKAGES = [
         id: 'enterprise',
         name: 'Agency Scale',
         credits: 500,
-        price: 995,
+        price: 999,
         currency: 'INR',
         popular: false,
         savings: '60%'
@@ -83,7 +83,7 @@ export const openRazorpayCheckout = async (packageInfo, onSuccess, onFailure) =>
         const createOrderFn = httpsCallable(functions, 'createRazorpayOrder');
         const orderResponse = await createOrderFn({
             packageId: packageInfo.id,
-            price: packageInfo.price,
+            price: packageInfo.actualPrice || packageInfo.price, // Use override price if available
             credits: packageInfo.credits
         });
 
@@ -96,6 +96,8 @@ export const openRazorpayCheckout = async (packageInfo, onSuccess, onFailure) =>
         document.body.appendChild(script);
 
         script.onload = () => {
+            let paymentProcessing = false; // Guard against duplicate calls
+
             const options = {
                 key: key, // Public key from backend
                 amount: amount,
@@ -104,6 +106,13 @@ export const openRazorpayCheckout = async (packageInfo, onSuccess, onFailure) =>
                 description: `${packageInfo.name} - ${packageInfo.credits} Credits`,
                 order_id: orderId, // Secure Order ID from backend
                 handler: async function (response) {
+                    // Prevent duplicate processing
+                    if (paymentProcessing) {
+                        console.log('Payment already being processed, ignoring duplicate call');
+                        return;
+                    }
+                    paymentProcessing = true;
+
                     try {
                         // console.log('Payment successful, verifying...', response);
 
@@ -124,6 +133,7 @@ export const openRazorpayCheckout = async (packageInfo, onSuccess, onFailure) =>
                         }
                     } catch (error) {
                         console.error('Error verifying payment:', error);
+                        paymentProcessing = false; // Reset on error
                         onFailure(new Error('Payment verification failed. Please contact support.'));
                     }
                 },

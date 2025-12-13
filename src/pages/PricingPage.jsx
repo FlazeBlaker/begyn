@@ -61,10 +61,12 @@ export default function PricingPage() {
 
         // Open payment modal
         setIsPaymentModalOpen(true);
+        // alert("Payments will start in 2-3 days");
     };
 
-    const handlePaymentSuccess = (newCredits) => {
+    const handlePaymentSuccess = (newCredits, creditsAdded) => {
         setCredits(newCredits);
+        showToast(`🎉 Success! Added ${creditsAdded} credits to your account!`, "success");
     };
 
     return (
