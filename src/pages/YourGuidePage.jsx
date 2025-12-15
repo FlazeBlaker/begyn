@@ -78,8 +78,6 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                     timeEstimate: step.timeEstimate || "30 mins",
                     suggestions: step.suggestions || [],
                     resources: step.resources || [],
-                    suggestions: step.suggestions || [],
-                    resources: step.resources || [],
                     actionItems: step.actionItems || step.subNodes || [], // Fallback for old data
                     generatorLink: step.generatorLink || null,
                     type: 'ai-generated'
@@ -292,8 +290,6 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
     const mobileSteps = dynamicRoadmapSteps.map(step => {
         const stepProgress = roadmapProgress[step.id] || {};
         return {
-            ...step,
-            status: stepProgress.completed ? 'completed' : (step.id === progressStats.nextStep?.id ? 'in-progress' : 'locked'),
             ...step,
             status: stepProgress.completed ? 'completed' : (step.id === progressStats.nextStep?.id ? 'in-progress' : 'locked'),
             actionItems: (step.actionItems || []).map((item, i) => ({

@@ -269,6 +269,7 @@ const SurpriseMe = () => {
 };
 
 export default function Dashboard() {
+    const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -278,62 +279,58 @@ export default function Dashboard() {
     const [timeRange, setTimeRange] = useState('7d');
 
     useEffect(() => {
-        let unsubBrand = null;
-        let unsubHistory = null;
+        const u = auth.currentUser;
+        if (!u) {
+            // Should verify in PrivateRoute, but just in case
+            // navigate('/'); 
+            // Don't navigate here to avoid conflict with PrivateRoute
+            return;
+        }
 
-        const unsubscribe = auth.onAuthStateChanged((u) => {
-            // Clean up previous listeners
-            if (unsubBrand) { unsubBrand(); unsubBrand = null; }
-            if (unsubHistory) { unsubHistory(); unsubHistory = null; }
+        setUser(u);
 
-            setUser(u);
-            if (u) {
-                // 1. Fetch User Stats (Credits, Streak) & Check Onboarding
-                unsubBrand = onSnapshot(doc(db, "brands", u.uid), (docSnapshot) => {
-                    if (docSnapshot.exists()) {
-                        const data = docSnapshot.data();
+        // 1. Fetch User Stats (Credits, Streak) & Check Onboarding via Snapshot
+        const unsubBrand = onSnapshot(doc(db, "brands", u.uid), (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                const data = docSnapshot.data();
 
-                        // Safety Check: Redirect if not onboarded
-                        // This handles the race condition where Login might redirect to Dashboard too early
-                        if (!data.introSeen) {
-                            navigate('/intro', { replace: true });
-                            return;
-                        }
-                        if (!data.onboarded) {
-                            navigate('/flow', { replace: true });
-                            return;
-                        }
+                // Safety Check: Redirect if not onboarded
+                // We use replace: true to avoid history stack buildup
+                if (!data.introSeen) {
+                    navigate('/intro', { replace: true });
+                    return;
+                }
+                if (!data.onboarded) {
+                    navigate('/flow', { replace: true });
+                    return;
+                }
 
-                        setCredits(data.credits || 0);
-                        setStreak(data.streak || 1);
-                    } else {
-                        // User exists in Auth but no DB doc -> New User -> Go to Intro
-                        navigate('/intro', { replace: true });
-                    }
-                }, (error) => {
-                    if (error.code !== 'permission-denied') console.error("Brand snapshot error:", error);
-                });
-
-                // 2. Fetch History & Process for Usage
-                unsubHistory = onSnapshot(collection(db, "users", u.uid, "history"), (snap) => {
-                    const data = snap.docs.map(d => d.data()).sort((a, b) => b.timestamp - a.timestamp);
-                    setHistory(data);
-                    setLoading(false);
-                }, (error) => {
-                    if (error.code !== 'permission-denied') console.error("History snapshot error:", error);
-                });
-
+                setCredits(data.credits || 0);
+                setStreak(data.streak || 1);
             } else {
-                setLoading(false);
+                // User exists in Auth but no DB doc -> New User -> Go to Intro
+                navigate('/intro', { replace: true });
             }
+        }, (error) => {
+            if (error.code !== 'permission-denied') console.error("Brand snapshot error:", error);
+        });
+
+        // 2. Fetch History & Process for Usage
+        const unsubHistory = onSnapshot(collection(db, "users", u.uid, "history"), (snap) => {
+            const data = snap.docs.map(d => d.data()).sort((a, b) => b.timestamp - a.timestamp);
+            setHistory(data);
+            setLoading(false);
+        }, (error) => {
+            // Warning only
+            if (error.code !== 'permission-denied') console.error("History snapshot error:", error);
+            setLoading(false);
         });
 
         return () => {
             if (unsubBrand) unsubBrand();
             if (unsubHistory) unsubHistory();
-            unsubscribe();
         };
-    }, []);
+    }, [navigate]); // Added navigate to dependency array for safety
 
     // Recalculate usage data when history or timeRange changes
     useEffect(() => {

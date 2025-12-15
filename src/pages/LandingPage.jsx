@@ -73,12 +73,14 @@ const Navbar = ({ user }) => {
 
 const Hero = ({ user }) => {
     const navigate = useNavigate();
+    const [email, setEmail] = useState('');
 
     const handleCtaClick = () => {
         if (user) {
             navigate('/dashboard');
         } else {
-            navigate('/login');
+            // Pass email and force signup mode
+            navigate('/login', { state: { email, authMode: 'signup' } });
         }
     };
 
@@ -148,7 +150,25 @@ const Hero = ({ user }) => {
                 <br />
                 Follow our step-by-step guide to master your social media journey.
             </p>
-            <div className="stagger-3" style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            <div className="stagger-3" style={{ display: 'flex', gap: '12px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                {!user && (
+                    <input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        style={{
+                            padding: '16px 24px',
+                            borderRadius: '99px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.05)',
+                            color: 'white',
+                            fontSize: '1rem',
+                            outline: 'none',
+                            minWidth: '280px'
+                        }}
+                    />
+                )}
                 <button onClick={handleCtaClick} className="cyber-button" style={{ padding: '16px 40px', fontSize: '1.1rem', borderRadius: '99px' }}>
                     {user ? (
                         <>Go to Dashboard <ArrowRight size={18} /></>
@@ -160,6 +180,171 @@ const Hero = ({ user }) => {
         </section>
     );
 };
+
+const MacWindowPreview = () => (
+    <section style={{ padding: '0 20px 80px', maxWidth: '1000px', margin: '0 auto', transform: 'translateY(-40px)', position: 'relative', zIndex: 10 }}>
+        <div className="glass-premium hover-lift-glow" style={{
+            borderRadius: '16px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            overflow: 'hidden',
+            boxShadow: '0 40px 100px -20px rgba(0,0,0,0.7)',
+            background: '#0a0a0a'
+        }}>
+            {/* Title Bar */}
+            <div style={{
+                background: 'rgba(255,255,255,0.03)',
+                padding: '12px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.05)'
+            }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }} />
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ffbd2e' }} />
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27c93f' }} />
+                </div>
+                <div style={{ flex: 1, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem', fontWeight: '500' }}>
+                    Begyn Mission Control
+                </div>
+            </div>
+
+            {/* Content Split */}
+            <div className="mac-window-content" style={{ display: 'flex', minHeight: '400px' }}>
+                {/* Left Side: Text */}
+                <div style={{
+                    flex: 1,
+                    padding: '48px',
+                    borderRight: '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(to bottom right, rgba(255,255,255,0.01), transparent)'
+                }}>
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        color: '#CE93D8', fontSize: '0.9rem', marginBottom: '20px', fontWeight: '600',
+                        textTransform: 'uppercase', letterSpacing: '1px'
+                    }}>
+                        <Cpu size={16} /> AI Strategy Engine
+                    </div>
+                    <h3 style={{ fontSize: '2.2rem', fontWeight: '800', marginBottom: '20px', color: '#fff', lineHeight: '1.2' }}>
+                        Your Daily Roadmap to <span className="gradient-text">Success</span>
+                    </h3>
+                    <p style={{ color: '#a0a0b0', lineHeight: '1.7', fontSize: '1.1rem', marginBottom: '32px' }}>
+                        Forget the guesswork. Get a tailored plan every single day based on your niche.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ background: 'rgba(34, 197, 94, 0.1)', borderRadius: '50%', padding: '4px' }}><CheckCircle size={16} color="#4ade80" /></div>
+                            <span style={{ color: '#e0e0e0' }}>Step-by-step generic tasks</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ background: 'rgba(34, 197, 94, 0.1)', borderRadius: '50%', padding: '4px' }}><CheckCircle size={16} color="#4ade80" /></div>
+                            <span style={{ color: '#e0e0e0' }}>Viral hooks & scripts generated for you</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ background: 'rgba(34, 197, 94, 0.1)', borderRadius: '50%', padding: '4px' }}><CheckCircle size={16} color="#4ade80" /></div>
+                            <span style={{ color: '#e0e0e0' }}>Monitor growth & streaks</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side: Guide Visual */}
+                <div style={{
+                    flex: 1.2,
+                    background: '#050507',
+                    padding: '40px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                }}>
+                    {/* Background Grid */}
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)',
+                        backgroundSize: '24px 24px', opacity: 0.5
+                    }}></div>
+
+                    {/* Simulated Chat/Guide Interface */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', zIndex: 1 }}>
+                        <div className="stagger-1" style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            display: 'flex', gap: '16px', alignItems: 'flex-start'
+                        }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #7C4DFF, #CE93D8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>1</div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.95rem', fontWeight: '600', color: '#fff', marginBottom: '8px' }}>Define Your Niche</div>
+                                <div style={{ fontSize: '0.85rem', color: '#a0a0b0' }}>Identifying your target audience is the first step to viral growth.</div>
+                            </div>
+                        </div>
+
+                        <div className="stagger-2" style={{
+                            background: 'rgba(124, 77, 255, 0.05)',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            border: '1px solid rgba(124, 77, 255, 0.2)',
+                            display: 'flex', gap: '16px', alignItems: 'flex-start',
+                            boxShadow: '0 10px 30px -10px rgba(124, 77, 255, 0.1)'
+                        }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={18} color="#000" /></div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.95rem', fontWeight: '600', color: '#fff', marginBottom: '8px' }}>Post a "Hook" Twist</div>
+                                <div style={{ fontSize: '0.85rem', color: '#e0e0e0', background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '6px' }}>
+                                    "I tried AI for 30 days and here's what happened..."
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="stagger-3" style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            display: 'flex', gap: '16px', alignItems: 'flex-start',
+                            opacity: 0.6
+                        }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', border: '2px dashed rgba(255,255,255,0.2)' }}></div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ height: '10px', width: '50%', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginBottom: '8px' }} />
+                                <div style={{ height: '8px', width: '80%', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Floating Badge */}
+                    <div style={{
+                        position: 'absolute', bottom: '20px', right: '20px',
+                        background: 'rgba(5, 5, 7, 0.8)',
+                        backdropFilter: 'blur(10px)',
+                        padding: '8px 16px',
+                        borderRadius: '99px',
+                        border: '1px solid rgba(34, 197, 94, 0.3)',
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        zIndex: 10
+                    }}>
+                        <div style={{ width: '6px', height: '6px', background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e' }} />
+                        <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#4ade80' }}>AI Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            {`
+            @media (max-width: 900px) {
+                .mac-window-content {
+                    flex-direction: column !important;
+                }
+            }
+        `}
+        </style>
+    </section>
+);
 
 const HowItWorks = ({ user }) => {
     const navigate = useNavigate();
@@ -760,6 +945,7 @@ export default function LandingPage() {
         <div style={{ minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
             <Navbar user={user} />
             <Hero user={user} />
+            <MacWindowPreview />
             <HowItWorks user={user} />
             <Features />
 

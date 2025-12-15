@@ -133,9 +133,15 @@ const FullScreenLoader = () => (
     </div>
 );
 
-// PrivateRoute: returns children if user authed
+// PrivateRoute: returns children if user authed AND verified
 function PrivateRoute({ user, children }) {
     if (!user) return <Navigate to="/" replace />;
+
+    // Security Fix: Block unverified users
+    if (!user.emailVerified) {
+        return <Navigate to="/login" state={{ needsVerification: true }} replace />;
+    }
+
     return children;
 }
 

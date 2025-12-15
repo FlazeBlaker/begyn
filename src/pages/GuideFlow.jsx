@@ -318,7 +318,7 @@ const FinalReviewStep = ({ data, finish }) => {
     return (
         <div className="form-container">
             <div className="final-review-grid">
-                <div className="final-card"><h3>Core Foundation</h3><p>Niche: {data.coreTopic}</p><p>Tone: {(data.tone || []).join(', ')}</p></div>
+                <div className="final-card"><h3>Core Foundation</h3><p>Niche: {data.coreTopic}</p><p>Tone: {Array.isArray(data.tone) ? data.tone.join(', ') : (data.tone || 'None')}</p></div>
                 <div className="final-card"><h3>Commitment</h3><p>{data.timeCommitment}</p></div>
                 {dynamicAnswers.map((item, i) => (
                     <div key={i} className="final-card"><h3>{item.question}</h3><p>{item.answer}</p></div>
@@ -345,16 +345,35 @@ export default function GuideFlow({ setOnboardedStatus }) {
     const [showProcessing, setShowProcessing] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState("");
 
+    const [agentMessage, setAgentMessage] = useState("Initializing Agents...");
+
+    // Agentic Loading Messages
+    useEffect(() => {
+        if (!loading) return;
+        const messages = [
+            "Orchestrator: Analyzing your niche strategy...",
+            "Viral Engineer: Crafting high-retention hooks...",
+            "Community Builder: Designing engagement loops...",
+            "Monetization Architect: Structuring revenue paths...",
+            "Systems Engineer: Batching workflow steps...",
+            "Orchestrator: Reviewing agent outputs..."
+        ];
+        let i = 0;
+        setAgentMessage(messages[0]);
+        const interval = setInterval(() => {
+            i = (i + 1) % messages.length;
+            setAgentMessage(messages[i]);
+        }, 2500);
+        return () => clearInterval(interval);
+    }, [loading]);
+
     const navigate = useNavigate();
     const location = useLocation(); // Import useLocation
     const uid = auth.currentUser?.uid;
 
-    useEffect(() => {
-        // Access Control: Only allow entry if state.allowed is true
-        if (!location.state?.allowed) {
-            navigate('/dashboard', { replace: true });
-        }
-    }, [location, navigate]);
+    // Access Control useEffect removed to fix redirect loop
+    // Users are directed here by Dashboard/Login if not onboarded.
+    // Strict checks here caused infinite redirection.
 
     useEffect(() => {
         const fetchBrandData = async () => {
@@ -419,6 +438,108 @@ export default function GuideFlow({ setOnboardedStatus }) {
         const dynamicAnswers = (formData.dynamicSteps || []).map(s => ({ question: s.question, answer: formData[s.keyName] || 'N/A' }));
         let finalGuideData = { roadmapSteps: [], sevenDayChecklist: [], contentPillars: [] };
 
+        // Helper to safely parse AI JSON responses
+        const sanitizeAndParse = (str) => {
+            if (typeof str === 'object') return str;
+
+            // 0. Pre-process function to escape newlines INSIDE strings
+            const escapeNewlinesInStrings = (input) => {
+                let result = '';
+                let inString = false;
+                let inEscape = false;
+
+                for (let i = 0; i < input.length; i++) {
+                    const char = input[i];
+
+                    if (inEscape) {
+                        result += char;
+                        inEscape = false;
+                        continue;
+                    }
+
+                    if (char === '\\') {
+                        inEscape = true;
+                        result += char;
+                        continue;
+                    }
+
+                    if (char === '"') {
+                        inString = !inString;
+                        result += char;
+                        continue;
+                    }
+
+                    if (char === '\n' || char === '\r') {
+                        if (inString) {
+                            // If we use \n inside a string, escape it
+                            result += '\\n';
+                        } else {
+                            // If outside string, keep it (structural whitespace)
+                            result += char;
+                        }
+                        continue;
+                    }
+
+                    result += char;
+                }
+                return result;
+            };
+
+            let source = str;
+            // 1. Try extracting from code blocks first
+
+            const codeBlockMatch = source.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (codeBlockMatch) {
+                source = codeBlockMatch[1];
+            }
+
+            // 2. Find the first '{'
+            const firstBrace = source.indexOf('{');
+            if (firstBrace === -1) {
+                // Try parsing strictly in case it's not an object (e.g. valid number/string)
+                try { return JSON.parse(source); } catch (e) { return {}; }
+            }
+
+            // 3. Balanced Brace Extraction
+            let braceCount = 0;
+            let jsonString = '';
+            let foundStart = false;
+
+            for (let i = firstBrace; i < source.length; i++) {
+                const char = source[i];
+                if (char === '{') {
+                    braceCount++;
+                    foundStart = true;
+                } else if (char === '}') {
+                    braceCount--;
+                }
+
+                jsonString += char;
+
+                if (foundStart && braceCount === 0) {
+                    break; // We found the matching closing brace
+                }
+            }
+
+            try {
+                // Pre-process to fix newlines
+                const safeJsonString = escapeNewlinesInStrings(jsonString);
+                return JSON.parse(safeJsonString);
+            } catch (e) {
+                console.error("JSON Parse Failed. Raw:", str, "Extracted:", jsonString);
+                // Fallback: Try naive regex extraction if manual balance failed
+                try {
+                    const fallback = source.match(/\{[\s\S]*\}/);
+                    if (fallback) {
+                        const safeFallback = escapeNewlinesInStrings(fallback[0]);
+                        return JSON.parse(safeFallback);
+                    }
+                } catch (e2) { }
+
+                throw new Error("Failed to parse JSON response.");
+            }
+        };
+
         try {
             const totalSteps = 60;
             const batchSize = 5;
@@ -428,7 +549,8 @@ export default function GuideFlow({ setOnboardedStatus }) {
             for (let i = 0; i < batches; i++) {
                 const startStep = i * batchSize + 1;
                 const endStep = startStep + batchSize - 1;
-                setLoadingProgress(`Generating steps ${startStep}-${endStep} of 30...`);
+                setLoadingProgress(`Orchestrating steps ${startStep}-${endStep}...`);
+
 
                 // Context: Pass the last 5 steps to maintain continuity
                 const previousStepsContext = allSteps.slice(-5).map(s => ({ title: s.title, description: s.description }));
@@ -446,7 +568,7 @@ export default function GuideFlow({ setOnboardedStatus }) {
                     }
                 });
                 let batchData;
-                try { batchData = typeof batchResponse === 'object' ? batchResponse : JSON.parse(batchResponse); } catch (e) { continue; }
+                try { batchData = sanitizeAndParse(batchResponse); } catch (e) { continue; }
                 if (batchData.steps && Array.isArray(batchData.steps)) allSteps = [...allSteps, ...batchData.steps];
             }
 
@@ -455,7 +577,7 @@ export default function GuideFlow({ setOnboardedStatus }) {
             }));
 
             const pillarsResponse = await generateContent({ type: "generatePillars", payload: { formData: formData } });
-            const pillarsData = typeof pillarsResponse === 'object' ? pillarsResponse : JSON.parse(pillarsResponse);
+            const pillarsData = sanitizeAndParse(pillarsResponse);
             finalGuideData.contentPillars = pillarsData.contentPillars || ["Education", "Entertainment", "Inspiration"];
             finalGuideData.sevenDayChecklist = finalGuideData.roadmapSteps.slice(0, 7).map((s, i) => `Day ${i + 1}: ${s.title}`);
             finalGuideData.detailedGuide = { roadmapSteps: finalGuideData.roadmapSteps };
@@ -517,8 +639,11 @@ export default function GuideFlow({ setOnboardedStatus }) {
         return (
             <div className="guide-flow-split-layout" style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999, background: 'rgba(5, 5, 7, 0.98)' }}>
                 <div className="processing-orb" style={{ width: '150px', height: '150px' }}></div>
-                <h2 style={{ color: 'white', marginTop: '40px', fontSize: '2rem' }}>Generating Your Roadmap...</h2>
-                <p style={{ color: '#a0a0b0', fontSize: '1.2rem', marginTop: '16px' }}>{loadingProgress}</p>
+                <h2 style={{ color: 'white', marginTop: '40px', fontSize: '2rem' }}>Building Your Agentic Roadmap...</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <p style={{ color: '#CE93D8', fontSize: '1.3rem', fontWeight: '500' }}>{agentMessage}</p>
+                    <p style={{ color: '#a0a0b0', fontSize: '1rem' }}>{loadingProgress}</p>
+                </div>
                 <p style={{ color: '#ef4444', marginTop: '32px', fontWeight: 'bold' }}>⚠️ Do not close this page</p>
             </div>
         );

@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, sendEmailVerification } from "firebase/auth";
 import {
     getFirestore,
     collection,
@@ -160,7 +160,7 @@ export {
     serverTimestamp,
     updateDoc,
 
-    // Exports for Google Sign-In Pop-up flow:
+    // Export exports for Google Sign-In Pop-up flow:
     GoogleAuthProvider,
     signInWithPopup,
     sendPasswordResetEmail,
@@ -168,5 +168,6 @@ export {
     signInWithEmailAndPassword,
     sendSignInLinkToEmail,
     isSignInWithEmailLink,
-    signInWithEmailLink
+    signInWithEmailLink,
+    sendEmailVerification
 };

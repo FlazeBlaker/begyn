@@ -1,36 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
     auth, db, doc, getDoc, GoogleAuthProvider, signInWithPopup,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    sendSignInLinkToEmail, sendPasswordResetEmail, isSignInWithEmailLink, signInWithEmailLink
+    sendSignInLinkToEmail, sendPasswordResetEmail, isSignInWithEmailLink, signInWithEmailLink,
+    sendEmailVerification
 } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { Sparkles, ArrowRight, CheckCircle, Shield, Cpu } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, Shield, Cpu, Mail } from 'lucide-react';
 
 export default function Login() {
     const navigate = useNavigate();
+    const location = useLocation(); // Needed for redirect state
     const [loading, setLoading] = useState(false);
     const [authChecking, setAuthChecking] = useState(true);
     const [error, setError] = useState(null);
+    const [message, setMessage] = useState(null);
+    const [needsVerification, setNeedsVerification] = useState(false);
 
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'magic'
+
+    // Check for redirection state (e.g. from ProtectedRoute or Landing Page)
+    useEffect(() => {
+        if (location.state?.needsVerification) {
+            setNeedsVerification(true);
+            setMessage("Please verify your email to access that page.");
+        }
+        if (location.state?.email) {
+            setEmail(location.state.email);
+        }
+        if (location.state?.authMode) {
+            setAuthMode(location.state.authMode);
+        }
+    }, [location]);
 
     // Robust Auth Check
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                navigate('/dashboard', { replace: true });
+                if (user.emailVerified) {
+                    // Check onboard status logic moved here or kept in checkUserOnboardStatus
+                    // We let the flow continue usually, but auto-redirect if verified
+                    checkUserOnboardStatus(user);
+                } else {
+                    // Logged in but not verified.
+                    // DO NOT redirect to dashboard yet.
+                    setAuthChecking(false);
+                    // Optionally setNeedsVerification(true) if you want to force it immediately,
+                    // but usually we wait for them to try an action or if they just signed up.
+                }
             } else {
                 setAuthChecking(false);
             }
         });
         return () => unsubscribe();
     }, [navigate]);
-
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'magic'
-    const [message, setMessage] = useState(null);
 
     // Initial Magic Link Check
     useEffect(() => {
@@ -40,9 +66,10 @@ export default function Login() {
                 emailForLink = window.prompt('Please provide your email for confirmation');
             }
             signInWithEmailLink(auth, emailForLink, window.location.href)
-                .then((result) => {
+                .then(async (result) => {
                     window.localStorage.removeItem('emailForSignIn');
-                    navigate('/dashboard', { replace: true });
+                    // Magic link users are verified by definition
+                    await checkUserOnboardStatus(result.user);
                 })
                 .catch((error) => {
                     setError("Error signing in with link: " + error.message);
@@ -55,6 +82,7 @@ export default function Login() {
         setError(null);
         try {
             const result = await signInWithPopup(auth, new GoogleAuthProvider());
+            // Google users are verified by default
             await checkUserOnboardStatus(result.user);
         } catch (err) {
             console.error("Login failed:", err);
@@ -75,10 +103,19 @@ export default function Login() {
             let userCredential;
             if (authMode === 'signup') {
                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await checkUserOnboardStatus(userCredential.user);
+                await sendEmailVerification(userCredential.user);
+                setNeedsVerification(true);
+                setLoading(false);
+                setMessage("Verification link sent! Please check your email.");
             } else if (authMode === 'login') {
                 userCredential = await signInWithEmailAndPassword(auth, email, password);
-                // Auth state listener will handle redirect, but we can check onboard status too
+                if (!userCredential.user.emailVerified) {
+                    setNeedsVerification(true);
+                    setLoading(false);
+                    setMessage("Please verify your email first.");
+                    // Optionally resend: await sendEmailVerification(userCredential.user);
+                    return;
+                }
                 await checkUserOnboardStatus(userCredential.user);
             } else if (authMode === 'magic') {
                 const actionCodeSettings = {
@@ -89,7 +126,7 @@ export default function Login() {
                 window.localStorage.setItem('emailForSignIn', email);
                 setMessage('Magic link sent to your email! Click it to login.');
                 setLoading(false);
-                return; // Don't proceed to onboard check yet
+                return;
             }
         } catch (err) {
             console.error("Auth error:", err);
@@ -113,6 +150,11 @@ export default function Login() {
     };
 
     const checkUserOnboardStatus = async (user) => {
+        if (!user.emailVerified) {
+            setNeedsVerification(true);
+            return; // Stop redirection if not verified
+        }
+
         const userRef = doc(db, "brands", user.uid);
         const snap = await getDoc(userRef);
         const introSeen = snap.exists() && snap.data()?.introSeen;
@@ -125,6 +167,29 @@ export default function Login() {
         }
     };
 
+    const checkVerification = async () => {
+        if (auth.currentUser) {
+            await auth.currentUser.reload();
+            if (auth.currentUser.emailVerified) {
+                setNeedsVerification(false);
+                await checkUserOnboardStatus(auth.currentUser);
+            } else {
+                setMessage("Not verified yet. Please click the link in your email and try again.");
+                // Optionally resend logic here
+            }
+        }
+    };
+
+    const resendVerification = async () => {
+        if (auth.currentUser) {
+            try {
+                await sendEmailVerification(auth.currentUser);
+                setMessage("New verification link sent!");
+            } catch (e) {
+                setError("Error sending link: " + e.message);
+            }
+        }
+    };
 
 
     if (authChecking) return null;
@@ -145,7 +210,41 @@ export default function Login() {
                 `}
             </style>
 
-            {/* LEFT SIDE: Visuals (Marketing) */}
+            {/* VERIFICATION OVERLAY */}
+            {needsVerification && (
+                <div className="glass-premium" style={{
+                    position: 'absolute', inset: '24px', zIndex: 50,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(5, 5, 7, 0.95)', padding: '40px', textAlign: 'center', borderRadius: '16px'
+                }}>
+                    <div style={{
+                        width: '80px', height: '80px', background: 'rgba(124, 77, 255, 0.2)',
+                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '24px', animation: 'pulse-glow 2s infinite'
+                    }}>
+                        <Mail size={40} color="#7C4DFF" />
+                    </div>
+                    <h2 style={{ fontSize: '2rem', fontWeight: '700', color: 'white', marginBottom: '16px' }}>Verify Your Email</h2>
+                    <p style={{ color: '#a0a0b0', maxWidth: '400px', marginBottom: '32px', lineHeight: '1.6' }}>
+                        We've sent a verification link to <strong>{auth.currentUser?.email || email}</strong>.<br />
+                        Please check your inbox (and spam folder) to activate your account.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '300px' }}>
+                        <button onClick={checkVerification} className="cyber-button" style={{ padding: '16px', borderRadius: '12px' }}>
+                            I've Verified My Email
+                        </button>
+                        <button onClick={resendVerification} style={{ background: 'transparent', border: 'none', color: '#7C4DFF', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            Resend Verification Link
+                        </button>
+                        <button onClick={() => { setNeedsVerification(false); }} style={{ background: 'transparent', border: 'none', color: '#a0a0b0', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            Back to Login
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* LEFT SIDE: Visuals */}
             <div className="login-left-panel" style={{
                 flex: 1,
                 display: 'flex',

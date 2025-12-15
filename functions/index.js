@@ -40,14 +40,14 @@ const GROQ_TEXT_MODEL = "groq/llama-3.3-70b-versatile"; // Or just "llama-3.3-70
 // Let's use a helper to clean it if needed or try both.
 const GROQ_VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"; // As requested
 
-async function callGroqText(prompt, systemInstruction = "You are a helpful assistant.") {
+async function callGroqText(prompt, systemInstruction = "You are a helpful assistant.", model = "llama-3.3-70b-versatile") {
     try {
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: systemInstruction },
                 { role: "user", content: prompt }
             ],
-            model: "llama-3.3-70b-versatile", // Hardcoding the known working ID from test
+            model: model,
             temperature: 0.7,
             max_tokens: 4096,
         });
@@ -261,24 +261,13 @@ No generic designs.
 Only viral-grade output.`;
 
 const VERIFIED_TOOLS = [
-    { name: "Canva", url: "https://www.canva.com" },
-    { name: "CapCut", url: "https://www.capcut.com" },
-    { name: "ChatGPT", url: "https://chat.openai.com" },
-    { name: "Buffer", url: "https://buffer.com" },
-    { name: "Notion", url: "https://www.notion.so" },
-    { name: "Trello", url: "https://trello.com" },
-    { name: "Google Sheets", url: "https://sheets.google.com" },
-    { name: "Google Docs", url: "https://docs.google.com" },
-    { name: "Meta Business Suite", url: "https://business.facebook.com" },
-    { name: "YouTube Studio", url: "https://studio.youtube.com" },
-    { name: "OBS Studio", url: "https://obsproject.com" },
-    { name: "Audacity", url: "https://www.audacityteam.org" },
-    { name: "DaVinci Resolve", url: "https://www.blackmagicdesign.com/products/davinciresolve" },
-    { name: "AnswerThePublic", url: "https://answerthepublic.com" },
-    { name: "Google Trends", url: "https://trends.google.com" },
-    { name: "Hootsuite", url: "https://hootsuite.com" },
-    { name: "Later", url: "https://later.com" },
-    { name: "Linktree", url: "https://linktr.ee" }
+    { name: "Video Script Generator", url: "/generate?type=videoScript", description: "Generate viral scripts with hooks." },
+    { name: "Tweet Generator", url: "/generate?type=tweet", description: "Create engaging threads." },
+    { name: "Caption Generator", url: "/generate?type=caption", description: "Write perfect captions." },
+    { name: "Content Idea Generator", url: "/generate?type=idea", description: "Brainstorm viral topics." },
+    { name: "CapCut", url: "https://www.capcut.com", description: "Video editing." },
+    { name: "Canva", url: "https://www.canva.com", description: "Graphic design." },
+    { name: "OBS Studio", url: "https://obsproject.com", description: "Streaming software." }
 ];
 
 // --- MAIN FUNCTION (HTTP) ---
@@ -396,6 +385,10 @@ exports.generateContent = onRequest(
                 dynamicGuide: 0,
                 dynamicGuideIterative: 0,
                 finalGuide: 0,
+                generateRoadmapBatch: 0,
+                generateGuideOutline: 0,
+                generateModuleSteps: 0,
+                generatePillars: 0,
                 payForGuideReset: 10 // Cost for resetting the guide
             };
 
@@ -478,6 +471,10 @@ exports.generateContent = onRequest(
                 type !== "finalGuide" &&
                 type !== "dynamicGuideIterative" &&
                 type !== "generateRoadmapSteps" &&
+                type !== "generateRoadmapBatch" &&
+                type !== "generateGuideOutline" &&
+                type !== "generateModuleSteps" &&
+                type !== "generatePillars" &&
                 type !== "generateChecklist" &&
                 type !== "generatePillars" &&
                 type !== "generateRoadmapBatch"
@@ -700,15 +697,28 @@ exports.generateContent = onRequest(
           Return ONLY the JSON object. NO explanations, NO markdown formatting, NO extra text.
         `,
                 dynamicGuide: `
-          You are an expert brand strategist. Create a dynamic onboarding flow for a new creator.
-          **Niche:** ${payload?.coreData?.niche || 'General'}
-          **Tone:** ${(payload?.coreData?.tone || []).join(', ')}
-          **Commitment:** ${payload?.coreData?.commitment || 'Unknown'}
+          You are an expert **Content Director**.
+          **Your Goal:** Narrow down the exact **Sub-Niche** and **Format** for this creator.
           
-          **Goal:** Generate 3-5 follow-up questions to refine their strategy.
+          **KNOWN CONTEXT (DO NOT ASK ABOUT THESE):**
+          - Niche: ${payload?.coreData?.niche || 'General'}
+          - Tone: ${(payload?.coreData?.tone || []).join(', ')}
+          - Commitment: ${payload?.coreData?.commitment || 'Unknown'}
+          - Target Audience: ${payload?.coreData?.audience || 'General'}
+          - Primary Goal: ${payload?.coreData?.goal || 'Growth'}
+          - Content Preference: ${(payload?.coreData?.preference || []).join(', ')}
+          
+          **Goal:** Generate 3-5 DEEP follow-up questions to exactly define their content. 
+          **Constraint:** 
+          - **Focus on Narrowing:** Convert broad niches into specific sub-genres.
+            - *If Gaming:* Ask "FPS, RPG, or Horror?" AND "Live Streaming or Produced Videos?"
+            - *If Cooking:* Ask "Quick Recipes, ASMR, or Educational Science?"
+            - *If Vlogging:* Ask "Daily Life, Travel, or Tech Reviews?"
+          - **Focus on Production Style:** Ask about "Faceless vs On-Camera" or "Voiceover vs Music Only".
+          - **DO NOT** ask about "Challenges", "Feelings", or "Broad Goals".
+          
           **Schema:** You MUST return a valid JSON object matching this schema: ${JSON.stringify(payload?.schema || {})}
           **Instructions:**
-          - Questions should be specific to their niche.
           - Return ONLY the JSON object. No markdown formatting.
         `,
                 dynamicGuideIterative: `
@@ -788,42 +798,73 @@ exports.generateContent = onRequest(
             "contentPillars": ["Pillar 1", "Pillar 2", "Pillar 3"]
           - Return ONLY the JSON object.
         `,
-                generateRoadmapBatch: `
-          You are an expert social media manager. Create a batch of roadmap steps.
-          **Core Data:** ${JSON.stringify(payload?.formData || {})}
-          **Dynamic Answers:** ${JSON.stringify(payload?.dynamicAnswers || [])}
-          **Previous Steps Context:** ${JSON.stringify(payload?.previousSteps || [])}. Ensure new steps logically follow these.
-          **Batch Context:** Generating steps ${payload?.startStep} to ${payload?.endStep} (Total ${payload?.numSteps} steps in this batch).
-          **Verified Tools List:** ${JSON.stringify(VERIFIED_TOOLS)}
+                generateGuideOutline: `
+          You are an expert **Agent Orchestrator** for YouTube creators.
+          **Your Goal:** Design a multi-agent production workflow for a creator in the **${payload?.formData?.coreTopic || 'General'}** niche.
+          
+          **Inputs:**
+          - Niche: ${payload?.formData?.coreTopic}
+          - Goal: ${payload?.formData?.primaryGoal}
+          - Experience: ${payload?.formData?.experienceLevel || 'Beginner'}
           
           **Instructions:**
-          - Generate exactly ${payload?.numSteps} high-impact, **extremely granular** steps.
-          - **Granularity Rule:** Break down every major task into "baby steps". 
-            - Example: Instead of just "Create a Video", break it down: "Download OBS", "Configure Audio Settings", "Find Background Music", "Record Raw Footage", "Import to Editor", etc.
-          - **Scope:** Ensure the steps cover the full journey: Foundation -> Setup -> Creation -> Distribution -> Growth -> Monetization.
-          - These steps should logically follow previous steps and fit into the overall "Zero to Hero" journey.
-          - **Schema:** Return a JSON object with ONLY "steps":
+          1.  **Analyze the Niche:** What specific skills are needed? (e.g. Gaming needs "OBS Technician", Makeup needs "Lighting Specialist").
+          2.  **Define 6-8 Modules:** Break the lifecycle into phases.
+          3.  **Appoint Agents:** For EACH module, assign a specific **Expert Persona** to handle it.
+          
+          **Schema:** Return a JSON object with ONLY "modules":
+          {
+            "modules": [
+               { 
+                 "title": "Module 1: [Specific Phase Name]", 
+                 "agentPersona": "e.g. 'OBS Specialist' or 'Beauty Lighting Expert'",
+                 "goal": "Brief description of what this agent should achieve."
+               },
+               ...
+            ]
+          }
+        `,
+                generateModuleSteps: `
+          You are an expert **${payload?.agentPersona || 'Technical Specialist'}**.
+          **Task:** Write the "Instruction Manual" for **${payload?.moduleTitle}**.
+          
+          **Context:**
+          - Niche: ${payload?.formData?.coreTopic}
+          - Current Phase: ${payload?.moduleTitle}
+          - **Your Role:** ${payload?.agentPersona}
+          - **Verified Tools List:** ${JSON.stringify(VERIFIED_TOOLS)}
+          
+          **CRITICAL INSTRUCTION: ATOMIC GRANULARITY**
+          - Act purely as the **${payload?.agentPersona}**. Use your specific jargon and tools.
+          - You are NOT giving advice. You are giving **COMMANDS**.
+          - **Micro-Steps:** Break down this single phase into **6-10 atomic actions**.
+          - **Sequential Logic:** Step 2 must be physically impossible without Step 1.
+          
+          **TOOL SUGGESTION RULE (MANDATORY):**
+          - You **MUST** populate the "resources" array for at least 80% of the steps.
+          - **PRIORITY:** If a step involves writing, brainstorming, or planning, YOU MUST recommend one of these internal tools:
+            * "Video Script Generator" (for scripts)
+            * "Content Idea Generator" (for topics)
+            * "Tweet Generator" (for text/threads)
+            * "Caption Generator" (for posts)
+          - **SECONDARY:** Use CapCut, OBS, Canva for production tasks.
+          - **Example:** { "name": "Video Script Generator", "url": "/generate?type=videoScript" }
+          
+          **Schema:** Return a JSON object with ONLY "steps":
+          {
             "steps": [
               {
-                "title": "Short Action Title",
-                "description": "Brief 1-sentence summary",
-                "detailedDescription": "Specific instructions on WHAT and HOW.",
-                "subNodes": [
-                  { "title": "Sub-Task 1", "steps": ["Step 1.1", "Step 1.2"] },
-                  { "title": "Sub-Task 2", "steps": ["Step 2.1", "Step 2.2"] }
-                ],
-                "phase": "Foundation" | "Content Creation" | "Growth" | "Monetization",
-                "timeEstimate": "e.g., 15 mins",
-                "suggestions": ["Suggestion 1", "Suggestion 2"],
-                "resources": [{ "name": "Tool Name", "url": "https://..." }],
-                "generatorLink": "/video-script-generator" | "/post-generator" | "/idea-generator" | null
+                "title": "Action Verb Title",
+                "description": "Direct command.",
+                "detailedDescription": "Exact physical/digital action required.",
+                "subNodes": [],
+                "phase": "${payload?.moduleTitle}",
+                "timeEstimate": "e.g. 5 mins",
+                "suggestions": ["Tip 1"],
+                "resources": []
               }
             ]
-          - **CRITICAL TOOL RULE:** For the "resources" field, YOU MUST ONLY SELECT TOOLS FROM THE PROVIDED "Verified Tools List". 
-          - Do NOT invent tools. Do NOT use tools like "Gaming Forms".
-          - If a relevant tool exists in the Verified List, include it.
-          - If NO relevant tool exists in the Verified List, return an empty array [] for "resources".
-          - Return ONLY the JSON object.
+          }
         `,
                 finalGuide: `
           You are an expert social media manager. Create a comprehensive "Zero to Hero" action plan.
@@ -855,6 +896,72 @@ exports.generateContent = onRequest(
             - If no verified tool is relevant, use an empty array [].
             - "generatorLink": IF the step can be done by our AI tools, return one of: ["/video-script-generator", "/post-generator", "/idea-generator", "/caption-generator", "/tweet-generator", "/image-generator"].Otherwise null.
           - Return ONLY the JSON object.No markdown formatting.
+        `,
+                generateRoadmapBatch: `
+          You are the **Head of Content Strategy (The Orchestrator)**. 
+          You lead a team of elite specialized agents to build a "Zero to Hero" roadmap.
+          
+          **THE MISSION:** Generate steps ${payload?.startStep} to ${payload?.endStep} of 30.
+          
+          **YOUR AGENT TEAM:**
+          1. ⚡ **The Viral Engineer:** Obsessed with hooks, retention, algorithms, and trends. Handles high-views content.
+          2. ❤️ **The Community Builder:** Obsessed with trust, engagement, DMs, and psychology. Handles loyalty tasks.
+          3. 💰 **The Monetization Architect:** Obsessed with funnels, sales, offers, and ROI. Handles business tasks.
+          4. 🏗️ **The Systems Engineer:** Obsessed with efficiency, batching, and tools. Handles setup and workflow.
+          
+          **CONTEXT:**
+          - **Niche/Category:** "${payload?.formData?.coreTopic}" (e.g., Gaming, Vlogging, Cooking, Animation).
+          - **Goal:** ${payload?.formData?.primaryGoal}
+          - **Experience:** ${payload?.formData?.experienceLevel || 'Beginner'}
+          - **Previous Steps Context:** ${JSON.stringify(payload?.previousSteps || [])}
+          
+          **CRITICAL INSTRUCTION: "UNIVERSAL GROUPING PROTOCOL"**
+          - **GROUP RELATED ACTIONS:** Do not fragment a single logical task.
+            - *Bad:* "1. Buy Flour. 2. Buy Eggs. 3. Buy Milk."
+            - *Good:* "1. Gather All Ingredients." (Detailed Desc: 1. Buy Flour. 2. Buy Eggs...)
+            - *Bad:* "1. Download App. 2. Install App."
+            - *Good:* "1. Install & Configure Software." (Detailed Desc: 1. Download. 2. Install. 3. Open.)
+          
+          - **PACING GUIDE (THE "ZERO TO HERO" ARC):**
+            - **Steps 1-6 (Foundation):** SETUP & ENVIRONMENT.
+               - *Gaming:* Install OBS, Steam, Discord.
+               - *Cooking:* Buy knives, organize kitchen, set up tripod.
+               - *Vlogging:* Clear phone storage, clean lens, find lighting.
+            - **Steps 7-15 (The Content Lab):** FIRST CREATION CYCLE.
+               - Ideation -> Scripting/Planning -> Recording -> Editing -> Thumbnail.
+            - **Steps 16-25 (Growth Engine):** PUBLISHING & OPTIMIZATION.
+               - Uploading, Titles, Tags, Analytics Review, Reply to Comments.
+            - **Steps 26-30 (Monetization & Scaling):**
+               - Affiliates, Sponsorship preparation, Workflow batching.
+          
+          **CRITICAL:** IF YOU ARE ON STEP 10 AND STILL DOING "SETUP", YOU HAVE FAILED. MOVE TO CREATION.
+          
+          **INSTRUCTIONS:**
+           1. **Analyze Niche:** Adapt purely to "${payload?.formData?.coreTopic}". Use the correct tools for THAT niche.
+           2. **Cluster Actions:** Combine small physical actions into ONE roadmap step.
+           3. **Baby-Step Descriptions:** The 'Detailed Description' must still list the specific micro-actions/clicks.
+          
+          **Schema:** Return a JSON object with ONLY "steps":
+          {
+            "steps": [
+              {
+                "title": "Action-Oriented Title (e.g., 'Setup Filming Environment')",
+                "description": "One sentence summary of the goal.",
+                "detailedDescription": "1. Clear a space on your counter.\n2. Set up your tripod/phone stand.\n3. Position your lights 45 degrees to the subject.",
+                "phase": "Foundation" | "Content Creation" | "Growth" | "Monetization",
+                "timeEstimate": "e.g., 10 mins",
+                "suggestions": ["Specific Technical Tip"],
+                "resources": [{ "name": "Tool Name", "url": "https://..." }], 
+                "agentAssigned": "Viral Engineer" | "Community Builder" | "Monetization Architect" | "Systems Engineer",
+                "generatorLink": null
+              }
+            ]
+          }
+          
+          **CRITICAL TOOL RULE:** 
+          - POPULATE "resources" AGGRESSIVELY. Always link the tool being used in that step.
+          - Verified List: ${JSON.stringify(VERIFIED_TOOLS || [])}.
+          - Return ONLY the JSON object.
         `
             };
 
@@ -884,9 +991,9 @@ exports.generateContent = onRequest(
                         .composite([
                             {
                                 input: Buffer.from(
-                                    `<svg width="${faceSize}" height="${faceSize}">
-        <circle cx="${faceSize / 2}" cy="${faceSize / 2}" r="${faceSize / 2}" fill="white" />
-                                    </svg>`
+                                    `< svg width = "${faceSize}" height = "${faceSize}" >
+                <circle cx="${faceSize / 2}" cy="${faceSize / 2}" r="${faceSize / 2}" fill="white" />
+                                    </svg > `
                                 ),
                                 blend: 'dest-in'
                             }
@@ -928,7 +1035,7 @@ exports.generateContent = onRequest(
                         .toBuffer();
 
                     // Convert back to base64
-                    return `data:image/png;base64,${result.toString('base64')}`;
+                    return `data: image / png; base64, ${result.toString('base64')} `;
                 } catch (e) {
                     console.error("Face compositing error:", e);
                     throw e;
@@ -964,7 +1071,7 @@ exports.generateContent = onRequest(
                     } else {
                         // Fallback if strategist fails
                         console.warn("Strategist failed, using fallback prompt.");
-                        finalPrompt = `Create a high-quality ${userPlatform} image for topic: ${userIdea}. Aspect Ratio: ${finalAspectRatio}`;
+                        finalPrompt = `Create a high - quality ${userPlatform} image for topic: ${userIdea}. Aspect Ratio: ${finalAspectRatio} `;
                     }
 
                     // Append Aspect Ratio instruction strictly
@@ -977,10 +1084,10 @@ exports.generateContent = onRequest(
                     else if (finalAspectRatio === "1.91:1") { pixelDims = "1200x628"; ratioKeywords = "Wide Link"; }
 
                     // PREPEND to make it the first thing the model sees
-                    finalPrompt = `${ratioKeywords} image (${finalAspectRatio}, ${pixelDims}). ${finalPrompt}\n\nEnsure the image is ${ratioKeywords} with aspect ratio ${finalAspectRatio}.`;
+                    finalPrompt = `${ratioKeywords} image(${finalAspectRatio}, ${pixelDims}).${finalPrompt} \n\nEnsure the image is ${ratioKeywords} with aspect ratio ${finalAspectRatio}.`;
 
                     // TEXT ACCURACY INSTRUCTION
-                    finalPrompt += `\n\nCRITICAL TEXT RULE: If any text appears in the image, the spelling MUST BE PERFECT. No typos, no gibberish. If you cannot render the text perfectly, do not include it.`;
+                    finalPrompt += `\n\nCRITICAL TEXT RULE: If any text appears in the image, the spelling MUST BE PERFECT.No typos, no gibberish.If you cannot render the text perfectly, do not include it.`;
 
 
 
@@ -1007,7 +1114,7 @@ exports.generateContent = onRequest(
                         const parts = response.candidates[0].content.parts;
                         for (const part of parts) {
                             if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
-                                let finalImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                                let finalImage = `data:${part.inlineData.mimeType}; base64, ${part.inlineData.data} `;
                                 res.status(200).json({
                                     result: finalImage,
                                     creditsDeducted: requiredCredits,
@@ -1032,21 +1139,21 @@ exports.generateContent = onRequest(
                         model: "gemini-2.5-flash-image"
                     });
 
-                    const imagePrompt = `Create a high-quality, professional social media image.
+                    const imagePrompt = `Create a high - quality, professional social media image.
 
 Brand Context:
-- Industry: ${brand.industry || "general business"}
-- Brand Name: ${brand.brandName || ""}
-- Tone: ${brand.tone || "modern and professional"}
-- Target Audience: ${brand.audience || "general audience"}
+            - Industry: ${brand.industry || "general business"}
+            - Brand Name: ${brand.brandName || ""}
+            - Tone: ${brand.tone || "modern and professional"}
+            - Target Audience: ${brand.audience || "general audience"}
 
 Post Topic: "${topic}"
 
-Requirements:
-- Professional, eye-catching design suitable for social media
-    - High quality, vibrant colors
-        - Modern aesthetic
-            - 1024x1024 resolution`;
+            Requirements:
+            - Professional, eye - catching design suitable for social media
+                - High quality, vibrant colors
+                    - Modern aesthetic
+                        - 1024x1024 resolution`;
 
                     const result = await imageModel.generateContent(imagePrompt);
                     const response = await result.response;
@@ -1063,7 +1170,7 @@ Requirements:
                                 const imageData = part.inlineData.data;
                                 const mimeType = part.inlineData.mimeType;
 
-                                res.status(200).json({ result: `data:${mimeType};base64,${imageData}` });
+                                res.status(200).json({ result: `data:${mimeType}; base64, ${imageData} ` });
                                 return;
                             }
                         }
@@ -1076,13 +1183,13 @@ Requirements:
                     console.error("Image Generation Error:", e);
                     console.error("Error details:", e && e.message ? e.message : "");
                     if (e && e.stack) console.error("Stack:", e.stack);
-                    return res.status(500).json({ error: `Failed to generate image with Imagen 3: ${e && e.message ? e.message : "Unknown error"}` });
+                    return res.status(500).json({ error: `Failed to generate image with Imagen 3: ${e && e.message ? e.message : "Unknown error"} ` });
                 }
             }
 
             // --- TEXT GENERATION (Model Selection) ---
             const selectedPrompt = prompts[type];
-            if (!selectedPrompt) return res.status(404).json({ error: `Invalid prompt type: ${type}` });
+            if (!selectedPrompt) return res.status(404).json({ error: `Invalid prompt type: ${type} ` });
 
             try {
                 let generatedText = "";
@@ -1103,15 +1210,31 @@ Requirements:
                     // Step 2: Llama 3.3 70B (Creative Writing part)
                     console.log("Generating final creative content with Llama 3.3 70B...");
                     const finalSystemPrompt = "You are an elite, MrBeast-level social media strategist. Use the provided CREATIVE BRIEF to write the final content.";
-                    const finalUserPrompt = `${selectedPrompt}\n\n[CONTEXT FROM IMAGE ANALYSIS]:\n${creativeBrief}`;
+                    const finalUserPrompt = `${selectedPrompt} \n\n[CONTEXT FROM IMAGE ANALYSIS]: \n${creativeBrief} `;
 
-                    generatedText = await callGroqText(finalUserPrompt, finalSystemPrompt);
+                    generatedText = await callGroqText(finalUserPrompt, finalSystemPrompt, "llama-3.3-70b-versatile");
 
                 }
                 // BRANCH 2: TEXT ONLY (Standard Llama 3.3 70B Flow)
                 else {
-                    console.log("Generating content with Llama 3.3 70B...");
-                    generatedText = await callGroqText(selectedPrompt, "You are an expert social media strategist who ONLY responds in the requested detailed JSON format.");
+                    // --- HYBRID MODEL SELECTION ---
+                    // Strategy/Roadmap = 70B (High Quality) | Content = 8B (Low Cost, High Speed)
+                    let selectedModel = "llama-3.1-8b-instant"; // Default to cheap/fast
+
+                    if (
+                        type === "generateRoadmapSteps" ||
+                        type === "generatePillars" ||
+                        type === "dynamicGuide" ||
+                        type === "dynamicGuideIterative" ||
+                        type === "finalGuide" ||
+                        type === "generateChecklist" ||
+                        type === "generateRoadmapBatch"
+                    ) {
+                        selectedModel = "llama-3.3-70b-versatile"; // Keep High Quality for Strategy
+                    }
+
+                    console.log(`Generating content with ${selectedModel}...`);
+                    generatedText = await callGroqText(selectedPrompt, "You are an expert social media strategist who ONLY responds in the requested detailed JSON format.", selectedModel);
                 }
 
                 // --- COST TRACKING (Approximate) ---
