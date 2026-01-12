@@ -136,6 +136,40 @@ const Step2Platform = ({ data, updateData, next }) => {
 
 // --- STEP 3: AI Analysis ---
 const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
+    // Helper to safely parse AI JSON responses (duplicated here for scope access, or should be moved to util)
+    const sanitizeAndParse = (str) => {
+        if (typeof str === 'object') return str;
+        let source = str;
+        // 1. Try extracting from code blocks first
+        const codeBlockMatch = source.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (codeBlockMatch) {
+            source = codeBlockMatch[1];
+        }
+        // 2. Find the first '{'
+        const firstBrace = source.indexOf('{');
+        if (firstBrace === -1) {
+            try { return JSON.parse(source); } catch (e) { return {}; }
+        }
+        // 3. Balanced Brace Extraction
+        let braceCount = 0;
+        let jsonString = '';
+        let foundStart = false;
+        for (let i = firstBrace; i < source.length; i++) {
+            const char = source[i];
+            if (char === '{') { braceCount++; foundStart = true; }
+            else if (char === '}') { braceCount--; }
+            jsonString += char;
+            if (foundStart && braceCount === 0) break;
+        }
+        try { return JSON.parse(jsonString); }
+        catch (e) {
+            console.error("JSON Parse Failed in Step 3. Raw:", str);
+            // Fallback: Try regex
+            try { return JSON.parse(source.match(/\{[\s\S]*\}/)[0]); } catch (e2) { }
+            return {};
+        }
+    };
+
     const AI_SCHEMA = {
         type: "object",
         properties: {
@@ -160,6 +194,7 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
 
     const startGeneration = async () => {
         setLoading(true);
+        console.log("Generating Dynamic Questions...");
         try {
             const responseString = await generateContent({
                 type: "dynamicGuide",
@@ -170,18 +205,46 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
                 }
             });
 
-            let result;
-            try {
-                result = (typeof responseString === 'object' && responseString !== null) ? responseString : JSON.parse(responseString);
-            } catch (e) {
-                console.error("Failed to parse AI JSON:", e);
-                result = { questions: [] };
-            }
+            console.log("Raw AI Response (Step 3):", responseString);
+            const result = sanitizeAndParse(responseString);
+            console.log("Parsed AI Result (Step 3):", result);
 
-            const dynamicQuestions = (result.questions && result.questions.length > 0) ? result.questions : [
+            let dynamicQuestions = (result.questions && result.questions.length > 0) ? result.questions : [
                 { stepId: 4, question: "What is your main struggle?", keyName: "struggle", type: "text", required: true },
                 { stepId: 5, question: "Do you have a budget?", keyName: "budget", type: "radio", options: ["No", "Small", "Large"], required: true }
             ];
+
+            // ROBUSTNESS FIX: Inject options client-side if AI fails to provide them
+            dynamicQuestions = dynamicQuestions.map(q => {
+                const k = (q.keyName || "").toLowerCase();
+                const text = (q.question || "").toLowerCase();
+                const hasOptions = Array.isArray(q.options) && q.options.length > 0;
+
+                if (!hasOptions) {
+                    let newOptions = [];
+                    // Equipment / Tools
+                    if (k.includes("equip") || k.includes("tool") || k.includes("software") || text.includes("equipment") || text.includes("software")) {
+                        newOptions = ["Phone Only", "Basic Laptop", "Professional Camera/PC", "Other"];
+                    }
+                    // Struggles / Challenges / Blockers
+                    else if (k.includes("block") || k.includes("strug") || k.includes("chal") || text.includes("challenge") || text.includes("struggle")) {
+                        newOptions = ["Time Management", "Consistency", "Content Ideas", "Editing Skills", "Other"];
+                    }
+                    // Goals / Monetization
+                    else if (k.includes("goal") || k.includes("money") || k.includes("income") || text.includes("revenue")) {
+                        newOptions = ["Ad Revenue", "Sponsorships", "Selling Products", "Just Growth", "Other"];
+                    }
+                    // Format / Content Type
+                    else if (k.includes("format") || k.includes("type") || text.includes("format")) {
+                        newOptions = ["Tutorials", "Vlogs/Lifestyle", "Educational", "Entertainment", "Other"];
+                    }
+
+                    if (newOptions.length > 0) {
+                        return { ...q, type: "radio", options: newOptions }; // Force radio type
+                    }
+                }
+                return q;
+            });
 
             setFormData(prev => ({ ...prev, dynamicSteps: dynamicQuestions, totalDynamicSteps: dynamicQuestions.length }));
             setLoading(false);
@@ -189,6 +252,7 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
         } catch (error) {
             console.error("AI Generation Error:", error);
             setLoading(false);
+            // Fallback so user isn't stuck
             setFormData(prev => ({
                 ...prev,
                 dynamicSteps: [
@@ -219,10 +283,10 @@ const Step4ToN_Dynamic = ({ step, stepNumber, totalSteps, data, updateData, next
     const [otherText, setOtherText] = useState(data[step.keyName] && !step.options?.includes(data[step.keyName]) ? data[step.keyName] : '');
 
     const inputType = (step.type || 'text').toLowerCase();
-    // Force ALL dynamic steps to be choice types to satisfy user request
-    // "text field should only apear if i clicked the other options"
-    const isChoiceType = true;
-    const isTextType = false;
+
+    // Fix: If we have valid options, treat it as a choice question regardless of the 'type' label (AI robustness)
+    const validOptions = Array.isArray(step.options) ? step.options.filter(o => o && typeof o === 'string' && o.trim() !== '') : [];
+    const isChoiceType = validOptions.length > 0;
 
     const handleNext = () => {
         let answerToSave = '';
@@ -230,7 +294,6 @@ const Step4ToN_Dynamic = ({ step, stepNumber, totalSteps, data, updateData, next
         if (isChoiceType) {
             answerToSave = (radioAnswer === 'Other') ? otherText : radioAnswer;
         } else {
-            // Default to text handling for text types AND unknown types (fallback)
             answerToSave = currentAnswer;
         }
 
@@ -250,12 +313,11 @@ const Step4ToN_Dynamic = ({ step, stepNumber, totalSteps, data, updateData, next
     );
 
     const renderInput = () => {
-        // Force choice type logic
         if (isChoiceType) {
-            // Create a safe copy of options, defaulting to empty array if undefined
-            let optionsToRender = step.options ? [...step.options] : [];
+            // Create a safe copy of options
+            let optionsToRender = [...validOptions];
 
-            // Ensure 'Other' is always present
+            // Add "Other" if requested or needed
             if (!optionsToRender.includes("Other")) {
                 optionsToRender.push("Other");
             }
@@ -298,10 +360,25 @@ const Step4ToN_Dynamic = ({ step, stepNumber, totalSteps, data, updateData, next
         return <input className="premium-input" value={currentAnswer} onChange={(e) => setCurrentAnswer(e.target.value)} placeholder="Type your answer here..." />;
     };
 
+    const [refreshKey, setRefreshKey] = useState(0);
+
     return (
         <div className="form-container">
-            {step.required && <p style={{ color: '#F48FB1', fontSize: '0.9rem', marginBottom: '16px' }}>(Required)</p>}
-            <div className="input-group">{renderInput()}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                {step.required && <span style={{ color: '#F48FB1', fontSize: '0.9rem' }}>(Required)</span>}
+                <button
+                    onClick={() => setRefreshKey(k => k + 1)}
+                    style={{ background: 'transparent', border: 'none', color: '#a0a0b0', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}
+                >
+                    Refresh Options
+                </button>
+            </div>
+
+            <div className="input-group" key={refreshKey}>
+                {!isChoiceType && <label className="input-label" style={{ display: 'block', marginBottom: '8px', color: '#e0e0e0' }}>Your Answer:</label>}
+                {renderInput()}
+            </div>
+
             <div className="action-bar">
                 <button className="premium-button" onClick={handleNext} disabled={isNextDisabled}>
                     {stepNumber === totalSteps ? "Finish" : "Next"} <span>→</span>

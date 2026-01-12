@@ -3,6 +3,22 @@ import React, { useState, useEffect } from "react";
 import { db, auth } from "../services/firebase";
 import { collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore";
 import ReactMarkdown from 'react-markdown';
+import {
+    FileText,
+    Sparkles,
+    Lightbulb,
+    PenTool,
+    Hash,
+    Film,
+    Twitter,
+    Image as ImageIcon,
+    Target,
+    ClipboardList,
+    Check,
+    Download,
+    Trash2,
+    Inbox
+} from "lucide-react";
 
 // Helper function to format text (convert **text** to bold)
 const formatText = (text) => {
@@ -66,16 +82,16 @@ export default function HistoryPage() {
     };
 
     const getIconForType = (type) => {
-        if (!type) return '📄';
+        if (!type) return <FileText size={18} />;
         const t = type.toLowerCase();
-        if (t.includes('caption')) return '✨';
-        if (t.includes('idea')) return '💡';
-        if (t.includes('post')) return '📝';
-        if (t.includes('hashtag')) return '#️⃣';
-        if (t.includes('script')) return '🎬';
-        if (t.includes('tweet')) return '🐦';
-        if (t.includes('image')) return '🖼️';
-        return '📄';
+        if (t.includes('caption')) return <Sparkles size={18} />;
+        if (t.includes('idea')) return <Lightbulb size={18} />;
+        if (t.includes('post')) return <PenTool size={18} />;
+        if (t.includes('hashtag')) return <Hash size={18} />;
+        if (t.includes('script')) return <Film size={18} />;
+        if (t.includes('tweet')) return <Twitter size={18} />;
+        if (t.includes('image')) return <ImageIcon size={18} />;
+        return <FileText size={18} />;
     };
 
     const handleCopy = (text, e) => {
@@ -141,9 +157,9 @@ export default function HistoryPage() {
         const [activeTab, setActiveTab] = useState('intro');
 
         const tabs = [
-            { id: 'intro', label: 'Intro', icon: '🎬' },
-            { id: 'main', label: 'Main Content', icon: '📝' },
-            { id: 'outro', label: 'Outro', icon: '🎯' }
+            { id: 'intro', label: 'Intro', icon: <Film size={16} /> },
+            { id: 'main', label: 'Main Content', icon: <PenTool size={16} /> },
+            { id: 'outro', label: 'Outro', icon: <Target size={16} /> }
         ];
 
         return (
@@ -237,7 +253,7 @@ export default function HistoryPage() {
                                     gap: "10px"
                                 }}
                             >
-                                📋 Copy Intro
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={16} /> Copy Intro</span>
                             </button>
                         </div>
                     )}
@@ -307,7 +323,7 @@ export default function HistoryPage() {
                                     transition: "all 0.2s"
                                 }}
                             >
-                                📋 Copy Main Content
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={16} /> Copy Main Content</span>
                             </button>
                         </div>
                     )}
@@ -364,7 +380,7 @@ export default function HistoryPage() {
                                     gap: "10px"
                                 }}
                             >
-                                📋 Copy Outro
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={16} /> Copy Outro</span>
                             </button>
                         </div>
                     )}
@@ -418,7 +434,7 @@ export default function HistoryPage() {
                                 width: '100%'
                             }}
                         >
-                            ⬇️ Download Image
+                            <span style={{ display: 'flex', alignItems: 'center', justifyItems: 'center', gap: '8px' }}><Download size={16} /> Download Image</span>
                         </button>
                     </div>
                 </div>
@@ -523,7 +539,7 @@ export default function HistoryPage() {
                                     gap: "8px"
                                 }}
                             >
-                                📋 Copy Tweet
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={16} /> Copy Tweet</span>
                             </button>
                         </div>
                     ))}
@@ -587,7 +603,7 @@ export default function HistoryPage() {
                                                 color: "var(--text-primary)"
                                             }}
                                         >
-                                            📋 Copy
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><ClipboardList size={14} /> Copy</span>
                                         </button>
                                     </>
                                 )}
@@ -636,7 +652,7 @@ export default function HistoryPage() {
                 <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>Loading history...</div>
             ) : history.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "40px", background: "var(--bg-card)", borderRadius: "16px", border: "1px solid var(--border-color)" }}>
-                    <div style={{ fontSize: "40px", marginBottom: "16px" }}>📭</div>
+                    <div style={{ fontSize: "40px", marginBottom: "16px", color: "var(--text-secondary)", display: 'flex', justifyContent: 'center' }}><Inbox size={48} /></div>
                     <h3 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>No history yet</h3>
                     <p style={{ color: "var(--text-secondary)", margin: 0 }}>Generate some content to see it here!</p>
                 </div>
@@ -701,7 +717,7 @@ export default function HistoryPage() {
                                             transition: "all 0.2s"
                                         }}
                                     >
-                                        {copiedId === item.id ? "✓ Copied" : "📋 Copy"}
+                                        {copiedId === item.id ? <><Check size={16} /> Copied</> : <><ClipboardList size={16} /> Copy</>}
                                     </button>
                                     <button
                                         onClick={(e) => handleDelete(item.id, e)}
@@ -719,7 +735,7 @@ export default function HistoryPage() {
                                             minWidth: "44px"
                                         }}
                                     >
-                                        🗑️
+                                        <Trash2 size={18} />
                                     </button>
                                 </div>
                             </div>

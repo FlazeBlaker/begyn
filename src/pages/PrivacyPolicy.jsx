@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, Eye, Lock, Database } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const PrivacyPolicy = () => {
     return (
@@ -11,6 +12,11 @@ const PrivacyPolicy = () => {
             fontFamily: 'Inter, sans-serif',
             padding: '40px 20px'
         }}>
+            <SEO
+                title="Privacy Policy - Begyn"
+                description="Read Begyn's Privacy Policy to understand how we collect, use, and protect your data."
+                canonicalUrl="https://begyn.in/privacy"
+            />
             <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                 {/* Header */}
                 <div style={{ marginBottom: '60px' }}>

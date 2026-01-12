@@ -2,398 +2,431 @@
 import { auth, db, collection, onSnapshot, doc } from "../services/firebase";
 import { Link, useNavigate } from "react-router-dom";
 import {
-    AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer
-} from 'recharts';
+    AreaChart, Area, XAxis, Tooltip, ResponsiveContainer
+} from "recharts";
 import {
-    Zap, TrendingUp, Award, Star,
-    Layout, Image as ImageIcon, PenTool, Twitter, Linkedin, FileText,
-    Mic, Download, Save, Globe, Server, Cloud, Shuffle, MoreHorizontal, Flame,
-    Lightbulb, Video
-} from 'lucide-react';
+    Zap, Flame, Shuffle, Twitter,
+    Image as ImageIcon, Lightbulb, Video,
+    ArrowRight, Sparkles, Star
+} from "lucide-react";
 
-// --- STYLES & ANIMATIONS ---
+/* ================= APPLE STYLE SYSTEM ================= */
+
 const dashboardStyles = `
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(124, 77, 255, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(124, 77, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(124, 77, 255, 0); } }
-    @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-    
-    .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        transition: all 0.3s ease;
-        overflow: hidden;
-        position: relative;
-    }
-    .glass-card:hover {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(124, 77, 255, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    .gradient-text {
-        background: linear-gradient(135deg, #7C4DFF, #CE93D8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .bento-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        grid-auto-rows: minmax(clamp(100px, 15vh, 150px), auto);
-        gap: 20px;
-    }
-    /* Responsive Grid */
-    @media (max-width: 1200px) { 
-        .bento-grid { grid-template-columns: repeat(3, 1fr); } 
-        .span-4 { grid-column: span 3; }
-    }
-    @media (max-width: 900px) { 
-        .bento-grid { grid-template-columns: repeat(2, 1fr); } 
-        .span-4 { grid-column: span 2; }
-    }
-    @media (max-width: 600px) { 
-        /* Keep 2 columns on mobile so stats can be side-by-side */
-        .bento-grid { grid-template-columns: repeat(2, 1fr); } 
-        /* Force larger items to full width */
-        .span-2, .span-4 { grid-column: 1 / -1; }
-    }
+:root {
+  --bg: #0a0118; /* Deep purple-black background */
+  --panel: rgba(255, 255, 255, 0.05); /* Slightly lighter glass */
+  --border: rgba(139, 92, 246, 0.15); /* Purple-tinted border */
+  --muted: #a78bfa; /* Light purple muted text */
+  --accent: #7c3aed; /* Vibrante purple accent */
+  --ease: cubic-bezier(0.25,0.1,0.25,1);
+}
 
-    /* Helper Classes for Grid Spans */
-    .span-2 { grid-column: span 2; }
-    .span-4 { grid-column: span 4; }
+@keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-    /* Mobile Optimization */
-    @media (max-width: 768px) {
-        .glass-card { padding: 16px !important; }
-        h1 { fontSize: 1.8rem !important; }
-        .bento-grid { gap: 12px; }
-        .quick-actions-container { 
-            justify-content: center !important; 
-            flex-wrap: wrap;
-        }
-        .quick-actions-container > a { flex: 1 1 40%; } 
-    }
+.dashboard-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background: radial-gradient(circle at top, #1e0938 0%, #05010a 100%);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: center; /* Vertical center of grid content */
+  justify-items: center; /* Horizontal center */
+}
+
+/* Ensure Ticker spans full width */
+.dashboard-wrapper > :first-child {
+  width: 100%;
+  grid-row: 1;
+}
+
+.premium-container {
+  grid-row: 2;
+  max-width: 920px;
+  width: 100%;
+  padding: 20px 24px 60px;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+
+
+/* ===== HUD ===== */
+
+.hud-strip {
+  display: flex;
+  gap: 48px;
+  padding: 28px 40px;
+  border-radius: 999px;
+  background: rgba(15, 5, 30, 0.6); /* Darker pill background */
+  border: 1px solid var(--border);
+  margin-bottom: 72px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.hud-item {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.hud-value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-shadow: 0 0 20px rgba(124, 58, 237, 0.3); /* Subtle glow */
+}
+
+.hud-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ===== ACTION GRID ===== */
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap: 24px;
+  margin-bottom: 80px;
+}
+
+.action-card {
+  padding: 28px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: white;
+  transition: all 0.3s var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card:hover {
+  transform: translateY(-5px);
+  background: linear-gradient(145deg, rgba(124, 58, 237, 0.15) 0%, rgba(20, 5, 40, 0.4) 100%);
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow: 0 10px 40px rgba(124, 58, 237, 0.15);
+}
+
+.action-card:active {
+  transform: scale(0.98);
+}
+
+.card-icon {
+  opacity: 1;
+  margin-bottom: 20px;
+  color: #c4b5fd; /* Light violet icon */
+}
+
+.action-card:hover .card-icon {
+  color: #fff;
+  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.6));
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.card-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ===== SECONDARY ===== */
+
+.secondary-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+
+.chart-box {
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(15, 5, 30, 0.4);
+  border: 1px solid var(--border);
+}
+
+.surprise-box {
+  padding: 28px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.05));
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+
+.surprise-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: translateX(-100%);
+  transition: 0.5s;
+}
+
+.surprise-box:hover::before {
+  transform: translateX(100%);
+}
+
+.surprise-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.1);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+/* ===== MOBILE ===== */
+
+@media (max-width: 768px) {
+  .hero-greeting { font-size: 2.4rem; }
+  .hud-strip { flex-direction: column; gap: 20px; }
+  .secondary-section { grid-template-columns: 1fr; }
+
+/* ===== TRENDING ===== */
+
+.trending-box {
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.trending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trending-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.trending-item:hover {
+  background: linear-gradient(145deg, rgba(124, 58, 237, 0.1) 0%, rgba(255,255,255,0.05) 100%);
+  border-color: rgba(124, 58, 237, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.t-icon {
+  font-size: 1.2rem;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.4), rgba(76, 29, 149, 0.4));
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.t-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+
+.t-sub {
+  font-size: 0.8rem;
+  color: #d1d5db;
+  font-weight: 400;
+}
+
+.t-arrow {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: all 0.3s;
+  color: var(--muted);
+  transform: translateX(-5px);
+}
+
+.trending-item:hover .t-arrow {
+  opacity: 1;
+  color: white;
+  transform: translateX(0);
+}
 `;
 
-const NewsTicker = () => (
-    <div style={{
-        background: 'rgba(124, 77, 255, 0.1)',
-        borderBottom: '1px solid rgba(124, 77, 255, 0.2)',
-        padding: '8px 0',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        position: 'relative',
-        marginBottom: '24px'
-    }}>
+/* ================= UI ================= */
+
+const Ticker = () => (
+    <div style={{ width: '100%', overflow: 'hidden', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '40px', background: 'rgba(0,0,0,0.2)' }}>
         <div style={{
-            display: 'inline-block',
-            animation: 'ticker 30s linear infinite',
-            color: '#CE93D8',
-            fontSize: '0.9rem',
-            fontWeight: '500'
+            display: 'inline-flex', whiteSpace: 'nowrap', animation: 'ticker 60s linear infinite', gap: '60px',
+            color: '#a78bfa', fontSize: '0.85rem', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em'
         }}>
-            🚀 New Feature: AI Video Scripts are now live! • 💡 Tip: Use "Surprise Me" for instant inspiration • 🌟 Pro Plan users get 2x faster generation speeds • 📢 Join our Discord community for daily tips!
+            {[1, 2, 3].map(i => (
+                <div key={i} style={{ display: 'flex', gap: '60px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Sparkles size={14} color="#CE93D8" /> New AI Model V2.0 Live</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Zap size={14} color="#fbbf24" /> Speed Optimized</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Star size={14} color="#64748b" /> Pro Tips Available in Guide</span>
+                </div>
+            ))}
         </div>
     </div>
 );
 
-const WelcomeHeader = ({ user }) => (
-    <div style={{ marginBottom: '32px', animation: 'slideUp 0.5s ease-out' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px', color: 'white' }}>
-            Welcome back, <span className="gradient-text">{user?.displayName?.split(' ')[0] || 'Creator'}</span>! 👋
-        </h1>
-        <p style={{ color: '#a0a0b0', fontSize: '1.1rem' }}>Ready to create something amazing today?</p>
-    </div>
-);
-
-const StatWidget = ({ icon: Icon, label, value, subtext, color, trend, className }) => (
-    <div className={`glass-card ${className || ''}`} style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{
-                background: `${color}20`,
-                padding: '10px',
-                borderRadius: '12px',
-                color: color
-            }}>
-                <Icon size={24} />
-            </div>
-            {trend && (
-                <span style={{
-                    background: 'rgba(34, 197, 94, 0.1)',
-                    color: '#4ade80',
-                    padding: '4px 8px',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: '600'
-                }}>
-                    {trend}
-                </span>
-            )}
-        </div>
+const HudStat = ({ icon: Icon, label, value }) => (
+    <div className="hud-item">
+        <Icon size={20} />
         <div>
-            <div style={{ fontSize: '2rem', fontWeight: '700', color: 'white', marginBottom: '4px' }}>
-                {value}
-            </div>
-            <div style={{ fontSize: '0.9rem', color: '#a0a0b0', fontWeight: '500' }}>
-                {label}
-            </div>
-            {subtext && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>{subtext}</div>}
+            <div className="hud-label">{label}</div>
+            <div className="hud-value">{value}</div>
         </div>
     </div>
 );
 
-const QuickAction = ({ icon: Icon, label, to, color }) => (
-    <Link to={to} style={{ textDecoration: 'none' }}>
-        <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '12px',
-            padding: '12px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.2s',
-            border: '1px solid transparent',
-            cursor: 'pointer'
-        }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.background = `${color}15`;
-                e.currentTarget.style.borderColor = `${color}40`;
-                e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-            }}
-        >
-            <Icon size={24} color={color} />
-            <span style={{ fontSize: '0.85rem', color: '#e0e0e0', fontWeight: '500' }}>{label}</span>
-        </div>
+const ActionCard = ({ icon: Icon, label, to }) => (
+    <Link to={to} className="action-card">
+        <div className="card-icon"><Icon size={22} /></div>
+        <div className="card-title">{label}</div>
+        <div className="card-sub">Create new</div>
     </Link>
 );
 
-const AnalyticsCard = ({ usageData, timeRange, setTimeRange }) => (
-    <div className="glass-card span-4" style={{ padding: '24px', minHeight: '300px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <TrendingUp size={20} color="#CE93D8" /> Activity Overview
-            </h3>
-            <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', padding: '4px' }}>
-                {['7d', '30d'].map(range => (
-                    <button
-                        key={range}
-                        onClick={() => setTimeRange(range)}
-                        style={{
-                            background: timeRange === range ? 'rgba(124, 77, 255, 0.2)' : 'transparent',
-                            color: timeRange === range ? '#CE93D8' : '#a0a0b0',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            fontWeight: '600',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        {range === '7d' ? '7 Days' : '30 Days'}
-                    </button>
-                ))}
-            </div>
-        </div>
-        <div style={{ height: '200px', width: '100%', minWidth: 0 }}>
-            {usageData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%" debounce={50}>
-                    <AreaChart data={usageData}>
-                        <defs>
-                            <linearGradient id="colorUsage" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#7C4DFF" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#7C4DFF" stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <XAxis dataKey="day" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip
-                            contentStyle={{ background: '#1e202d', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                            itemStyle={{ color: '#CE93D8' }}
-                            labelStyle={{ color: '#a0a0b0' }}
-                        />
-                        <Area type="monotone" dataKey="usage" stroke="#7C4DFF" strokeWidth={3} fillOpacity={1} fill="url(#colorUsage)" />
-                    </AreaChart>
-                </ResponsiveContainer>
-            ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#a0a0b0' }}>
-                    No activity data yet
-                </div>
-            )}
-        </div>
+const ChartWidget = ({ usageData }) => (
+    <div className="chart-box">
+        <h3 style={{ fontSize: "0.9rem", marginBottom: 16 }}>Activity</h3>
+        <ResponsiveContainer width="100%" height={140}>
+            <AreaChart data={usageData}>
+                <defs>
+                    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#7c4dff" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#7c4dff" stopOpacity={0} />
+                    </linearGradient>
+                </defs>
+                <XAxis dataKey="day" hide />
+                <Tooltip />
+                <Area type="monotone" dataKey="usage" stroke="#7c4dff" fill="url(#g)" />
+            </AreaChart>
+        </ResponsiveContainer>
     </div>
 );
 
-const SurpriseMe = () => {
-    const navigate = useNavigate();
-
-    const SURPRISE_PROMPTS = [
-        "A futuristic city where plants glow in the dark",
-        "Top 5 productivity hacks for remote workers",
-        "The secret to making the perfect cup of coffee",
-        "Why AI will change the way we learn forever",
-        "A motivational quote about never giving up",
-        "Review of the latest tech gadget in 2025",
-        "How to start a side hustle with zero capital",
-        "The most beautiful travel destinations in Japan",
-        "Explain quantum computing to a 5-year-old",
-        "A funny story about a cat who thinks he's a dog"
-    ];
-
-    const handleSurprise = () => {
-        const types = ['tweet', 'idea', 'videoScript', 'caption'];
-        const randomType = types[Math.floor(Math.random() * types.length)];
-        const randomPrompt = SURPRISE_PROMPTS[Math.floor(Math.random() * SURPRISE_PROMPTS.length)];
-        navigate(`/generate?type=${randomType}&topic=${encodeURIComponent(randomPrompt)}`);
-    };
-
-    return (
-        <button onClick={handleSurprise} className="glass-card span-4" style={{
-            padding: '20px', width: '100%', textAlign: 'left', cursor: 'pointer',
-            background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.2), rgba(206, 147, 216, 0.2))',
-            border: '1px solid rgba(124, 77, 255, 0.3)'
-        }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Shuffle size={16} /> Surprise Me
-            </h3>
-            <p style={{ fontSize: '0.8rem', color: '#e0e0e0' }}>Don't know what to create? Let AI decide.</p>
-        </button>
-    );
-};
+/* ================= DASHBOARD ================= */
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [credits, setCredits] = useState(0);
     const [streak, setStreak] = useState(1);
     const [usageData, setUsageData] = useState([]);
-    const [timeRange, setTimeRange] = useState('7d');
 
     useEffect(() => {
         const u = auth.currentUser;
-        if (!u) {
-            // Should verify in PrivateRoute, but just in case
-            // navigate('/'); 
-            // Don't navigate here to avoid conflict with PrivateRoute
-            return;
-        }
-
+        if (!u) return;
         setUser(u);
 
-        // 1. Fetch User Stats (Credits, Streak) & Check Onboarding via Snapshot
-        const unsubBrand = onSnapshot(doc(db, "brands", u.uid), (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                const data = docSnapshot.data();
-
-                // Safety Check: Redirect if not onboarded
-                // We use replace: true to avoid history stack buildup
-                if (!data.introSeen) {
-                    navigate('/intro', { replace: true });
-                    return;
-                }
-                if (!data.onboarded) {
-                    navigate('/flow', { replace: true });
-                    return;
-                }
-
-                setCredits(data.credits || 0);
-                setStreak(data.streak || 1);
-            } else {
-                // User exists in Auth but no DB doc -> New User -> Go to Intro
-                navigate('/intro', { replace: true });
-            }
-        }, (error) => {
-            if (error.code !== 'permission-denied') console.error("Brand snapshot error:", error);
+        // 1. Brand Data (Credits/Streak)
+        const unsubBrand = onSnapshot(doc(db, "brands", u.uid), snap => {
+            const d = snap.data();
+            if (!d) return;
+            setCredits(d.credits || 0);
+            setStreak(d.streak || 1);
         });
 
-        // 2. Fetch History & Process for Usage
+        // 2. History Data (Chart)
         const unsubHistory = onSnapshot(collection(db, "users", u.uid, "history"), (snap) => {
-            const data = snap.docs.map(d => d.data()).sort((a, b) => b.timestamp - a.timestamp);
-            setHistory(data);
-            setLoading(false);
-        }, (error) => {
-            // Warning only
-            if (error.code !== 'permission-denied') console.error("History snapshot error:", error);
-            setLoading(false);
+            const docs = snap.docs.map(d => d.data());
+
+            // Process for Chart (Last 7 Days)
+            const days = 7;
+            const labels = [...Array(days)].map((_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - (days - 1 - i));
+                return d.toISOString().split('T')[0];
+            });
+            const map = docs.reduce((acc, item) => {
+                const date = item.timestamp ? new Date(item.timestamp.toDate()).toISOString().split('T')[0] : '';
+                if (date) acc[date] = (acc[date] || 0) + 1;
+                return acc;
+            }, {});
+
+            setUsageData(labels.map(date => ({
+                day: new Date(date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                usage: map[date] || 0
+            })));
         });
 
-        return () => {
-            if (unsubBrand) unsubBrand();
-            if (unsubHistory) unsubHistory();
-        };
-    }, [navigate]); // Added navigate to dependency array for safety
+        return () => { unsubBrand(); unsubHistory(); };
+    }, []);
 
-    // Recalculate usage data when history or timeRange changes
-    useEffect(() => {
-        if (!history.length) return;
-
-        const days = timeRange === '7d' ? 7 : 30;
-        const dateLabels = [...Array(days)].map((_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (days - 1 - i));
-            return d.toISOString().split('T')[0];
-        });
-
-        const usageMap = history.reduce((acc, item) => {
-            if (item.timestamp) {
-                const date = new Date(item.timestamp.toDate()).toISOString().split('T')[0];
-                acc[date] = (acc[date] || 0) + 1;
-            }
-            return acc;
-        }, {});
-
-        const chartData = dateLabels.map(date => ({
-            day: new Date(date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-            usage: usageMap[date] || 0
-        }));
-        setUsageData(chartData);
-
-    }, [history, timeRange]);
-
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#a0a0b0' }}>Initializing Mission Control...</div>;
+    const handleSurprise = () => {
+        const prompts = [
+            "A cyberpunk street food vendor story",
+            "Why silence is the ultimate productivity hack",
+            "A thread about the history of coffee",
+            "LinkedIn post about failing forward"
+        ];
+        const types = ['tweet', 'idea', 'caption'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+        navigate(`/generate?type=${type}&topic=${encodeURIComponent(prompt)}`);
+    };
 
     return (
-        <div style={{ maxWidth: '95vw', margin: '0 auto' }}>
+        <div className="dashboard-wrapper">
             <style>{dashboardStyles}</style>
 
-            <NewsTicker />
-
-            <div style={{ padding: '0 24px 24px 24px' }}>
-                <WelcomeHeader user={user} />
-
-                <div className="bento-grid">
-                    {/* ROW 1: Stats */}
-                    <StatWidget icon={Zap} label="Credits Left" value={credits} subtext="Refills monthly" color="#fbbf24" />
-                    <StatWidget icon={Flame} label="Daily Streak" value={streak} subtext="Keep it up!" color="#f97316" trend="+1" />
 
 
-                    {/* ROW 3: Analytics */}
-                    <AnalyticsCard usageData={usageData} timeRange={timeRange} setTimeRange={setTimeRange} />
+            <Ticker />
 
-                    {/* ROW 2: Quick Actions */}
-                    <div className="glass-card span-2" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <div style={{ flex: '1 1 200px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '4px', color: 'white' }}>Quick Actions</h3>
-                            <p style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>Jump straight into creation.</p>
-                        </div>
-                        <div className="quick-actions-container" style={{ flex: '2 1 auto', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                            <QuickAction icon={Twitter} label="Tweet" to="/generate?type=tweet" color="#1da1f2" />
-                            <QuickAction icon={FileText} label="Caption" to="/generate?type=caption" color="#CE93D8" />
-                            <QuickAction icon={Lightbulb} label="Idea" to="/generate?type=idea" color="#fbbf24" />
-                            <QuickAction icon={Video} label="Script" to="/generate?type=videoScript" color="#ef4444" />
+            <div className="premium-container">
+
+
+                <div className="hud-strip">
+                    <HudStat icon={Zap} label="Credits" value={credits} />
+                    <HudStat icon={Flame} label="Streak" value={streak} />
+                </div>
+
+                <div className="actions-grid">
+                    <ActionCard icon={Twitter} label="Tweet" to="/generate?type=tweet" />
+                    <ActionCard icon={ImageIcon} label="Post" to="/generate?type=caption" />
+                    <ActionCard icon={Lightbulb} label="Idea" to="/generate?type=idea" />
+                    <ActionCard icon={Video} label="Script" to="/generate?type=videoScript" />
+                </div>
+
+                <div className="secondary-section">
+                    <ChartWidget usageData={usageData} />
+                    <div className="trending-box">
+                        <div className="trending-list">
+                            <div className="trending-item" onClick={handleSurprise}>
+                                <div className="t-icon">🎲</div>
+                                <div>
+                                    <div className="t-title">Surprise Me</div>
+                                    <div className="t-sub">Random Inspiration</div>
+                                </div>
+                                <ArrowRight size={14} className="t-arrow" />
+                            </div>
                         </div>
                     </div>
-                    {/* ROW 4: Widgets */}
-                    <SurpriseMe />
                 </div>
             </div>
         </div>

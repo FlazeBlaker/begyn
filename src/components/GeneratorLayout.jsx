@@ -16,7 +16,7 @@ const useWindowWidth = () => {
 export const SelectionButton = ({ label, isSelected, isDisabled, onClick, isLocked, tooltip }) => {
     const handleClick = () => {
         if (isLocked) {
-            alert("🔒 Coming Soon!\\n\\nImage generation feature is currently under development.");
+            alert("🔒 Coming Soon!\n\nImage generation feature is currently under development.");
             return;
         }
         if (onClick) {
@@ -61,34 +61,43 @@ export const StyledSlider = ({ label, min, max, step, value, onChange }) => (
 );
 
 // --- SUB-COMPONENT: Toggle Switch ---
-export const ToggleSwitch = ({ label, checked, onChange }) => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <span style={{ color: "#e0e0e0", fontSize: "0.95rem", fontWeight: "500" }}>{label}</span>
-        <div style={{ position: "relative", width: "44px", height: "24px", display: "inline-block" }}>
-            <input
-                type="checkbox"
-                checked={checked}
-                onChange={(e) => onChange(e.target.checked)}
-                style={{ opacity: 0, width: 0, height: 0 }}
-                id={`toggle-${label.replace(/\\s+/g, '-').toLowerCase()}`}
-            />
-            <label
-                htmlFor={`toggle-${label.replace(/\\s+/g, '-').toLowerCase()}`}
-                style={{
-                    position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: checked ? "rgba(168, 85, 247, 0.5)" : "rgba(255, 255, 255, 0.1)",
-                    transition: ".4s", borderRadius: "34px", border: "1px solid rgba(255,255,255,0.1)"
-                }}
-            >
-                <span style={{
-                    position: "absolute", content: '""', height: "18px", width: "18px", left: checked ? "22px" : "3px", bottom: "2px",
-                    backgroundColor: "white", transition: ".4s", borderRadius: "50%",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }} />
-            </label>
+export const ToggleSwitch = ({ label, checked, onChange, id }) => {
+    // Generate a safe ID: use prop if provided, else use label if string, else fallback
+    const safeLabelId = typeof label === 'string'
+        ? label.replace(/\s+/g, '-').toLowerCase()
+        : `switch-${Math.random().toString(36).substr(2, 9)}`;
+
+    const inputId = id || `toggle-${safeLabelId}`;
+
+    return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+            <span style={{ color: "#e0e0e0", fontSize: "0.95rem", fontWeight: "500", display: 'flex', alignItems: 'center' }}>{label}</span>
+            <div style={{ position: "relative", width: "44px", height: "24px", display: "inline-block" }}>
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => onChange(e.target.checked)}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                    id={inputId}
+                />
+                <label
+                    htmlFor={inputId}
+                    style={{
+                        position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: checked ? "rgba(168, 85, 247, 0.5)" : "rgba(255, 255, 255, 0.1)",
+                        transition: ".4s", borderRadius: "34px", border: "1px solid rgba(255,255,255,0.1)"
+                    }}
+                >
+                    <span style={{
+                        position: "absolute", content: '""', height: "18px", width: "18px", left: checked ? "22px" : "3px", bottom: "2px",
+                        backgroundColor: "white", transition: ".4s", borderRadius: "50%",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                    }} />
+                </label>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // --- SUB-COMPONENT: Advanced Options Panel ---
 export const AdvancedOptionsPanel = ({ open, onToggle, children }) => (

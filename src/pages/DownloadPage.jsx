@@ -1,5 +1,6 @@
 ﻿// src/pages/DownloadPage.jsx
 import React from "react";
+import { Calendar, Hash, Anchor, Film, Palette, TrendingUp, Download } from "lucide-react";
 
 export default function DownloadPage() {
     const downloads = [
@@ -9,7 +10,7 @@ export default function DownloadPage() {
             description: "Plan your social media content for the entire month with this easy-to-use spreadsheet.",
             type: "Excel / Google Sheets",
             size: "1.2 MB",
-            icon: "📅",
+            icon: <Calendar size={32} color="white" />,
             color: "from-blue-400 to-blue-600",
             link: "https://firebasestorage.googleapis.com/v0/b/ai-social-media-19b8b.firebasestorage.app/o/downloads%2F30-Day_Content_Calendar_Premium.xlsx?alt=media&token=d8a963d1-a7dd-4b06-a826-502da963e7cc",
             disabled: false
@@ -20,7 +21,7 @@ export default function DownloadPage() {
             description: "Learn how to find and use the best hashtags to explode your reach on Instagram and TikTok.",
             type: "PDF Guide",
             size: "4.5 MB",
-            icon: "#️⃣",
+            icon: <Hash size={32} color="white" />,
             color: "from-purple-400 to-purple-600",
             link: "#",
             disabled: true
@@ -31,7 +32,7 @@ export default function DownloadPage() {
             description: "100+ proven hooks to grab attention in the first 3 seconds of your videos.",
             type: "PDF Guide",
             size: "2.1 MB",
-            icon: "🎣",
+            icon: <Anchor size={32} color="white" />,
             color: "from-orange-400 to-orange-600",
             link: "#",
             disabled: true
@@ -42,7 +43,7 @@ export default function DownloadPage() {
             description: "Fill-in-the-blank scripts for educational, entertaining, and promotional videos.",
             type: "Word / Google Docs",
             size: "1.8 MB",
-            icon: "🎬",
+            icon: <Film size={32} color="white" />,
             color: "from-pink-400 to-pink-600",
             link: "#",
             disabled: true
@@ -53,7 +54,7 @@ export default function DownloadPage() {
             description: "Editable templates for quotes, carousels, and stories to keep your brand consistent.",
             type: "Canva Link",
             size: "N/A",
-            icon: "🎨",
+            icon: <Palette size={32} color="white" />,
             color: "from-teal-400 to-teal-600",
             link: "#",
             disabled: true
@@ -64,7 +65,7 @@ export default function DownloadPage() {
             description: "Track your growth, engagement, and best-performing posts to optimize your strategy.",
             type: "Excel / Google Sheets",
             size: "1.5 MB",
-            icon: "📈",
+            icon: <TrendingUp size={32} color="white" />,
             color: "from-indigo-400 to-indigo-600",
             link: "#",
             disabled: true
@@ -173,7 +174,7 @@ export default function DownloadPage() {
                                         minHeight: "44px"
                                     }}>
                                         <span>Download</span>
-                                        <span style={{ fontSize: "1.1rem" }}>↓</span>
+                                        <span style={{ fontSize: "1.1rem" }}><Download size={18} /></span>
                                     </button>
                                 </a>
                             )}

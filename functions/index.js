@@ -38,7 +38,7 @@ const GROQ_TEXT_MODEL = "groq/llama-3.3-70b-versatile"; // Or just "llama-3.3-70
 // Note: Groq SDK uses "llama-3.3-70b-versatile" usually. The user provided "groq/llama-3.3-70b-versatile" which might be OpenRouter style, but we'll try to strip or use as is. 
 // If using official Groq Cloud, IDs are usually sans "groq/".
 // Let's use a helper to clean it if needed or try both.
-const GROQ_VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"; // As requested
+const GROQ_VISION_MODEL = "llama-3.2-90b-vision-preview"; // Standard Vision Model
 
 async function callGroqText(prompt, systemInstruction = "You are a helpful assistant.", model = "llama-3.3-70b-versatile") {
     try {
@@ -338,6 +338,8 @@ exports.generateContent = onRequest(
 
             // Extract variables from payload
             const { topic, image, options: rawOptions, videoLength } = payload || {};
+
+            if (image) console.log("Received image payload, length:", image.length);
 
             // Fix: Frontend sends options at payload root, not nested.
             // We construct 'options' from payload root if 'rawOptions' is missing.
@@ -696,6 +698,7 @@ exports.generateContent = onRequest(
           **FINAL INSTRUCTION:**
           Return ONLY the JSON object. NO explanations, NO markdown formatting, NO extra text.
         `,
+
                 dynamicGuide: `
           You are an expert **Content Director**.
           **Your Goal:** Narrow down the exact **Sub-Niche** and **Format** for this creator.
@@ -704,20 +707,29 @@ exports.generateContent = onRequest(
           - Niche: ${payload?.coreData?.niche || 'General'}
           - Tone: ${(payload?.coreData?.tone || []).join(', ')}
           - Commitment: ${payload?.coreData?.commitment || 'Unknown'}
-          - Target Audience: ${payload?.coreData?.audience || 'General'}
-          - Primary Goal: ${payload?.coreData?.goal || 'Growth'}
-          - Content Preference: ${(payload?.coreData?.preference || []).join(', ')}
           
-          **Goal:** Generate 3-5 DEEP follow-up questions to exactly define their content. 
-          **Constraint:** 
+          **Goal:** Generate 3-4 DEEP follow-up questions to exactly define their content strategy.
+          
+          **Constraint:**
           - **Focus on Narrowing:** Convert broad niches into specific sub-genres.
-            - *If Gaming:* Ask "FPS, RPG, or Horror?" AND "Live Streaming or Produced Videos?"
-            - *If Cooking:* Ask "Quick Recipes, ASMR, or Educational Science?"
-            - *If Vlogging:* Ask "Daily Life, Travel, or Tech Reviews?"
-          - **Focus on Production Style:** Ask about "Faceless vs On-Camera" or "Voiceover vs Music Only".
-          - **DO NOT** ask about "Challenges", "Feelings", or "Broad Goals".
+          - **Focus on Production:** Ask about equipment/skills. ALWAYS provide 3-4 common options (e.g., "Phone Only", "Professional Camera", "OBS/Streamlabs").
+          - **Focus on Struggles:** Ask about blockers. ALWAYS provide 3-4 common options (e.g., "Time", "Editing Skills", "Ideas").
+          - **PRIORITY:** ALWAYS use 'radio' type with options. Avoid 'text' type unless absolutely impossible to guess options.
           
-          **Schema:** You MUST return a valid JSON object matching this schema: ${JSON.stringify(payload?.schema || {})}
+          **Schema:** You MUST return a valid JSON object matching this schema:
+          {
+            "questions": [
+              {
+                "stepId": 4,
+                "question": "The actual question string",
+                "keyName": "uniqueCamelCaseKey",
+                "type": "radio" | "select" | "text",
+                "options": ["Option 1", "Option 2", "Option 3"], // Required for radio/select. Each option must be a non-empty string.
+                "required": true
+              }
+            ]
+          }
+          
           **Instructions:**
           - Return ONLY the JSON object. No markdown formatting.
         `,
@@ -901,7 +913,7 @@ exports.generateContent = onRequest(
           You are the **Head of Content Strategy (The Orchestrator)**. 
           You lead a team of elite specialized agents to build a "Zero to Hero" roadmap.
           
-          **THE MISSION:** Generate steps ${payload?.startStep} to ${payload?.endStep} of 30.
+          **THE MISSION:** Generate steps ${payload?.startStep} to ${payload?.endStep} of ${payload?.numStepsTotal || 60}.
           
           **YOUR AGENT TEAM:**
           1. ⚡ **The Viral Engineer:** Obsessed with hooks, retention, algorithms, and trends. Handles high-views content.
@@ -922,19 +934,19 @@ exports.generateContent = onRequest(
             - *Bad:* "1. Download App. 2. Install App."
             - *Good:* "1. Install & Configure Software." (Detailed Desc: 1. Download. 2. Install. 3. Open.)
           
-          - **PACING GUIDE (THE "ZERO TO HERO" ARC):**
-            - **Steps 1-6 (Foundation):** SETUP & ENVIRONMENT.
-               - *Gaming:* Install OBS, Steam, Discord.
-               - *Cooking:* Buy knives, organize kitchen, set up tripod.
-               - *Vlogging:* Clear phone storage, clean lens, find lighting.
-            - **Steps 7-15 (The Content Lab):** FIRST CREATION CYCLE.
-               - Ideation -> Scripting/Planning -> Recording -> Editing -> Thumbnail.
-            - **Steps 16-25 (Growth Engine):** PUBLISHING & OPTIMIZATION.
-               - Uploading, Titles, Tags, Analytics Review, Reply to Comments.
-            - **Steps 26-30 (Monetization & Scaling):**
-               - Affiliates, Sponsorship preparation, Workflow batching.
+          **PACING GUIDE (THE "ZERO TO HERO" ARC - 60 DAYS):**
+            - **Steps 1-10 (Foundation):** SETUP, RESEARCH & BRANDING.
+               - *Gaming:* Install OBS, Steam, Discord, overlay setup.
+               - *Cooking:* Kitchen, lighting, ingredient sourcing, channel art.
+            - **Steps 11-30 (The Content Lab):** CREATION & PUBLISHING CYCLES.
+               - Ideation -> Scripting -> Recording -> Editing -> Thumbnail -> Publish.
+               - Establishing consistency and workflow.
+            - **Steps 31-50 (Growth Engine):** OPTIMIZATION & DISTRIBUTION.
+               - Analytics review, improving retention, shorts/reels strategy, community engagement.
+            - **Steps 51-60 (Monetization & Scaling):** BUSINESS & SYSTEMS.
+               - Affiliates, Sponsorship preparation, digital products, hiring editors.
           
-          **CRITICAL:** IF YOU ARE ON STEP 10 AND STILL DOING "SETUP", YOU HAVE FAILED. MOVE TO CREATION.
+          **CRITICAL:** IF YOU ARE ON STEP 20 AND STILL DOING "SETUP", YOU HAVE FAILED. MOVE TO CREATION.
           
           **INSTRUCTIONS:**
            1. **Analyze Niche:** Adapt purely to "${payload?.formData?.coreTopic}". Use the correct tools for THAT niche.

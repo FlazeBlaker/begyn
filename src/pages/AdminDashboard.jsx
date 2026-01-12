@@ -545,7 +545,7 @@ const AdminDashboard = ({ userInfo }) => {
                             {/* Revenue Chart */}
                             <div style={{ background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '24px' }}>
                                 <h3 style={{ color: 'white', marginBottom: '20px', fontSize: '1.1rem' }}>Revenue vs Costs (7 Days)</h3>
-                                <div style={{ height: '250px', width: '100%' }}>
+                                <div style={{ height: '250px', width: '100%', minWidth: 0, position: 'relative' }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={chartData}>
                                             <defs>
@@ -576,7 +576,7 @@ const AdminDashboard = ({ userInfo }) => {
                             {/* Plan Distribution Chart */}
                             <div style={{ background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '24px' }}>
                                 <h3 style={{ color: 'white', marginBottom: '20px', fontSize: '1.1rem' }}>Plan Distribution</h3>
-                                <div style={{ height: '250px', width: '100%' }}>
+                                <div style={{ height: '250px', width: '100%', minWidth: 0, position: 'relative' }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie

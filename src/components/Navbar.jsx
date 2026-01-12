@@ -24,28 +24,26 @@ export default function Navbar({ isTestActive, userInfo, isMobile, onMenuClick }
     return (
         <nav style={{
             height: "70px",
-            borderBottom: "1px solid var(--glass-border)",
+            borderBottom: "1px solid rgba(139, 92, 246, 0.15)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 24px",
-            background: "var(--glass-bg)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
+            background: "#0a0118", /* Solid background to prevent bleed-through issues */
             position: "sticky",
             top: 0,
-            zIndex: 40,
-            boxShadow: "var(--glass-shadow)"
+            zIndex: 9999, /* Force top layer */
+            flexShrink: 0, /* Prevent navbar from shrinking */
         }}>
-            {/* Left: Page Title (and Menu Button on Mobile) */}
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            {/* Left: Page Title */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
                 {isMobile && (
                     <button
                         onClick={onMenuClick}
                         style={{
                             background: "transparent",
                             border: "none",
-                            color: "var(--text-primary)",
+                            color: "white",
                             fontSize: "1.5rem",
                             cursor: "pointer",
                             padding: "4px",
@@ -55,8 +53,6 @@ export default function Navbar({ isTestActive, userInfo, isMobile, onMenuClick }
                             borderRadius: "8px",
                             transition: "background 0.2s"
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-hover)"}
-                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                     >
                         ☰
                     </button>
@@ -65,7 +61,7 @@ export default function Navbar({ isTestActive, userInfo, isMobile, onMenuClick }
                     margin: 0,
                     fontSize: "1.25rem",
                     fontWeight: "700",
-                    color: "var(--text-primary)",
+                    color: "white",
                     letterSpacing: "-0.02em"
                 }}>
                     {pageTitle}
@@ -73,53 +69,47 @@ export default function Navbar({ isTestActive, userInfo, isMobile, onMenuClick }
             </div>
 
             {/* Right: Credits & Upgrade */}
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0, zIndex: 10000 }}>
                 {/* Credits Counter */}
-                {!isTestActive && (
-                    <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        background: "var(--bg-card)",
-                        padding: "6px 12px",
-                        borderRadius: "20px",
-                        border: "1px solid var(--border-color)",
-                        fontSize: "0.9rem",
-                        fontWeight: "600",
-                        color: "var(--text-secondary)"
-                    }}>
-                        <span style={{ fontSize: "1.1rem" }}>⚡</span>
-                        <span>{credits} Credits</span>
-                    </div>
-                )}
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "rgba(255, 255, 255, 0.08)",
+                    padding: "8px 16px",
+                    borderRadius: "100px",
+                    border: "1px solid rgba(255, 255, 255, 0.15)",
+                    fontSize: "0.9rem",
+                    fontWeight: "700",
+                    color: "white",
+                    whiteSpace: "nowrap"
+                }}>
+                    <span style={{ fontSize: "1rem", color: "#fbbf24" }}>⚡</span>
+                    <span>{credits} Credits</span>
+                </div>
 
                 {/* Buy Credits Button */}
-                {!isTestActive && (
-                    <Link to="/pricing" style={{ textDecoration: "none" }}>
-                        <button style={{
-                            background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
-                            border: "none",
-                            borderRadius: "8px",
-                            padding: "8px 16px",
-                            color: "white",
-                            fontSize: "0.9rem",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            boxShadow: "0 4px 12px rgba(124, 77, 255, 0.3)",
-                            transition: "transform 0.2s",
-                            whiteSpace: "nowrap",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px"
-                        }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-1px)"}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-                        >
-                            <span>+</span>
-                            <span>Buy Credits</span>
-                        </button>
-                    </Link>
-                )}
+                <Link to="/pricing" style={{ textDecoration: "none" }}>
+                    <button style={{
+                        background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
+                        border: "none",
+                        borderRadius: "100px",
+                        padding: "10px 24px",
+                        color: "white",
+                        fontSize: "0.9rem",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(124, 77, 255, 0.4)",
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                    }}>
+                        <span>+</span>
+                        <span>Get Credits</span>
+                    </button>
+                </Link>
             </div>
         </nav>
     );

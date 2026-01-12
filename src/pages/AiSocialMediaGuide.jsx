@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ArrowRight, CheckCircle, Star, Zap, Layout, Globe, Shield } from 'lucide-react';
+import SEO from '../components/SEO';
 
 // Reusing Navbar from LandingPage (simplified for this page)
 const Navbar = ({ user }) => {
@@ -54,6 +55,11 @@ export default function AiSocialMediaGuide() {
 
     return (
         <div style={{ minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif', background: '#050507' }}>
+            <SEO
+                title="The Complete AI Social Media Guide - Begyn"
+                description="Learn how to become an influencer using AI with Begyn's step-by-step social media guide."
+                canonicalUrl="https://begyn.in/ai-social-media-guide"
+            />
             <Navbar user={user} />
 
             <main style={{ maxWidth: '900px', margin: '0 auto', padding: '60px 20px' }}>

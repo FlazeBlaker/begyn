@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { auth, db, doc, getDoc, updateDoc, setDoc } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
 import { generateContent } from "../services/aiApi";
+import { AlertTriangle, RotateCcw, Map, Target } from "lucide-react";
 import "../styles/MobileMissionControl.css"; // New Mobile Styles
 import Roadmap from "./guide/Roadmap";
 import MobileRoadmap from "./guide/MobileRoadmap"; // New Mobile Component
@@ -230,7 +231,9 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                     border: '1px solid rgba(140, 100, 255, 0.3)', maxWidth: '400px', width: '90%',
                     textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
                 }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '15px' }}>⚠️</div>
+                    <div style={{ marginBottom: '15px', color: '#fbbf24', display: 'flex', justifyContent: 'center' }}>
+                        <AlertTriangle size={48} />
+                    </div>
                     <h3 style={{ color: 'white', marginBottom: '10px', fontSize: '1.5rem' }}>Reset Mission?</h3>
                     <p style={{ color: '#cbd5e1', marginBottom: '25px', lineHeight: '1.5' }}>
                         Regenerating your guide will cost <strong style={{ color: '#a855f7' }}>10 credits</strong>.
@@ -399,10 +402,9 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                         cursor: 'pointer',
                         transition: 'all 0.2s',
                         fontSize: 'clamp(0.85rem, 3vw, 0.9rem)',
-                        minHeight: '44px',
-                        whiteSpace: 'nowrap'
+                        display: 'flex', alignItems: 'center', gap: '8px'
                     }}>
-                        🔄 Reset Mission
+                        <RotateCcw size={16} /> Reset Mission
                     </button>
                 )}
             </div >
@@ -515,7 +517,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                                     transition: 'all 0.2s'
                                 }}
                             >
-                                <span style={{ fontSize: 'clamp(1.2rem, 5vw, 1.5rem)' }}>🗺️</span>
+                                <span style={{ display: 'flex' }}><Map size={32} color="#a855f7" /></span>
                                 <span>Roadmap</span>
                             </button>
 
@@ -558,7 +560,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                                     boxShadow: progressStats.nextStep ? '0 4px 12px rgba(52, 211, 153, 0.2)' : 'none'
                                 }}
                             >
-                                <span style={{ fontSize: 'clamp(1.2rem, 5vw, 1.5rem)' }}>🎯</span>
+                                <span style={{ display: 'flex' }}><Target size={32} color={progressStats.nextStep ? "white" : "currentColor"} /></span>
                                 <span>{progressStats.nextStep ? 'Current Task' : 'All Complete!'}</span>
                             </button>
                         </div>
@@ -580,7 +582,7 @@ export default function YourGuidePage({ userInfo, setOnboardedStatus }) {
                             />
                         ) : (
                             <>
-                                <h2 style={{ fontSize: 'clamp(1.4rem, 5vw, 1.8rem)', marginBottom: 'clamp(16px, 4vw, 20px)', color: 'var(--text-primary)' }} >🗺️ The Begyn Journey</h2 >
+                                <h2 style={{ fontSize: 'clamp(1.4rem, 5vw, 1.8rem)', marginBottom: 'clamp(16px, 4vw, 20px)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }} ><Map size={28} color="#a855f7" /> The Begyn Journey</h2 >
                                 <Roadmap steps={dynamicRoadmapSteps} />
                             </>
                         )

@@ -3,65 +3,74 @@
 
 /* --- CSS VARIABLES FOR THEMING --- */
 :root[data-theme="dark"] {
-    --bg-primary: #050507;
-    /* Darker, deeper black */
-    --bg-secondary: rgba(20, 20, 30, 0.6);
-    --bg-tertiary: rgba(35, 35, 45, 0.6);
-    --bg-card: rgba(255, 255, 255, 0.03);
-    --bg-input: rgba(0, 0, 0, 0.4);
-    --bg-hover: rgba(255, 255, 255, 0.05);
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0b0;
-    --text-tertiary: #64748b;
-    --text-muted: #94a3b8;
-    --border-color: rgba(255, 255, 255, 0.05);
-    --border-strong: rgba(255, 255, 255, 0.1);
-    --scrollbar-track: rgba(255, 255, 255, 0.05);
-    --scrollbar-thumb: rgba(255, 255, 255, 0.2);
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
-    --gradient-1: linear-gradient(135deg, hsla(271, 100%, 50%, 0.1) 0%, hsla(271, 100%, 50%, 0) 60%);
-    --gradient-2: linear-gradient(225deg, hsla(199, 100%, 50%, 0.1) 0%, hsla(199, 100%, 50%, 0) 60%);
+    /* --- HUMAN / WARM DARK THEME --- */
+    --bg-primary: #121214;
+    /* Softer charcoal, not pure black */
+    --bg-secondary: #1c1c1f;
+    --bg-tertiary: #27272a;
+    --bg-card: #1c1c1f;
+    --bg-input: #27272a;
+    --bg-hover: #3f3f46;
 
-    /* --- GLASSMORPHISM VARIABLES --- */
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    --glass-highlight: rgba(255, 255, 255, 0.1);
+    --text-primary: #ededed;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #71717a;
+    --text-muted: #52525b;
 
-    /* --- NEON ACCENTS --- */
-    --neon-blue: #3b82f6;
-    --neon-purple: #7C4DFF;
-    --neon-pink: #CE93D8;
-    --neon-gold: #fbbf24;
-    --neon-glow: 0 0 10px rgba(124, 77, 255, 0.5);
-    --shadow-sm: 0 4px 30px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.5);
+    --border-color: #3f3f46;
+    --border-strong: #52525b;
+
+    /* Accents - Warm & Earthy/Soft */
+    --accent-primary: #f472b6;
+    /* Soft Pink (Tailwind Pink-400) */
+    --accent-secondary: #a78bfa;
+    /* Soft Purple (Tailwind Violet-400) */
+    --accent-glow: rgba(244, 114, 182, 0.2);
+
+    --glass-bg: rgba(39, 39, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 :root[data-theme="light"] {
-    --bg-primary: #f8f7fa;
-    --bg-secondary: rgba(255, 255, 255, 0.8);
-    --bg-tertiary: rgba(255, 255, 255, 0.95);
-    --bg-card: rgba(255, 255, 255, 0.7);
-    --bg-input: rgba(0, 0, 0, 0.05);
-    --bg-hover: rgba(124, 77, 255, 0.1);
-    --text-primary: #1a1a1a;
-    --text-secondary: #4a4a4a;
-    --text-tertiary: #6b7280;
-    --text-muted: #9ca3af;
-    --border-color: rgba(0, 0, 0, 0.1);
-    --border-strong: rgba(0, 0, 0, 0.15);
-    --scrollbar-track: rgba(0, 0, 0, 0.05);
-    --scrollbar-thumb: rgba(0, 0, 0, 0.2);
-    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.4);
-    --gradient-1: linear-gradient(135deg, hsla(270, 100%, 96%, 1) 0%, hsla(270, 100%, 98%, 0) 100%);
-    --gradient-2: linear-gradient(225deg, hsla(290, 100%, 96%, 1) 0%, hsla(290, 100%, 98%, 0) 100%);
-    --shadow-sm: 0 4px 30px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.1);
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.4);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-    --glass-highlight: rgba(255, 255, 255, 0.8);
+    --bg-primary: #ffffff;
+    --bg-secondary: #fafafa;
+    /* Zinc-50 */
+    --bg-tertiary: #f4f4f5;
+    /* Zinc-100 */
+    --bg-card: #ffffff;
+    --bg-input: #f4f4f5;
+    --bg-hover: #f4f4f5;
+
+    --text-primary: #18181b;
+    /* Zinc-900 */
+    --text-secondary: #52525b;
+    /* Zinc-600 */
+    --text-tertiary: #a1a1aa;
+    /* Zinc-400 */
+    --text-muted: #d4d4d8;
+
+    --border-color: #e4e4e7;
+    /* Zinc-200 */
+    --border-strong: #d4d4d8;
+    /* Zinc-300 */
+
+    /* Accents */
+    --accent-primary: #db2777;
+    /* Pink-600 */
+    --accent-secondary: #7c3aed;
+    /* Violet-600 */
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(228, 228, 231, 0.5);
 }
 
 /* --- ROOT & FONT DEFINITIONS --- */
@@ -796,6 +805,28 @@ select:focus {
 
 .star {
     animation: twinkle 3s infinite ease-in-out;
+}
+
+.cursor-blink {
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    background-color: var(--accent-primary);
+    margin-left: 4px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 /* --- UTILITIES --- */

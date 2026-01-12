@@ -9,30 +9,55 @@ import GeneratorLayout, {
 import ImageUpload from "../components/ImageUpload";
 import { auth, logUserAction, db, uploadImageToStorage, doc, getDoc } from "../services/firebase";
 import { generateContent } from "../services/aiApi";
+import {
+    Twitter,
+    Linkedin,
+    Instagram,
+    Facebook,
+    Youtube,
+    Sparkles,
+    Lightbulb,
+    Film,
+    Image as ImageIcon,
+    Square,
+    RectangleHorizontal,
+    RectangleVertical,
+    Smartphone,
+    MonitorPlay,
+    ClipboardList,
+    Download,
+    CheckCircle,
+    Copy,
+    PenTool,
+    FileText,
+    Target,
+    Hash,
+    Smile
+} from "lucide-react";
 
 // --- CONSTANTS ---
 const GENERATOR_TYPES = [
-    { id: "tweet", name: "Tweet", icon: "🐦" },
-    { id: "caption", name: "Caption", icon: "✨" },
-    { id: "idea", name: "Idea", icon: "💡" },
-    { id: "videoScript", name: "Script", icon: "🎬" },
-    { id: "image", name: "Image", icon: "🎨", locked: true }
+    { id: "tweet", name: "Tweet", icon: Twitter },
+    { id: "caption", name: "Caption", icon: Sparkles },
+    { id: "idea", name: "Idea", icon: Lightbulb },
+    { id: "videoScript", name: "Script", icon: Film },
+    { id: "image", name: "Image", icon: ImageIcon, locked: true }
 ];
 
 const PLATFORMS = [
-    { id: "linkedin", name: "LinkedIn", icon: "💼" },
-    { id: "twitter", name: "X", icon: "🐦" },
-    { id: "instagram", name: "Insta", icon: "📸" },
-    { id: "facebook", name: "FB", icon: "👥" },
-    { id: "youtube", name: "YT", icon: "▶️" }
+    { id: "linkedin", name: "LinkedIn", icon: Linkedin },
+    { id: "twitter", name: "X", icon: Twitter },
+    { id: "instagram", name: "Insta", icon: Instagram },
+    { id: "facebook", name: "FB", icon: Facebook },
+    { id: "youtube", name: "YT", icon: Youtube }
 ];
 
 const ASPECT_RATIOS = [
-    { id: "1:1", name: "Square (1:1)", icon: "🟦" },
-    { id: "16:9", name: "Landscape (16:9)", icon: "▭" },
-    { id: "9:16", name: "Story (9:16)", icon: "▯" },
-    { id: "4:5", name: "Portrait (4:5)", icon: "📱" },
-    { id: "1.91:1", name: "Wide (1.91:1)", icon: "▬" }
+    { id: "1:1", name: "Square (1:1)", icon: Square },
+    { id: "16:9", name: "Landscape (16:9)", icon: RectangleHorizontal },
+    { id: "9:16", name: "Story (9:16)", icon: Smartphone },
+    { id: "4:5", name: "Portrait (4:5)", icon: RectangleVertical },
+    { id: "1.91:1", name: "Wide (1.91:1)", icon: MonitorPlay }
 ];
 
 // --- HELPER: Format Text (Converts **text** to Bold) ---
@@ -67,14 +92,14 @@ const getSliderConfig = (type, value) => {
     };
 };
 
-// --- SUB-COMPONENT: Type Selector (Compact Row) ---
+// --- SUB-COMPONENT: TypeSelector (Compact Row) ---
 const TypeSelector = ({ currentType, onChange }) => {
     return (
         <div style={{ display: "flex", gap: "8px" }}>
             {GENERATOR_TYPES.map(type => (
                 <SelectionButton
                     key={type.id}
-                    label={`${type.icon} ${type.name}`}
+                    label={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><type.icon size={18} /> {type.name}</div>}
                     isSelected={currentType === type.id}
                     isDisabled={false}
                     isLocked={type.locked}
@@ -86,14 +111,14 @@ const TypeSelector = ({ currentType, onChange }) => {
     );
 };
 
-// --- SUB-COMPONENT: Platform Selector (Compact Row) ---
+// --- SUB-COMPONENT: PlatformSelector (Compact Row) ---
 const PlatformSelector = ({ currentPlatform, onChange }) => {
     return (
         <div style={{ display: "flex", gap: "8px" }}>
             {PLATFORMS.map(platform => (
                 <SelectionButton
                     key={platform.id}
-                    label={`${platform.icon} ${platform.name}`}
+                    label={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><platform.icon size={18} /> {platform.name}</div>}
                     isSelected={currentPlatform === platform.id}
                     isDisabled={false}
                     onClick={() => onChange(platform.id)}
@@ -103,14 +128,14 @@ const PlatformSelector = ({ currentPlatform, onChange }) => {
     );
 };
 
-// --- SUB-COMPONENT: Aspect Ratio Selector (Compact Row) ---
+// --- SUB-COMPONENT: AspectRatioSelector (Compact Row) ---
 const AspectRatioSelector = ({ currentRatio, onChange }) => {
     return (
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {ASPECT_RATIOS.map(ratio => (
                 <SelectionButton
                     key={ratio.id}
-                    label={`${ratio.icon} ${ratio.name}`}
+                    label={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ratio.icon size={18} /> {ratio.name}</div>}
                     isSelected={currentRatio === ratio.id}
                     isDisabled={false}
                     onClick={() => onChange(ratio.id)}
@@ -319,9 +344,9 @@ const Generators = () => {
         const [activeTab, setActiveTab] = useState('intro');
 
         const tabs = [
-            { id: 'intro', label: 'Intro', icon: '🎬' },
-            { id: 'main', label: 'Main Content', icon: '📝' },
-            { id: 'outro', label: 'Outro', icon: '🎯' }
+            { id: 'intro', label: 'Intro', icon: Film },
+            { id: 'main', label: 'Main Content', icon: PenTool },
+            { id: 'outro', label: 'Outro', icon: CheckCircle }
         ];
 
         return (
@@ -357,7 +382,7 @@ const Generators = () => {
                                 gap: "8px"
                             }}
                         >
-                            <span style={{ fontSize: "1.2rem" }}>{tab.icon}</span> {tab.label}
+                            <span style={{ display: 'flex' }}><tab.icon size={18} /></span> {tab.label}
                         </button>
                     ))}
                 </div>
@@ -414,7 +439,7 @@ const Generators = () => {
                                 onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
                                 onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
                             >
-                                📋 Copy Intro
+                                <Copy size={16} /> Copy Intro
                             </button>
                         </div>
                     )}
@@ -478,12 +503,16 @@ const Generators = () => {
                                     width: "100%",
                                     fontSize: "1rem",
                                     boxShadow: "0 4px 15px rgba(124, 77, 255, 0.3)",
-                                    transition: "all 0.2s"
+                                    transition: "all 0.2s",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "10px"
                                 }}
                                 onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
                                 onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
                             >
-                                📋 Copy Main Content
+                                <Copy size={16} /> Copy Main Content
                             </button>
                         </div>
                     )}
@@ -539,7 +568,7 @@ const Generators = () => {
                                 onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
                                 onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
                             >
-                                📋 Copy Outro
+                                <Copy size={16} /> Copy Outro
                             </button>
                         </div>
                     )}
@@ -558,8 +587,8 @@ const Generators = () => {
             <div style={{ padding: "20px", color: "#e0e0e0", background: "#0a0e1a", height: "100%", display: "flex", flexDirection: "column" }}>
                 {/* Header with title and actions */}
                 <div style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-                    <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: "700", background: "linear-gradient(135deg, #7C4DFF, #CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        ✨ Generated Results
+                    <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: "700", background: "linear-gradient(135deg, #7C4DFF, #CE93D8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Sparkles size={20} /> Generated Results
                     </h3>
                     {content.image && (
                         <a
@@ -568,10 +597,10 @@ const Generators = () => {
                             style={{
                                 padding: "8px 16px", borderRadius: "8px", background: "linear-gradient(135deg, #7C4DFF, #CE93D8)",
                                 border: "none", cursor: "pointer", fontWeight: "600", color: "white",
-                                textDecoration: "none", display: "inline-block", fontSize: "0.85rem"
+                                textDecoration: "none", display: "inline-flex", alignItems: 'center', gap: '6px', fontSize: "0.85rem"
                             }}
                         >
-                            ⬇️ Download
+                            <Download size={14} /> Download
                         </a>
                     )}
                 </div>
@@ -760,7 +789,7 @@ const Generators = () => {
                                                             e.target.style.color = "#7dd3fc";
                                                         }}
                                                     >
-                                                        📋 Copy Tweet
+                                                        <Copy size={16} /> Copy Tweet
                                                     </button>
                                                 </div>
                                             ))}
@@ -898,7 +927,7 @@ const Generators = () => {
                                                                 }
                                                             }}
                                                         >
-                                                            {isIdea ? "✨ Copy Idea" : "📋 Copy Content"}
+                                                            {isIdea ? <><Sparkles size={16} /> Copy Idea</> : <><Copy size={16} /> Copy Content</>}
                                                         </button>
                                                     </div>
                                                 )
@@ -1014,9 +1043,10 @@ const Generators = () => {
                                     </div>
                                     <div style={{ width: "100%", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
                                         <ToggleSwitch
-                                            label="📝 Include Description"
+                                            label={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><FileText size={16} /> Include Description</div>}
                                             checked={advancedOptions.includeBody}
                                             onChange={(val) => setAdvancedOptions(prev => ({ ...prev, includeBody: val }))}
+                                            id="toggle-include-desc"
                                         />
                                     </div>
                                 </>
@@ -1105,21 +1135,24 @@ const Generators = () => {
                             {(currentType !== "post" || advancedOptions.includeBody) && (
                                 <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", justifyContent: "center", marginTop: "20px" }}>
                                     <ToggleSwitch
-                                        label="🎯 Use Brand Data"
+                                        label={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Target size={16} /> Use Brand Data</div>}
                                         checked={advancedOptions.useBrandData}
                                         onChange={(val) => setAdvancedOptions(prev => ({ ...prev, useBrandData: val }))}
+                                        id="toggle-brand-data"
                                     />
                                     {currentType !== "idea" && (
                                         <>
                                             <ToggleSwitch
-                                                label="# Hashtags"
+                                                label={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Hash size={16} /> Hashtags</div>}
                                                 checked={advancedOptions.includeHashtags}
                                                 onChange={(val) => setAdvancedOptions(prev => ({ ...prev, includeHashtags: val }))}
+                                                id="toggle-hashtags"
                                             />
                                             <ToggleSwitch
-                                                label="😊 Emojis"
+                                                label={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Smile size={16} /> Emojis</div>}
                                                 checked={advancedOptions.includeEmojis}
                                                 onChange={(val) => setAdvancedOptions(prev => ({ ...prev, includeEmojis: val }))}
+                                                id="toggle-emojis"
                                             />
                                         </>
                                     )}

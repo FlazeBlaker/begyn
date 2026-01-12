@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, FileText, Scale, AlertCircle } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const TermsOfService = () => {
     return (
@@ -11,6 +12,11 @@ const TermsOfService = () => {
             fontFamily: 'Inter, sans-serif',
             padding: '40px 20px'
         }}>
+            <SEO
+                title="Terms of Service - Begyn"
+                description="Review Begyn's Terms of Service regarding account usage, subscriptions, and content ownership."
+                canonicalUrl="https://begyn.in/terms"
+            />
             <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                 {/* Header */}
                 <div style={{ marginBottom: '60px' }}>

@@ -8,6 +8,7 @@ import {
 } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Sparkles, ArrowRight, CheckCircle, Shield, Cpu, Mail } from 'lucide-react';
+import SEO from '../components/SEO';
 
 export default function Login() {
     const navigate = useNavigate();
@@ -194,8 +195,15 @@ export default function Login() {
 
     if (authChecking) return null;
 
+    if (authChecking) return null;
+
     return (
         <div className="login-container" style={{ minHeight: '100vh', display: 'flex', position: 'relative', overflow: 'hidden', background: '#050507' }}>
+            <SEO
+                title="Login - Begyn"
+                description="Sign in to Begyn AI to access your social media growth roadmap and content generators."
+                canonicalUrl="https://begyn.in/login"
+            />
             <style>
                 {`
                 @media (max-width: 1024px) {

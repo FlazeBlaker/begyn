@@ -1,7 +1,10 @@
 ﻿// src/pages/BrandSetup.jsx
 import { useState, useEffect, useMemo } from "react";
-import { db, auth } from "../services/firebase";
+import { db, auth, uploadImageToStorage } from "../services/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
+import { updateProfile } from "firebase/auth";
+import { Bot, Sparkles, Upload } from "lucide-react";
+import ImageUpload from "../components/ImageUpload";
 
 // --- ANIMATIONS ---
 const KeyframeStyles = () => (
@@ -35,22 +38,47 @@ const KeyframeStyles = () => (
     </style>
 );
 
-// --- AI AVATAR COMPONENT ---
-const AIAvatar = () => {
+// --- AI AVATAR / LOGO COMPONENT ---
+const BrandLogo = ({ logoUrl, onUpload }) => {
     return (
         <div style={{
-            width: 'clamp(60px, 15vw, 80px)',
-            height: 'clamp(60px, 15vw, 80px)',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #7C4DFF, #CE93D8)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 'clamp(2rem, 5vw, 2.5rem)',
-            animation: 'float 3s ease-in-out infinite, glow 2s ease-in-out infinite',
-            marginBottom: '20px'
+            marginBottom: '30px',
+            position: 'relative',
         }}>
-            🤖
+            <div
+                style={{
+                    width: 'clamp(80px, 15vw, 100px)',
+                    height: 'clamp(80px, 15vw, 100px)',
+                    borderRadius: '50%',
+                    background: logoUrl ? 'transparent' : 'linear-gradient(135deg, #7C4DFF, #CE93D8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 'clamp(2rem, 5vw, 2.5rem)',
+                    animation: logoUrl ? 'none' : 'float 3s ease-in-out infinite, glow 2s ease-in-out infinite',
+                    border: '3px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    position: 'relative'
+                }}
+            >
+                {logoUrl ? (
+                    <img src={logoUrl} alt="Brand Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                    <Bot size={48} color="white" />
+                )}
+            </div>
+
+            <div style={{ marginTop: '16px' }}>
+                <ImageUpload
+                    selectedImage={null}
+                    onImageChange={onUpload}
+                />
+            </div>
         </div>
     );
 };
@@ -138,7 +166,7 @@ const EnhancedInput = ({ label, placeholder, description, value, onChange, chara
     return (
         <div style={containerStyle}>
             <label style={labelStyle}>
-                {focus && <span style={{ animation: 'pulse 1s infinite' }}>✨</span>}
+                {focus && <span style={{ animation: 'pulse 1s infinite', display: 'flex', alignItems: 'center' }}><Sparkles size={16} color="#7C4DFF" /></span>}
                 {label}
             </label>
             <p style={descriptionStyle}>{description}</p>
@@ -252,7 +280,7 @@ const EnhancedTextarea = ({ label, placeholder, description, value, onChange, ch
     return (
         <div style={containerStyle}>
             <label style={labelStyle}>
-                {focus && <span style={{ animation: 'pulse 1s infinite' }}>✨</span>}
+                {focus && <span style={{ animation: 'pulse 1s infinite', display: 'flex', alignItems: 'center' }}><Sparkles size={16} color="#7C4DFF" /></span>}
                 {label}
             </label>
             <p style={descriptionStyle}>{description}</p>
@@ -349,6 +377,8 @@ export default function BrandSetup() {
     const [tone, setTone] = useState("");
     const [audience, setAudience] = useState("");
 
+    // New: Logo State
+    const [brandLogo, setBrandLogo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -357,7 +387,7 @@ export default function BrandSetup() {
 
     // Calculate completion percentage
     const completionPercentage = useMemo(() => {
-        const fields = [brandName, industry, tone, audience];
+        const fields = [brandName, industry, tone, audience, brandLogo];
         const filledFields = fields.filter(field => {
             if (!field) return false;
             if (typeof field === 'string') return field.trim().length > 0;
@@ -365,7 +395,7 @@ export default function BrandSetup() {
             return true;
         });
         return Math.round((filledFields.length / fields.length) * 100);
-    }, [brandName, industry, tone, audience]);
+    }, [brandName, industry, tone, audience, brandLogo]);
 
     useEffect(() => {
         if (!uid) {
@@ -374,20 +404,55 @@ export default function BrandSetup() {
         }
         const fetchBrand = async () => {
             setLoading(true);
-            const ref = doc(db, "brands", uid);
-            const snap = await getDoc(ref);
-            if (snap.exists()) {
-                const data = snap.data();
-                setBrandName(data.brandName || "");
-                setIndustry(data.industry || "");
-                setTone(data.tone || "");
-                setAudience(data.audience || "");
+            try {
+                const ref = doc(db, "brands", uid);
+                const snap = await getDoc(ref);
 
+                let currentLogo = null;
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setBrandName(data.brandName || "");
+                    setIndustry(data.industry || "");
+                    setTone(data.tone || "");
+                    setAudience(data.audience || "");
+                    currentLogo = data.logoUrl || null;
+                }
+
+                // If no logo saved, try to auto-load the default logo.png
+                if (!currentLogo) {
+                    try {
+                        const response = await fetch("/logos/logo.png");
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            // Convert to base64 to trigger the upload logic in saveBrand
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                setBrandLogo(reader.result);
+                            };
+                            reader.readAsDataURL(blob);
+                        } else {
+                            setBrandLogo(null);
+                        }
+                    } catch (e) {
+                        console.log("No default logo found");
+                        setBrandLogo(null);
+                    }
+                } else {
+                    setBrandLogo(currentLogo);
+                }
+
+            } catch (err) {
+                console.error("Error loading brand settings:", err);
             }
             setLoading(false);
         };
         fetchBrand();
     }, [uid]);
+
+    const handleLogoChange = (base64) => {
+        setBrandLogo(base64); // ImageUpload returns base64 string
+    };
 
     const saveBrand = async () => {
         if (!uid) return;
@@ -395,7 +460,34 @@ export default function BrandSetup() {
         setSaved(false);
         const ref = doc(db, "brands", uid);
         try {
-            await setDoc(ref, { brandName, industry, tone, audience }, { merge: true });
+            let logoUrl = brandLogo;
+
+            // If brandLogo is new base64, upload it
+            if (brandLogo && brandLogo.startsWith('data:image')) {
+                const uploadUrl = await uploadImageToStorage(uid, brandLogo);
+                if (uploadUrl) {
+                    logoUrl = uploadUrl;
+                    setBrandLogo(logoUrl); // Update local state to URL
+
+                    // Update Auth Profile
+                    if (auth.currentUser) {
+                        try {
+                            await updateProfile(auth.currentUser, { photoURL: logoUrl });
+                        } catch (profileErr) {
+                            console.error("Failed to update auth profile photo", profileErr);
+                        }
+                    }
+                }
+            }
+
+            await setDoc(ref, {
+                brandName,
+                industry,
+                tone,
+                audience,
+                logoUrl: logoUrl || ""
+            }, { merge: true });
+
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (e) {
@@ -493,7 +585,7 @@ export default function BrandSetup() {
         return (
             <div style={pageStyle}>
                 <div style={headerStyle}>
-                    <AIAvatar />
+                    <BrandLogo logoUrl={null} onUpload={() => { }} />
                     <h1 style={titleStyle}>Loading...</h1>
                 </div>
             </div>
@@ -505,11 +597,14 @@ export default function BrandSetup() {
             <KeyframeStyles />
 
             <div style={headerStyle}>
-                <AIAvatar />
+                <BrandLogo logoUrl={brandLogo} onUpload={handleLogoChange} />
                 <h1 style={titleStyle}>AI Brand Setup</h1>
                 <p style={subtitleStyle}>
                     Train your AI assistant by providing detailed information about your brand.
-                    The more you share, the better your content will be! ✨
+                    The more you share, the better your content will be!
+                    <span style={{ display: "inline-flex", verticalAlign: "middle", marginLeft: "6px" }}>
+                        <Sparkles size={16} color="#CE93D8" />
+                    </span>
                 </p>
 
                 <div style={progressContainerStyle}>
@@ -557,8 +652,6 @@ export default function BrandSetup() {
                     onChange={(e) => setAudience(e.target.value)}
                     characterLimit={200}
                 />
-
-
 
                 <SaveButton
                     loading={isSaving}

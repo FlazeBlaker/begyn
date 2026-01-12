@@ -188,48 +188,47 @@
 
 .premium-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    /* Slightly lighter */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Brighter border */
     border-radius: 12px;
-    /* Slightly smaller radius */
     padding: 14px 16px;
-    /* Reduced padding */
     font-size: 1rem;
-    /* Standard size */
     color: white;
+    /* Force white text */
     transition: all 0.3s ease;
     font-family: inherit;
     box-sizing: border-box;
 }
 
-.premium-input:focus {
-    outline: none;
-    border-color: #a855f7;
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1);
+.premium-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .options-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    /* Tighter grid */
     gap: 12px;
-    /* Reduced gap */
 }
 
 .option-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     padding: 14px;
-    /* Reduced padding */
     text-align: center;
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 500;
     font-size: 0.95rem;
-    color: #cbd5e1;
-    border: 1px solid transparent;
+    color: #fff;
+    /* White text instead of pale grey */
+    min-height: 50px;
+    /* Ensure visibility even if empty text */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .option-card:hover {

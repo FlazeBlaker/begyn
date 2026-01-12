@@ -2,9 +2,25 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { auth } from "../services/firebase";
+import {
+    LayoutDashboard,
+    Map,
+    Settings,
+    Sparkles,
+    Video,
+    Bot,
+    History,
+    Download,
+    LogOut,
+    ChevronLeft,
+    ChevronRight,
+    MapPin,
+    Wrench,
+    Zap
+} from "lucide-react";
 
 // --- SUB-COMPONENT: NavLink ---
-const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick, state }) => {
+const NavLink = ({ to, children, icon: Icon, isTestActive, isSidebarOpen, onClick, state }) => {
     const [hover, setHover] = useState(false);
     const location = useLocation();
     const isActive = location.pathname === to;
@@ -45,12 +61,13 @@ const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick, sta
 
     const iconStyle = {
         marginRight: isSidebarOpen ? "12px" : "0",
-        fontSize: "1.2rem",
+        // fontSize: "1.2rem", // Removed font-size for SVG
         lineHeight: 0,
         flexShrink: 0,
         transition: "all 0.3s ease",
         filter: isActive ? "drop-shadow(0 0 8px rgba(124, 77, 255, 0.5))" : "none",
         transform: isActive ? "scale(1.1)" : "scale(1)",
+        color: isActive ? "#7C4DFF" : "currentColor" // Tint icon
     };
 
     const textStyle = useMemo(
@@ -70,7 +87,7 @@ const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick, sta
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
         >
-            <span style={iconStyle}>{icon}</span>
+            <span style={iconStyle}><Icon size={20} /></span>
             <span style={textStyle}>{isSidebarOpen && children}</span>
         </div>
     );
@@ -79,7 +96,7 @@ const NavLink = ({ to, children, icon, isTestActive, isSidebarOpen, onClick, sta
 };
 
 // --- SUB-COMPONENT: Profile Menu Item ---
-const ProfileMenuItem = ({ to, icon, label, onClick }) => {
+const ProfileMenuItem = ({ to, icon: Icon, label, onClick }) => {
     const [hover, setHover] = useState(false);
     return (
         <Link
@@ -100,16 +117,17 @@ const ProfileMenuItem = ({ to, icon, label, onClick }) => {
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
         >
-            <span style={{ fontSize: "1.1rem" }}>{icon}</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}><Icon size={16} /></span>
             <span>{label}</span>
         </Link>
     );
 };
 
 // --- SUB-COMPONENT: User Profile with Popup ---
-const UserProfile = ({ isSidebarOpen }) => {
+const UserProfile = ({ isSidebarOpen, userInfo }) => {
     const user = auth.currentUser;
-    const photoURL = user?.photoURL;
+    // Prioritize logoUrl from brand settings, then auth profile
+    const photoURL = userInfo?.logoUrl || user?.photoURL;
     const displayName = user?.displayName || "Creator";
     const email = user?.email || "";
     const [menuOpen, setMenuOpen] = useState(false);
@@ -160,10 +178,10 @@ const UserProfile = ({ isSidebarOpen }) => {
                     }}>
                         Manage
                     </div>
-                    <ProfileMenuItem to="/automate" icon="🤖" label="Automate (Soon)" onClick={() => setMenuOpen(false)} />
-                    <ProfileMenuItem to="/history" icon="📚" label="History" onClick={() => setMenuOpen(false)} />
-                    <ProfileMenuItem to="/download" icon="📦" label="Download Center" onClick={() => setMenuOpen(false)} />
-                    <ProfileMenuItem to="/settings" icon="⚙️" label="Settings" onClick={() => setMenuOpen(false)} />
+                    <ProfileMenuItem to="/automate" icon={Bot} label="Automate (Soon)" onClick={() => setMenuOpen(false)} />
+                    <ProfileMenuItem to="/history" icon={History} label="History" onClick={() => setMenuOpen(false)} />
+                    <ProfileMenuItem to="/download" icon={Download} label="Download Center" onClick={() => setMenuOpen(false)} />
+                    <ProfileMenuItem to="/settings" icon={Settings} label="Settings" onClick={() => setMenuOpen(false)} />
 
                     <div style={{ height: "1px", background: "var(--border-color)", margin: "4px 0" }} />
 
@@ -183,7 +201,7 @@ const UserProfile = ({ isSidebarOpen }) => {
                         onMouseEnter={(e) => e.currentTarget.style.background = "rgba(248, 113, 113, 0.1)"}
                         onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                     >
-                        <span>🚪</span>
+                        <span><LogOut size={16} /></span>
                         <span>Sign Out</span>
                     </div>
 
@@ -254,7 +272,7 @@ const UserProfile = ({ isSidebarOpen }) => {
                 {/* Chevron indicator */}
                 {isSidebarOpen && (
                     <div style={{ marginLeft: "auto", color: "var(--text-tertiary)", fontSize: "0.8rem" }}>
-                        {menuOpen ? "▼" : "▲"}
+                        {menuOpen ? <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} /> : <ChevronRight size={14} style={{ transform: 'rotate(-90deg)' }} />}
                     </div>
                 )}
             </div>
@@ -424,7 +442,7 @@ export default function Sidebar({
                             onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"}
                             title={isSidebarOpen ? "Collapse" : "Expand"}
                         >
-                            {isSidebarOpen ? "«" : "»"}
+                            {isSidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                         </button>
                     )}
                     {isMobile && (
@@ -454,7 +472,7 @@ export default function Sidebar({
                         <li>
                             <NavLink
                                 to="/dashboard"
-                                icon="🏠"
+                                icon={LayoutDashboard}
                                 isTestActive={isTestActive}
                                 isSidebarOpen={isSidebarOpen}
                                 onClick={isSidebarOpen ? toggleSidebar : undefined}
@@ -466,7 +484,7 @@ export default function Sidebar({
                             <NavLink
                                 to={guideButtonPath}
                                 state={{ allowed: true }}
-                                icon="🗺️"
+                                icon={Map}
                                 isTestActive={isTestActive}
                                 isSidebarOpen={isSidebarOpen}
                                 onClick={isSidebarOpen ? toggleSidebar : undefined}
@@ -477,7 +495,7 @@ export default function Sidebar({
                         <li>
                             <NavLink
                                 to="/brand-setup"
-                                icon="🔧"
+                                icon={Wrench}
                                 isTestActive={isTestActive}
                                 isSidebarOpen={isSidebarOpen}
                                 onClick={isSidebarOpen ? toggleSidebar : undefined}
@@ -493,7 +511,7 @@ export default function Sidebar({
                         <li>
                             <NavLink
                                 to="/generate"
-                                icon="✨"
+                                icon={Sparkles}
                                 isTestActive={isTestActive}
                                 isSidebarOpen={isSidebarOpen}
                                 onClick={isSidebarOpen ? toggleSidebar : undefined}
@@ -505,7 +523,7 @@ export default function Sidebar({
                         <li>
                             <NavLink
                                 to="/video-generator"
-                                icon="🎥"
+                                icon={Video}
                                 isTestActive={isTestActive}
                                 isSidebarOpen={isSidebarOpen}
                                 onClick={isSidebarOpen ? toggleSidebar : undefined}
@@ -517,7 +535,7 @@ export default function Sidebar({
                 </div>
 
                 {/* USER PROFILE SECTION (NOW CONTAINS MANAGE MENU) */}
-                <UserProfile isSidebarOpen={isSidebarOpen} />
+                <UserProfile isSidebarOpen={isSidebarOpen} userInfo={userInfo} />
             </div >
         </>
     );

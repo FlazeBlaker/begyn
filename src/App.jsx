@@ -490,11 +490,15 @@ function LayoutRouter({ user, userInfo, setUserInfo, isSidebarOpen, setIsSidebar
 
 import ScrollToTop from "./components/ScrollToTop";
 
+import { HelmetProvider } from "react-helmet-async";
+
 export default function App() {
     return (
-        <Router>
-            <ScrollToTop />
-            <AppContent />
-        </Router>
+        <HelmetProvider>
+            <Router>
+                <ScrollToTop />
+                <AppContent />
+            </Router>
+        </HelmetProvider>
     );
 }
