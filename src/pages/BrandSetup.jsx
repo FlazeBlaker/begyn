@@ -435,7 +435,6 @@ export default function BrandSetup() {
                             setBrandLogo(null);
                         }
                     } catch (e) {
-                        console.log("No default logo found");
                         setBrandLogo(null);
                     }
                 } else {

@@ -194,7 +194,6 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
 
     const startGeneration = async () => {
         setLoading(true);
-        console.log("Generating Dynamic Questions...");
         try {
             const responseString = await generateContent({
                 type: "dynamicGuide",
@@ -205,9 +204,7 @@ const Step3AI = ({ formData, setFormData, loading, setLoading, next }) => {
                 }
             });
 
-            console.log("Raw AI Response (Step 3):", responseString);
             const result = sanitizeAndParse(responseString);
-            console.log("Parsed AI Result (Step 3):", result);
 
             let dynamicQuestions = (result.questions && result.questions.length > 0) ? result.questions : [
                 { stepId: 4, question: "What is your main struggle?", keyName: "struggle", type: "text", required: true },
